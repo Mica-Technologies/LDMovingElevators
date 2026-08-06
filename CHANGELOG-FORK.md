@@ -29,7 +29,9 @@ Based on upstream **Moving Elevators 1.4.12**.
   bindable to any controller the same way the Remote Elevator Panel is: right-click a controller
   with it, then place it anywhere. It only reports — it has no buttons and takes no redstone input —
   and it can be camouflaged like the other blocks. While the cabin is moving it shows the floor it
-  is nearest to.
+  is nearest to. The label drops a leading "Floor" so it reads "3" rather than "Floor 3", and sits
+  on a dark inset panel so it stays legible over any camouflage — the floor's dye colour is kept
+  where it reads against that panel and swapped for white where it does not.
 - **Call queue.** Button and display presses made while the elevator is already moving are now
   remembered instead of ignored, and served once it arrives. Calls are dispatched in sweep order —
   the cabin finishes the floors ahead of it in its current direction before reversing — rather than
