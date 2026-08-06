@@ -10,6 +10,7 @@ import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import com.supermartijn642.movingelevators.blocks.ElevatorCarPanelBlockEntity;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.packets.PacketDoorControl;
+import com.supermartijn642.movingelevators.packets.PacketRingAlarm;
 import com.supermartijn642.movingelevators.packets.PacketRequestFloor;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
@@ -30,7 +31,7 @@ import javax.annotation.Nonnull;
 public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlockEntity> {
 
     private static final int BUTTON_SIZE = 22, GAP = 3, PADDING = 7, HEADER = 22;
-    /** Door controls sit under the grid, in their own row. */
+    /** Door controls sit under the grid, in their own row, with the alarm in a row below that. */
     private static final int DOOR_ROW_HEIGHT = 20, DOOR_ROW_GAP = 5, DOOR_LABEL_PADDING = 6;
     /** Rows before the grid grows sideways instead, so a tall shaft cannot run off the screen. */
     private static final int MAX_ROWS = 8;
@@ -98,7 +99,7 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     protected int height(ElevatorCarPanelBlockEntity blockEntity){
         int rows = rowsFor(floorCount(blockEntity));
         return PADDING + HEADER + rows * BUTTON_SIZE + (rows - 1) * GAP
-            + DOOR_ROW_GAP + DOOR_ROW_HEIGHT + PADDING;
+            + DOOR_ROW_GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
     }
 
     private static int floorCount(ElevatorCarPanelBlockEntity blockEntity){
@@ -171,6 +172,13 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
             () -> false, () -> false,
             TextComponents.translation("movingelevators.floor_select.door_close").get(),
             () -> MovingElevators.CHANNEL.sendToServer(new PacketDoorControl(this.blockEntityPos, false))));
+
+        // The alarm gets a row to itself rather than a third seat in the door row: it is not a door
+        // control, and it is the one button here that should be hard to hit by accident.
+        this.addWidget(new AlarmButtonWidget(PADDING, y + DOOR_ROW_HEIGHT + GAP, available + GAP, DOOR_ROW_HEIGHT,
+            () -> TextComponents.translation("movingelevators.floor_select.alarm").format(),
+            TextComponents.translation("movingelevators.floor_select.alarm.tooltip").get(),
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketRingAlarm(this.blockEntityPos))));
     }
 
     /**

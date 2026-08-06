@@ -83,6 +83,8 @@ public class MovingElevators {
     public static SoundEvent modern_chime_sound;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "modern_passing_floor_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
     public static SoundEvent modern_passing_floor_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "alarm_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent alarm_sound;
 
     public static final CreativeItemGroup GROUP = CreativeItemGroup.create("movingelevators", () -> elevator_block.asItem());
 
@@ -107,6 +109,7 @@ public class MovingElevators {
         CHANNEL.registerMessage(PacketDoorControl.class, PacketDoorControl::new, true);
         CHANNEL.registerMessage(PacketToggleElevatorSounds.class, PacketToggleElevatorSounds::new, true);
         CHANNEL.registerMessage(PacketCycleElevatorSoundScheme.class, PacketCycleElevatorSoundScheme::new, true);
+        CHANNEL.registerMessage(PacketRingAlarm.class, PacketRingAlarm::new, true);
         CHANNEL.registerMessage(PacketSetFloorName.class, PacketSetFloorName::new, true);
         CHANNEL.registerMessage(PacketSyncElevatorMovement.class, PacketSyncElevatorMovement::new, true);
         CHANNEL.registerMessage(PacketToggleShowControllerButtons.class, PacketToggleShowControllerButtons::new, true);
@@ -167,6 +170,7 @@ public class MovingElevators {
         handler.registerSoundEvent("door_close_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "door_close_sound")));
         handler.registerSoundEvent("modern_chime_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "modern_chime_sound")));
         handler.registerSoundEvent("modern_passing_floor_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "modern_passing_floor_sound")));
+        handler.registerSoundEvent("alarm_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "alarm_sound")));
     }
 
     private static void registerGenerators(){

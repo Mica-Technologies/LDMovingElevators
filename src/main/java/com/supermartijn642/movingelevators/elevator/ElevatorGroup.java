@@ -117,6 +117,20 @@ public class ElevatorGroup {
      * so both notes belong to the same pair even if a call arrives in between. */
     private ElevatorSoundScheme.Moment pendingChime;
 
+    /**
+     * Ticks the alarm keeps ringing after the last "still held" from whoever is pressing it.
+     * <p>
+     * The button does not send "start" and "stop" -- it says "still held" every so often, and this
+     * runs out on its own. A stop message can be lost to a disconnect, a closed screen, or a player
+     * dying with the panel open, and an alarm nobody can switch off is far worse than one that stops
+     * a fraction of a second late. It only has to outlast the gap between messages.
+     */
+    private static final int ALARM_HOLD_TICKS = 15;
+    /** Ticks between strikes. An alarm bell is one bell hit over and over, so that is how it is made. */
+    private static final int ALARM_STRIKE_INTERVAL = 5;
+    private int alarmTicks;
+    private int alarmStrikeCounter;
+
     public ElevatorGroup(World level, int x, int z, EnumFacing facing){
         this.level = level;
         this.x = x;
@@ -129,6 +143,8 @@ public class ElevatorGroup {
         this.cageChecks = 0;
         if(!this.level.isRemote && this.pendingDing > 0 && --this.pendingDing == 0)
             this.playAtCabin(this.pendingChime);
+        if(!this.level.isRemote)
+            this.updateAlarm();
         if(!this.level.isRemote && this.shouldBeSynced){
             this.shouldBeSynced = false;
             this.updateGroup();
@@ -379,6 +395,53 @@ public class ElevatorGroup {
 
     public boolean areSoundsEnabled(){
         return this.soundsEnabled;
+    }
+
+    /**
+     * Called repeatedly while a player holds the alarm button. Ringing lapses on its own once they
+     * stop; see {@link #ALARM_HOLD_TICKS}.
+     */
+    public void ringAlarm(){
+        // First press strikes immediately -- a button that waits before making a noise feels broken.
+        if(this.alarmTicks <= 0)
+            this.alarmStrikeCounter = 0;
+        this.alarmTicks = ALARM_HOLD_TICKS;
+    }
+
+    public boolean isAlarmRinging(){
+        return this.alarmTicks > 0;
+    }
+
+    private void updateAlarm(){
+        if(this.alarmTicks <= 0)
+            return;
+        this.alarmTicks--;
+        if(this.alarmStrikeCounter > 0){
+            this.alarmStrikeCounter--;
+            return;
+        }
+        this.alarmStrikeCounter = ALARM_STRIKE_INTERVAL;
+        this.strikeAlarm();
+    }
+
+    /**
+     * Rings once, in the cabin and at every landing.
+     * <p>
+     * At every landing because an alarm only the trapped passenger can hear is not an alarm -- the
+     * point is to reach somebody who can help, and they are by definition not in the cabin.
+     * <p>
+     * Not gated on {@link #soundsEnabled}, unlike everything else here: that switch is for the
+     * noises the elevator makes on its own, and a button a player is actively holding down that
+     * produces no sound is indistinguishable from a broken one.
+     */
+    private void strikeAlarm(){
+        Vec3d cabin = this.getCageAnchorPos(this.currentY).addVector(this.cageSizeX / 2d, this.cageSizeY / 2d, this.cageSizeZ / 2d);
+        this.soundScheme.play(this.level, cabin, ElevatorSoundScheme.Moment.ALARM);
+        for(int floor = 0; floor < this.getFloorCount(); floor++){
+            BlockPos pos = this.getPos(this.getFloorYLevel(floor));
+            if(this.level.isBlockLoaded(pos))
+                this.soundScheme.play(this.level, new Vec3d(pos).addVector(0.5, 0.5, 0.5), ElevatorSoundScheme.Moment.ALARM);
+        }
     }
 
     public ElevatorSoundScheme getSoundScheme(){

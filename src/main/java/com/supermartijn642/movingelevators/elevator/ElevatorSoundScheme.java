@@ -48,6 +48,8 @@ public enum ElevatorSoundScheme {
             // slower than a block being shoved.
             entries.put(Moment.DOORS_OPENING, new Entry(() -> MovingElevators.door_open_sound, 0.45f, 0.8f));
             entries.put(Moment.DOORS_CLOSING, new Entry(() -> MovingElevators.door_close_sound, 0.45f, 0.75f));
+            // High and hard: an alarm has to cut through whatever else is going on.
+            entries.put(Moment.ALARM, new Entry(() -> MovingElevators.alarm_sound, 1f, 1.9f));
             // DEPARTING, CALL_ACCEPTED and OBSTRUCTED are intentionally silent.
         }
     },
@@ -77,6 +79,9 @@ public enum ElevatorSoundScheme {
             entries.put(Moment.ARRIVAL_CHIME_DOWN_SECOND, new Entry(() -> MovingElevators.modern_chime_sound, 0.9f, 0.85f));
             entries.put(Moment.DOORS_OPENING, new Entry(() -> MovingElevators.door_open_sound, 0.3f, 1.1f));
             entries.put(Moment.DOORS_CLOSING, new Entry(() -> MovingElevators.door_close_sound, 0.3f, 1.05f));
+            // Same bell as Standard rather than this scheme's chime: an alarm should not sound like
+            // a pleasant arrival, whatever the rest of the scheme sounds like.
+            entries.put(Moment.ALARM, new Entry(() -> MovingElevators.alarm_sound, 1f, 2f));
         }
 
         @Override
@@ -103,6 +108,9 @@ public enum ElevatorSoundScheme {
         ARRIVAL_CHIME_DOWN_SECOND,
         DOORS_OPENING,
         DOORS_CLOSING,
+        /** One strike of the alarm bell. The elevator repeats it; a scheme only says what a strike
+         * sounds like. */
+        ALARM,
         CALL_ACCEPTED,
         OBSTRUCTED;
 

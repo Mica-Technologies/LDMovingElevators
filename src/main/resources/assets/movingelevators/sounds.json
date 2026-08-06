@@ -47,5 +47,12 @@
     "sounds": [
       "note/icechime"
     ]
+  },
+  "alarm_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.alarm_sound",
+    "sounds": [
+      "note/bell"
+    ]
   }
 }
