@@ -38,3 +38,45 @@ lib/
 logs/
 images/
 desktop.ini
+
+# ---------------------------------------------------------------------------
+# Mica Technologies fork additions
+# Everything above this line is inherited from upstream (SuperMartijn642).
+# Keep fork-specific entries below so the upstream diff stays readable.
+# ---------------------------------------------------------------------------
+
+# Windows / OS cruft
+thumbs.db
+Thumbs.db
+.DS_Store
+
+# JVM crash logs
+hs_err_pid*
+crash-reports/
+*.log
+
+# Gradle/Java leftovers
+tmp/
+*.tmp
+*.bak
+*.swp
+local.properties
+.factorypath
+
+# Local-only Claude Code state. Shared settings (.claude/settings.json) ARE committed;
+# per-machine overrides and agent worktrees are not.
+.claude/settings.local.json
+.claude/worktrees/
+
+# Agent working notes and implementation plans. Local scratch by design -- these churn
+# constantly and are written for whoever/whatever is doing the work right now, not for
+# the repo's history. Both spellings are listed because gitignore matching is
+# case-sensitive on Linux CI even though macOS checkouts are usually not.
+docs/agent-plans/
+docs/AGENT-PLANS/
+
+# Secrets. CURSEFORGE_TOKEN / MODRINTH_TOKEN are read from the environment by
+# publishMods and must never be committed in any form.
+*.env
+.env.*
+*credentials*

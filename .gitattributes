@@ -3,3 +3,28 @@
 # are changed when only line endings change.
 src/generated/**/.cache/cache text eol=lf
 src/generated/**/*.json text eol=lf
+
+# ---------------------------------------------------------------------------
+# Mica Technologies fork additions (see dev-configurations/templates/gitattributes)
+# ---------------------------------------------------------------------------
+
+# Normalize line endings: store LF in the repo, let git decide checkout per the rules below
+* text=auto
+
+# Scripts that must keep LF (run under bash/sh even on Windows)
+*.sh text eol=lf
+gradlew text eol=lf
+
+# Windows scripts that must keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files -- never touch line endings
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.zip binary
+*.pdn binary
