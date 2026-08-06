@@ -56,11 +56,11 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
 
         // Elevator doors
         this.block(MovingElevators.elevator_door_block, "Elevator Door");
-        this.translation("movingelevators.elevator_door.tooltip", "A 2x2 sliding doorway that opens when the elevator reaches this floor and closes again on its own. Redstone power forces it open. Bind it to an elevator controller by right-clicking on it");
+        this.translation("movingelevators.elevator_door.tooltip", "A 2x2 sliding doorway. Place it at an elevator landing and it finds that elevator by itself: it opens when the cabin arrives and closes again on its own. Redstone power forces it open");
         this.block(MovingElevators.elevator_single_door_block, "Elevator Door (Narrow)");
-        this.translation("movingelevators.elevator_single_door.tooltip", "A 1x2 sliding doorway that opens when the elevator reaches this floor and closes again on its own. Redstone power forces it open. Bind it to an elevator controller by right-clicking on it");
+        this.translation("movingelevators.elevator_single_door.tooltip", "A 1x2 sliding doorway. Place it at an elevator landing and it finds that elevator by itself: it opens when the cabin arrives and closes again on its own. Redstone power forces it open");
         this.translation("movingelevators.elevator_door.status.header", "Elevator door status:");
-        this.translation("movingelevators.elevator_door.status.unbound", "  Not bound to a controller - right-click a controller with the door item, then place it.");
+        this.translation("movingelevators.elevator_door.status.searching", "  No elevator landing found within 12 blocks at this height.");
         this.translation("movingelevators.elevator_door.status.bound", "  Bound to controller at (%1$s, %2$s, %3$s)");
         this.translation("movingelevators.elevator_door.status.no_group", "  That controller is gone, or belongs to a different elevator.");
         this.translation("movingelevators.elevator_door.status.landing", "  Door at y=%1$s serves landing y=%2$s");

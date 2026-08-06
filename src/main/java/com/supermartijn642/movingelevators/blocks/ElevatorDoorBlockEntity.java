@@ -4,6 +4,7 @@ import com.supermartijn642.core.block.TickableBlockEntity;
 import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.movingelevators.MovingElevatorsConfig;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
 import net.minecraft.block.state.IBlockState;
 import com.supermartijn642.core.TextComponents;
 import net.minecraft.nbt.NBTTagCompound;
@@ -33,6 +34,14 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
      */
     private static final int FLOOR_SEARCH_RANGE = 2;
 
+    /**
+     * How far from a landing's controller column a doorway may stand and still adopt it. A cabin can
+     * be up to fifteen blocks across, so its doors sit well off the controller's own column.
+     */
+    private static final int ADOPT_RANGE = 12;
+    /** Only retried periodically: an unbound door is looking for something that may not exist yet. */
+    private static final int ADOPT_INTERVAL = 40;
+
     /** World time of the last open/close request this door acted on, so it reacts once per press. */
     private long lastOpenRequest, lastCloseRequest;
     /** Ticks left before the doors close on their own. */
@@ -46,6 +55,7 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
      * block entity has no such limit.
      */
     private boolean top;
+    private int adoptCounter;
 
     public ElevatorDoorBlockEntity(){
         super(MovingElevators.elevator_door_tile);
@@ -93,6 +103,11 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         if(this.world == null || this.world.isRemote)
             return;
 
+        if(!this.isBound() && --this.adoptCounter <= 0){
+            this.adoptCounter = ADOPT_INTERVAL;
+            this.adoptNearestLanding();
+        }
+
         ElevatorGroup group = this.getGroup();
         int floorLevel = this.getFloorLevel();
         boolean cabinHere = group != null && group.isCabinAt(floorLevel);
@@ -134,6 +149,45 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
     }
 
     /**
+     * Finds the elevator landing this doorway stands at and binds to it.
+     * <p>
+     * Doors are not remotes. A landing panel can hang anywhere and genuinely needs to be told which
+     * elevator it belongs to, but a doorway is physically at a landing -- it can simply look. That
+     * removes the need to bind the item before placing it, and with it a whole failure mode: a door
+     * whose binding did not survive placement looks identical to a working one and never moves.
+     * <p>
+     * Cheap despite appearances: it walks the world's elevator groups, of which there are a handful,
+     * rather than scanning blocks.
+     */
+    private void adoptNearestLanding(){
+        ElevatorGroupCapability capability = ElevatorGroupCapability.get(this.world);
+        if(capability == null)
+            return;
+
+        ElevatorGroup best = null;
+        int bestY = 0;
+        double bestDistance = Double.MAX_VALUE;
+        for(ElevatorGroup group : capability.getGroups()){
+            double dx = group.x - this.pos.getX(), dz = group.z - this.pos.getZ();
+            double distance = dx * dx + dz * dz;
+            if(distance > ADOPT_RANGE * ADOPT_RANGE || distance >= bestDistance)
+                continue;
+            for(int floor = 0; floor < group.getFloorCount(); floor++){
+                int y = group.getFloorYLevel(floor);
+                if(Math.abs(y - this.pos.getY()) <= FLOOR_SEARCH_RANGE){
+                    best = group;
+                    bestY = y;
+                    bestDistance = distance;
+                    break;
+                }
+            }
+        }
+
+        if(best != null)
+            this.setValues(new BlockPos(best.x, bestY, best.z), best.facing);
+    }
+
+    /**
      * Tells a player exactly what this door believes, in order of what has to be true for it to work.
      * Whichever line reads wrong is the failure.
      */
@@ -142,7 +196,7 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.header").color(TextFormatting.AQUA).get());
 
         if(!this.isBound()){
-            player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.unbound").color(TextFormatting.RED).get());
+            player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.searching").color(TextFormatting.YELLOW).get());
             return;
         }
         BlockPos controller = this.getControllerPos();

@@ -143,8 +143,8 @@ public class MovingElevators {
         handler.registerItem("remote_indicator_block", () -> new RemoteControllerBlockItem(remote_indicator_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("remote_call_panel_block", () -> new RemoteControllerBlockItem(remote_call_panel_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_car_panel_block", () -> new RemoteControllerBlockItem(elevator_car_panel_block, ItemProperties.create().group(GROUP)));
-        handler.registerItem("elevator_door_block", () -> new RemoteControllerBlockItem(elevator_door_block, ItemProperties.create().group(GROUP)));
-        handler.registerItem("elevator_single_door_block", () -> new RemoteControllerBlockItem(elevator_single_door_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("elevator_door_block", () -> new BaseBlockItem(elevator_door_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("elevator_single_door_block", () -> new BaseBlockItem(elevator_single_door_block, ItemProperties.create().group(GROUP)));
         // Sounds
         handler.registerSoundEvent("arrive_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "arrive_sound")));
     }
