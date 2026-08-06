@@ -750,7 +750,9 @@ private void syncMovement(){
 
 public void validateControllersExist(Chunk chunk){
     BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.x, 0, this.z);
-    for(int floor = 0; floor < this.floors.size(); floor++){
+    // Iterate downwards: removeFloor() shifts every later element down by one, so counting up
+    // skipped the floor after each removal and left controller-less floors in the group.
+    for(int floor = this.floors.size() - 1; floor >= 0; floor--){
         pos.setY(this.floors.get(floor));
         if(!(chunk.getTileEntity(pos, Chunk.EnumCreateEntityType.CHECK) instanceof ControllerBlockEntity))
             this.removeFloor(floor);
