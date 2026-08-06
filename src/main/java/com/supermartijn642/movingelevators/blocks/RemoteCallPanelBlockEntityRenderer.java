@@ -24,7 +24,7 @@ public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRend
     /** Centres of the three zones, matching RemoteCallPanelBlock's hit regions. */
     private static final float SCREEN_CENTER_Y = 12 / 16f;
     private static final float UP_CENTER_Y = 7.5f / 16f, DOWN_CENTER_Y = 3.5f / 16f;
-    private static final float ARROW_HALF_WIDTH = 1.6f / 16f, ARROW_HALF_HEIGHT = 1.2f / 16f;
+    private static final float ARROW_HALF_WIDTH = 1.8f / 16f, ARROW_HALF_HEIGHT = 1.4f / 16f;
     /** Matches the plate's own depth, so the contents sit just proud of the metal. */
     private static final double LABEL_DEPTH = 0.5 - WallPanelBlock.PLATE_DEPTH - 0.01;
 

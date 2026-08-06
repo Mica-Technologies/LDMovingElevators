@@ -54,6 +54,13 @@ final class FloorLabelRenderer {
     private static final int LIT_R = 255, LIT_G = 200, LIT_B = 90;
 
     /**
+     * Bezel left around a call arrow, in block units. Stated as a margin rather than a multiple of
+     * the arrow, because a triangle only fills half its bounding box and a proportional inset
+     * therefore reads as a big empty square however the arrow is sized.
+     */
+    private static final float ARROW_BEZEL = 0.5f / 16;
+
+    /**
      * WCAG's AA threshold for large text. The label is a big glyph rather than body copy, and the
      * stricter 4.5 body-text bar also rejected colours that read perfectly well here -- magenta
      * scores 4.45 against the screen. At 3.0 the six genuinely dark dyes are replaced (grey, brown,
@@ -122,8 +129,8 @@ final class FloorLabelRenderer {
      * @param lit whether there is an outstanding call in this direction
      */
     static void drawArrow(float centerX, float centerY, float halfWidth, float halfHeight, boolean up, boolean lit){
-        drawScreen(centerX - halfWidth * 1.4f, centerY - halfHeight * 1.5f,
-            centerX + halfWidth * 1.4f, centerY + halfHeight * 1.5f);
+        drawScreen(centerX - halfWidth - ARROW_BEZEL, centerY - halfHeight - ARROW_BEZEL,
+            centerX + halfWidth + ARROW_BEZEL, centerY + halfHeight + ARROW_BEZEL);
 
         int r = lit ? LIT_R : UNLIT_R, g = lit ? LIT_G : UNLIT_G, b = lit ? LIT_B : UNLIT_B;
 
