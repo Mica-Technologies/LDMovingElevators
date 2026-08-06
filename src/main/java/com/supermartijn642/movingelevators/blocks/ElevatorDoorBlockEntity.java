@@ -47,6 +47,12 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
     /** World time of the last open/close request this door acted on, so it reacts once per press. */
     private long lastOpenRequest, lastCloseRequest;
     /** Ticks left before the doors close on their own. */
+    /**
+     * How long a door blocked at closing time stays open before trying again. A second is long
+     * enough to walk through and short enough that the door does not feel stuck once you are clear.
+     */
+    private static final int OBSTRUCTION_HOLD_TICKS = 20;
+
     private int openTicks;
     /**
      * Whether this block is the upper half of its doorway.
@@ -170,7 +176,15 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         else if(this.openTicks > 0)
             this.openTicks--;
 
-        this.setOpen(this.isDoorwayPowered() || this.openTicks > 0);
+        boolean shouldBeOpen = this.isDoorwayPowered() || this.openTicks > 0;
+        // A safety edge. Checked only at the moment a door that is open would close, so the entity
+        // scan costs nothing while it sits open or shut -- and holding rather than cancelling means
+        // stepping clear lets it close a second later instead of leaving it open indefinitely.
+        if(this.open && !shouldBeOpen && this.isDoorwayObstructed()){
+            this.openTicks = OBSTRUCTION_HOLD_TICKS;
+            shouldBeOpen = true;
+        }
+        this.setOpen(shouldBeOpen);
     }
 
     /**
@@ -178,6 +192,12 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
      * about this block's own position meant a lever opened whichever leaf it was next to and left the
      * rest shut.
      */
+    private boolean isDoorwayObstructed(){
+        IBlockState state = this.world.getBlockState(this.pos);
+        return state.getBlock() instanceof ElevatorDoorBlockBase
+            && ((ElevatorDoorBlockBase)state.getBlock()).isDoorwayObstructed(this.world, this.pos, state);
+    }
+
     private boolean isDoorwayPowered(){
         IBlockState state = this.world.getBlockState(this.pos);
         return state.getBlock() instanceof ElevatorDoorBlockBase

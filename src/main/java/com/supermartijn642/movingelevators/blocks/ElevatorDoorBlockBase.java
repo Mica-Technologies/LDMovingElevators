@@ -134,6 +134,23 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
     }
 
     /**
+     * Whether anything alive is standing in the doorway.
+     * <p>
+     * Asked of the whole doorway rather than of one block, for the same reason power is: the halves
+     * share an open state, so a check that only one of them could answer yes to would close half a
+     * door on somebody standing in the other half.
+     */
+    public boolean isDoorwayObstructed(World level, BlockPos pos, IBlockState state){
+        for(BlockPos cell : this.connectedCells(level, pos, state)){
+            // Living things only. Dropped items and the like should not be able to hold a door open
+            // indefinitely, and a door closing on them costs nothing.
+            if(!level.getEntitiesWithinAABB(EntityLivingBase.class, new AxisAlignedBB(cell)).isEmpty())
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * @return whether any block of this doorway is receiving redstone power
      */
     public boolean isDoorwayPowered(World level, BlockPos pos, IBlockState state){
