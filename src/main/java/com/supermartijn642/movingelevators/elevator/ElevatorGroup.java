@@ -255,12 +255,16 @@ public class ElevatorGroup {
      * on the server and reaches clients through {@link #write()}.
      */
     private void updateCallQueue(){
-        if(this.callQueue.isEmpty())
-            return;
+        // Counted down before the queue is checked, not after. A dwell is a wait at a floor that has
+        // to expire on its own; gating it on there being something queued meant an idle cabin kept
+        // its unspent wait indefinitely and handed the whole of it to whoever called next -- fifteen
+        // seconds of nothing after a bank pickup, thirty after an emergency.
         if(this.dwellCounter > 0){
             this.dwellCounter--;
             return;
         }
+        if(this.callQueue.isEmpty())
+            return;
 
         Integer target = this.pickNextCall();
         if(target == null)
@@ -397,6 +401,29 @@ public class ElevatorGroup {
             return;
         this.bankedDestinations.computeIfAbsent(pickupY, y -> new LinkedHashSet<>()).add(destinationY);
         this.onHallCall(pickupY, destinationY > pickupY, requester);
+        // Destinations are otherwise only picked up on arrival, and a hall call for the floor the
+        // cabin is already standing on does not produce an arrival -- it just opens the doors. Without
+        // this, the commonest request of all, calling a car that is already here, took the request,
+        // said a car was coming, and then sat there forever.
+        if(!this.isMoving && this.isCabinAt(pickupY))
+            this.collectBankedDestinations(pickupY);
+    }
+
+    /**
+     * Turns destinations booked from a floor into real calls, and holds the doors for boarding.
+     *
+     * @return whether there was anything to collect
+     */
+    private boolean collectBankedDestinations(int yLevel){
+        Set<Integer> banked = this.bankedDestinations.remove(yLevel);
+        if(banked == null || banked.isEmpty())
+            return false;
+        for(int destination : banked)
+            if(destination != yLevel && this.getFloorNumber(destination) != -1)
+                this.callQueue.add(destination);
+        this.doorHoldTicks.put(yLevel, BANKED_DWELL_TICKS);
+        this.dwellCounter = BANKED_DWELL_TICKS;
+        return true;
     }
 
     /**
@@ -696,16 +723,10 @@ public class ElevatorGroup {
         // Anyone who asked for this car from a lobby panel is boarding now, so their destinations
         // become real calls -- all of them, which is how two people going the same way end up
         // sharing the trip.
-        Set<Integer> banked = this.bankedDestinations.remove(this.targetY);
-        boolean collecting = banked != null && !banked.isEmpty();
-        if(collecting){
-            for(int destination : banked)
-                if(destination != this.targetY && this.getFloorNumber(destination) != -1)
-                    this.callQueue.add(destination);
-            this.doorHoldTicks.put(this.targetY, BANKED_DWELL_TICKS);
-        }else
+        if(!this.collectBankedDestinations(this.targetY)){
             this.doorHoldTicks.remove(this.targetY);
-        this.dwellCounter = collecting ? BANKED_DWELL_TICKS : DWELL_TICKS;
+            this.dwellCounter = DWELL_TICKS;
+        }
         // Levelled after an emergency stop: sit here with the doors open. Open rather than shut
         // because whoever is in the shaft may well want to get out through the cabin, and whoever is
         // inside it should not be held in a box that has just stopped for an emergency.

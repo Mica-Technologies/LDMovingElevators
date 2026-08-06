@@ -48,7 +48,9 @@ public class ElevatorBank {
         Assignment best = null;
         double bestScore = Double.MAX_VALUE;
         for(ElevatorGroup group : groups){
-            if(group == null || group.getFloorNumber(destinationY) == -1)
+            // A halted car is not a slow car, it is one that is not coming. Sending somebody to wait
+            // for it would be worse than telling them no elevator is available.
+            if(group == null || group.isEmergencyStopped() || group.getFloorNumber(destinationY) == -1)
                 continue;
             int pickupY = nearestFloorY(group, panelY);
             // A car that does not stop at this landing cannot collect from it, and one whose only
