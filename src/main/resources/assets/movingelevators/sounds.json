@@ -5,5 +5,19 @@
     "sounds": [
       "random/orb"
     ]
+  },
+  "passing_floor_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.passing_floor_sound",
+    "sounds": [
+      "random/click"
+    ]
+  },
+  "arrive_ding_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.arrive_ding_sound",
+    "sounds": [
+      "note/pling"
+    ]
   }
 }

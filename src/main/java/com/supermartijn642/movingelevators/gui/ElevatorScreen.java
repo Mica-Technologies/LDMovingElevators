@@ -50,6 +50,14 @@ public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity>
             checked -> MovingElevators.CHANNEL.sendToServer(new PacketToggleShowControllerButtons(this.blockEntityPos))
         ));
 
+        // Sounds. On the group rather than this controller: an elevator that beeps at some floors
+        // and not others would be odd.
+        this.addWidget(new CheckBoxWidget(42, 76,
+            checked -> TextComponents.translation("movingelevators.elevator_screen.sounds", checked ? TextComponents.translation("movingelevators.elevator_screen.sounds.on").color(TextFormatting.GREEN).get() : TextComponents.translation("movingelevators.elevator_screen.sounds.off").color(TextFormatting.RED).get()).get(),
+            () -> this.object.hasGroup() && this.object.getGroup().areSoundsEnabled(),
+            checked -> MovingElevators.CHANNEL.sendToServer(new PacketToggleElevatorSounds(this.blockEntityPos))
+        ));
+
         // Width
         PlusMinusButtonWidget widthSizeIncrease = this.addWidget(new PlusMinusButtonWidget(207, 31, true, TextComponents.translation("movingelevators.elevator_screen.cabin_width.increase_size").get(), () -> blockEntity.getGroup().canIncreaseCageWidth(), () -> MovingElevators.CHANNEL.sendToServer(new PacketIncreaseCabinWidth(this.blockEntityPos))));
         PlusMinusButtonWidget widthSizeDecrease = this.addWidget(new PlusMinusButtonWidget(230, 31, false, TextComponents.translation("movingelevators.elevator_screen.cabin_width.decrease_size").get(), () -> blockEntity.getGroup().canDecreaseCageWidth(), () -> MovingElevators.CHANNEL.sendToServer(new PacketDecreaseCabinWidth(this.blockEntityPos))));

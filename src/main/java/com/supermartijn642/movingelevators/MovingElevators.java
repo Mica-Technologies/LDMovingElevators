@@ -71,6 +71,10 @@ public class MovingElevators {
     public static ElevatorSingleDoorBlock elevator_single_door_block;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "arrive_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
     public static SoundEvent arrive_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "passing_floor_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent passing_floor_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "arrive_ding_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent arrive_ding_sound;
 
     public static final CreativeItemGroup GROUP = CreativeItemGroup.create("movingelevators", () -> elevator_block.asItem());
 
@@ -93,6 +97,7 @@ public class MovingElevators {
         CHANNEL.registerMessage(PacketRemoveElevatorGroup.class, PacketRemoveElevatorGroup::new, true);
         CHANNEL.registerMessage(PacketRequestFloor.class, PacketRequestFloor::new, true);
         CHANNEL.registerMessage(PacketDoorControl.class, PacketDoorControl::new, true);
+        CHANNEL.registerMessage(PacketToggleElevatorSounds.class, PacketToggleElevatorSounds::new, true);
         CHANNEL.registerMessage(PacketSetFloorName.class, PacketSetFloorName::new, true);
         CHANNEL.registerMessage(PacketSyncElevatorMovement.class, PacketSyncElevatorMovement::new, true);
         CHANNEL.registerMessage(PacketToggleShowControllerButtons.class, PacketToggleShowControllerButtons::new, true);
@@ -147,6 +152,8 @@ public class MovingElevators {
         handler.registerItem("elevator_single_door_block", () -> new BaseBlockItem(elevator_single_door_block, ItemProperties.create().group(GROUP)));
         // Sounds
         handler.registerSoundEvent("arrive_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "arrive_sound")));
+        handler.registerSoundEvent("passing_floor_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "passing_floor_sound")));
+        handler.registerSoundEvent("arrive_ding_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "arrive_ding_sound")));
     }
 
     private static void registerGenerators(){

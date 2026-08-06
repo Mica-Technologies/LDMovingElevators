@@ -25,6 +25,11 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Elevator sounds**, with an on/off toggle in the elevator controller's screen. A soft tick each
+  time the cabin passes a landing, so a ride has some sense of progress, and a two-note chime on
+  arrival alongside the existing arrival sound. The setting belongs to the elevator rather than to
+  one controller, and existing elevators start with sounds on.
+
 - **Elevator Doors**, in two sizes: a 2x2 double doorway whose leaves meet in the middle and retract
   into either side, and a 1x2 narrow one with a single leaf. Each is placed as one item and removed
   as one unit, and finds its own elevator from where it stands — there is nothing to bind. The

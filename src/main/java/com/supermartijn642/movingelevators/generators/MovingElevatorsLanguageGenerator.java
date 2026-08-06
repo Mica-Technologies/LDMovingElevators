@@ -98,12 +98,17 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.elevator_screen.cabin_size", "Cabin size");
         this.translation("movingelevators.elevator_screen.elevator_speed", "Speed");
         this.translation("movingelevators.elevator_screen.current_speed", "%s blocks/tick");
+        this.translation("movingelevators.elevator_screen.sounds", "Sounds: %s");
+        this.translation("movingelevators.elevator_screen.sounds.on", "On");
+        this.translation("movingelevators.elevator_screen.sounds.off", "Off");
         this.translation("movingelevators.elevator_screen.hide_controls", "Hide controls: %s");
         this.translation("movingelevators.elevator_screen.hide_controls.on", "True");
         this.translation("movingelevators.elevator_screen.hide_controls.off", "False");
 
         // Elevator arrive sound
         this.translation("movingelevators.elevator.arrive_sound", "Elevator arrived");
+        this.translation("movingelevators.elevator.passing_floor_sound", "Elevator passes a floor");
+        this.translation("movingelevators.elevator.arrive_ding_sound", "Elevator chimes");
 
         // Elevator feedback
         this.translation("movingelevators.elevator.invalid_block", "Invalid block '%s' in cabin at %s.");

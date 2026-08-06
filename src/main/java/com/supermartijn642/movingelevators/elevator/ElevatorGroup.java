@@ -102,6 +102,21 @@ public class ElevatorGroup {
     private final Map<Integer,Long> doorOpenRequests = new HashMap<>();
     private final Map<Integer,Long> doorCloseRequests = new HashMap<>();
 
+    /**
+     * The "Standard" sound scheme, and the only one so far.
+     * <p>
+     * Kept as named constants rather than scattered literals so that adding schemes later is a matter
+     * of choosing a different set, not hunting down every playSound call.
+     */
+    private static final float PASSING_VOLUME = 0.25f, PASSING_PITCH = 1.6f;
+    private static final float DING_VOLUME = 0.5f, DING_PITCH = 1.5f;
+    /** Gap between the two notes of the arrival ding, in ticks. */
+    private static final int DING_GAP_TICKS = 4;
+
+    private boolean soundsEnabled = true;
+    /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
+    private int pendingDing;
+
     public ElevatorGroup(World level, int x, int z, EnumFacing facing){
         this.level = level;
         this.x = x;
@@ -112,6 +127,8 @@ public class ElevatorGroup {
     public void update(){
         this.tickCounter++;
         this.cageChecks = 0;
+        if(!this.level.isRemote && this.pendingDing > 0 && --this.pendingDing == 0)
+            this.playSoundAtCabin(MovingElevators.arrive_ding_sound, DING_VOLUME, DING_PITCH);
         if(!this.level.isRemote && this.shouldBeSynced){
             this.shouldBeSynced = false;
             this.updateGroup();
@@ -137,6 +154,8 @@ public class ElevatorGroup {
                     this.currentY += Math.signum(this.targetY - this.currentY) * this.speed;
                 this.moveElevator(this.lastY, this.currentY);
             }
+
+            this.playPassingFloorSounds();
 
             if(this.syncCounter >= RE_SYNC_INTERVAL){
                 this.syncMovement();
@@ -358,6 +377,39 @@ public class ElevatorGroup {
         return this.callQueue.contains(yLevel);
     }
 
+    public boolean areSoundsEnabled(){
+        return this.soundsEnabled;
+    }
+
+    public void setSoundsEnabled(boolean soundsEnabled){
+        this.soundsEnabled = soundsEnabled;
+        this.shouldBeSynced = true;
+    }
+
+    /**
+     * A soft tick each time the cabin passes a landing, so a ride has some sense of progress rather
+     * than being silent between departure and arrival.
+     */
+    private void playPassingFloorSounds(){
+        if(this.level.isRemote || !this.soundsEnabled)
+            return;
+        double from = Math.min(this.lastY, this.currentY), to = Math.max(this.lastY, this.currentY);
+        for(int floor = 0; floor < this.floors.size(); floor++){
+            int y = this.floors.get(floor);
+            // Strictly greater than 'from' so a floor is not announced twice when the cabin starts
+            // moving from a standstill on top of it.
+            if(y > from && y <= to)
+                this.playSoundAtCabin(MovingElevators.passing_floor_sound, PASSING_VOLUME, PASSING_PITCH);
+        }
+    }
+
+    private void playSoundAtCabin(net.minecraft.util.SoundEvent sound, float volume, float pitch){
+        if(this.level.isRemote || !this.soundsEnabled || sound == null)
+            return;
+        Vec3d pos = this.getCageAnchorPos(this.currentY).addVector(this.cageSizeX / 2d, this.cageSizeY / 2d, this.cageSizeZ / 2d);
+        this.level.playSound(null, pos.x, pos.y, pos.z, sound, SoundCategory.BLOCKS, volume, pitch);
+    }
+
     private void moveElevator(double oldY, double newY){
         ElevatorCollisionHandler.handleEntityCollisions(this.level, this.cage.bounds, this.cage.collisionBoxes, this.getCageAnchorPos(oldY), new Vec3d(this.x, newY - oldY, 0));
     }
@@ -388,7 +440,13 @@ public class ElevatorGroup {
                     this.level.updateComparatorOutputLevel(pos, this.level.getBlockState(pos).getBlock());
             this.shouldBeSynced = true;
             Vec3d soundPos = this.getCageAnchorPos(this.targetY).addVector(this.cageSizeX / 2d, this.cageSizeY / 2d, this.cageSizeZ / 2d);
-            this.level.playSound(null, soundPos.x, soundPos.y, soundPos.z, MovingElevators.arrive_sound, SoundCategory.BLOCKS, 0.4f, 0.5f);
+            if(this.soundsEnabled){
+                this.level.playSound(null, soundPos.x, soundPos.y, soundPos.z, MovingElevators.arrive_sound, SoundCategory.BLOCKS, 0.4f, 0.5f);
+                // Two notes rather than one: the second is scheduled, so arrival reads as a ding-dong
+                // rather than a single blip lost under the arrival chime.
+                this.playSoundAtCabin(MovingElevators.arrive_ding_sound, DING_VOLUME, DING_PITCH * 0.8f);
+                this.pendingDing = DING_GAP_TICKS;
+            }
             this.syncCounter = 0;
         }
     }
@@ -939,6 +997,7 @@ public NBTTagCompound write(){
         directions[directionIndex++] = entry.getValue();
     }
     compound.setIntArray("callDirections", directions);
+    compound.setBoolean("soundsEnabled", this.soundsEnabled);
     compound.setInteger("lastDirection", this.lastDirection);
     compound.setInteger("dwellCounter", this.dwellCounter);
     NBTTagList floorDataTag = new NBTTagList();
@@ -1009,6 +1068,8 @@ public void read(NBTTagCompound compound){
     // Guard the length: a truncated or hand-edited array must not throw here.
     for(int i = 0; i + 1 < directions.length; i += 2)
         this.callDirections.put(directions[i], directions[i + 1]);
+    // Absent in saves from before sounds existed, where the elevator should start out audible.
+    this.soundsEnabled = !compound.hasKey("soundsEnabled") || compound.getBoolean("soundsEnabled");
     this.lastDirection = compound.getInteger("lastDirection");
     this.dwellCounter = compound.getInteger("dwellCounter");
     this.floorData.clear();
