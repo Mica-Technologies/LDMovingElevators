@@ -110,8 +110,12 @@ public class ElevatorGroup {
      */
 
     private boolean soundsEnabled = true;
+    private ElevatorSoundScheme soundScheme = ElevatorSoundScheme.STANDARD;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
     private int pendingDing;
+    /** Which note the scheduled half of the arrival chime is. Decided on arrival, not when it plays,
+     * so both notes belong to the same pair even if a call arrives in between. */
+    private ElevatorSoundScheme.Moment pendingChime;
 
     public ElevatorGroup(World level, int x, int z, EnumFacing facing){
         this.level = level;
@@ -124,7 +128,7 @@ public class ElevatorGroup {
         this.tickCounter++;
         this.cageChecks = 0;
         if(!this.level.isRemote && this.pendingDing > 0 && --this.pendingDing == 0)
-            this.playAtCabin(ElevatorSoundScheme.Moment.ARRIVAL_CHIME_SECOND);
+            this.playAtCabin(this.pendingChime);
         if(!this.level.isRemote && this.shouldBeSynced){
             this.shouldBeSynced = false;
             this.updateGroup();
@@ -377,6 +381,15 @@ public class ElevatorGroup {
         return this.soundsEnabled;
     }
 
+    public ElevatorSoundScheme getSoundScheme(){
+        return this.soundScheme;
+    }
+
+    public void setSoundScheme(ElevatorSoundScheme scheme){
+        this.soundScheme = scheme == null ? ElevatorSoundScheme.STANDARD : scheme;
+        this.shouldBeSynced = true;
+    }
+
     public void setSoundsEnabled(boolean soundsEnabled){
         this.soundsEnabled = soundsEnabled;
         this.shouldBeSynced = true;
@@ -407,7 +420,7 @@ public class ElevatorGroup {
         if(this.level == null || this.level.isRemote || !this.soundsEnabled)
             return;
         Vec3d pos = this.getCageAnchorPos(this.currentY).addVector(this.cageSizeX / 2d, this.cageSizeY / 2d, this.cageSizeZ / 2d);
-        ElevatorSoundScheme.current().play(this.level, pos, moment);
+        this.soundScheme.play(this.level, pos, moment);
     }
 
     /**
@@ -415,7 +428,7 @@ public class ElevatorGroup {
      */
     public void playAt(Vec3d pos, ElevatorSoundScheme.Moment moment){
         if(this.soundsEnabled)
-            ElevatorSoundScheme.current().play(this.level, pos, moment);
+            this.soundScheme.play(this.level, pos, moment);
     }
 
     private void moveElevator(double oldY, double newY){
@@ -452,11 +465,29 @@ public class ElevatorGroup {
                 this.playAt(soundPos, ElevatorSoundScheme.Moment.ARRIVED);
                 // Two notes rather than one: the second is scheduled, so arrival reads as a ding-dong
                 // rather than a single blip lost under the arrival sound.
-                this.playAtCabin(ElevatorSoundScheme.Moment.ARRIVAL_CHIME);
-                this.pendingDing = ElevatorSoundScheme.current().chimeGapTicks();
+                // Which way the car goes next, announced as it lands. A hall call answered here
+                // already says where its passenger is going; failing that, the next queued call does.
+                int onward = this.onwardDirection(directions);
+                this.playAtCabin(ElevatorSoundScheme.Moment.arrivalChime(onward, false));
+                this.pendingChime = ElevatorSoundScheme.Moment.arrivalChime(onward, true);
+                this.pendingDing = this.soundScheme.chimeGapTicks();
             }
             this.syncCounter = 0;
         }
+    }
+
+    /**
+     * Where the cabin is headed after the stop it has just made: 1 up, -1 down, 0 nowhere.
+     *
+     * @param landingCallDirections the hall call consumed at this landing, if there was one. It is
+     *                              the better answer when present -- someone stepping in has said
+     *                              which way they want to go before any call for it exists.
+     */
+    private int onwardDirection(Integer landingCallDirections){
+        if(landingCallDirections != null && landingCallDirections != (CALL_UP | CALL_DOWN))
+            return landingCallDirections == CALL_UP ? 1 : -1;
+        Integer next = this.pickNextCall();
+        return next == null ? 0 : Integer.signum(next - this.targetY);
     }
 
     private void startElevator(int currentY, int targetY){
@@ -1006,6 +1037,7 @@ public NBTTagCompound write(){
     }
     compound.setIntArray("callDirections", directions);
     compound.setBoolean("soundsEnabled", this.soundsEnabled);
+    compound.setString("soundScheme", this.soundScheme.name());
     compound.setInteger("lastDirection", this.lastDirection);
     compound.setInteger("dwellCounter", this.dwellCounter);
     NBTTagList floorDataTag = new NBTTagList();
@@ -1078,6 +1110,7 @@ public void read(NBTTagCompound compound){
         this.callDirections.put(directions[i], directions[i + 1]);
     // Absent in saves from before sounds existed, where the elevator should start out audible.
     this.soundsEnabled = !compound.hasKey("soundsEnabled") || compound.getBoolean("soundsEnabled");
+    this.soundScheme = ElevatorSoundScheme.byName(compound.getString("soundScheme"));
     this.lastDirection = compound.getInteger("lastDirection");
     this.dwellCounter = compound.getInteger("dwellCounter");
     this.floorData.clear();

@@ -295,7 +295,8 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
             group.playAt(pos, moment);
         else
             // An unbound door still moves under redstone, and should still be heard doing it.
-            ElevatorSoundScheme.current().play(this.world, pos, moment);
+            // There is no elevator to take a scheme from, so it gets the default one.
+            ElevatorSoundScheme.STANDARD.play(this.world, pos, moment);
     }
 
     @Override

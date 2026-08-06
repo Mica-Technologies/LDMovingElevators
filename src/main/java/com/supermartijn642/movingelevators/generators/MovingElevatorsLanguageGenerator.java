@@ -112,6 +112,10 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.elevator.door_open_sound", "Elevator doors open");
         this.translation("movingelevators.elevator.door_close_sound", "Elevator doors close");
 
+        this.translation("movingelevators.elevator_screen.sound_scheme", "Sound scheme");
+        this.translation("movingelevators.sound_scheme.standard", "Standard");
+        this.translation("movingelevators.sound_scheme.modern", "Modern");
+
         // Elevator feedback
         this.translation("movingelevators.elevator.invalid_block", "Invalid block '%s' in cabin at %s.");
         this.translation("movingelevators.elevator.empty", "No cabin at the current floor.");

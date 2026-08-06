@@ -33,5 +33,19 @@
     "sounds": [
       "tile/piston/in"
     ]
+  },
+  "modern_chime_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.arrive_ding_sound",
+    "sounds": [
+      "note/icechime"
+    ]
+  },
+  "modern_passing_floor_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.passing_floor_sound",
+    "sounds": [
+      "note/icechime"
+    ]
   }
 }

@@ -57,7 +57,13 @@ public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity>
             () -> this.object.hasGroup() && this.object.getGroup().areSoundsEnabled(),
             checked -> MovingElevators.CHANNEL.sendToServer(new PacketToggleElevatorSounds(this.blockEntityPos))
         ));
-
+        // Which set of sounds, on the group for the same reason as the toggle above it. A cycling
+        // button rather than a list: two schemes do not earn a dropdown, and the screen has no room
+        // for one.
+        this.addWidget(new SoundSchemeButtonWidget(6, 91, 84, 14,
+            () -> TextComponents.translation(this.object.hasGroup() ? this.object.getGroup().getSoundScheme().getNameTranslationKey() : "movingelevators.sound_scheme.standard").get(),
+            TextComponents.translation("movingelevators.elevator_screen.sound_scheme").get(),
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketCycleElevatorSoundScheme(this.blockEntityPos))));
         // Width
         PlusMinusButtonWidget widthSizeIncrease = this.addWidget(new PlusMinusButtonWidget(207, 31, true, TextComponents.translation("movingelevators.elevator_screen.cabin_width.increase_size").get(), () -> blockEntity.getGroup().canIncreaseCageWidth(), () -> MovingElevators.CHANNEL.sendToServer(new PacketIncreaseCabinWidth(this.blockEntityPos))));
         PlusMinusButtonWidget widthSizeDecrease = this.addWidget(new PlusMinusButtonWidget(230, 31, false, TextComponents.translation("movingelevators.elevator_screen.cabin_width.decrease_size").get(), () -> blockEntity.getGroup().canDecreaseCageWidth(), () -> MovingElevators.CHANNEL.sendToServer(new PacketDecreaseCabinWidth(this.blockEntityPos))));
