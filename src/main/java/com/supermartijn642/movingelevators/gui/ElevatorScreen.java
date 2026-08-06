@@ -45,8 +45,8 @@ public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity>
             .setSuggestion(MovingElevatorsClient.formatFloorDisplayName(null, blockEntity.getGroup().getFloorNumber(blockEntity.getFloorLevel())));
         // Render buttons option
         this.addWidget(new CheckBoxWidget(42, 60,
-            checked -> TextComponents.translation("movingelevators.elevator_screen.display_buttons", checked ? TextComponents.translation("movingelevators.elevator_screen.display_buttons.on").color(TextFormatting.GREEN).get() : TextComponents.translation("movingelevators.elevator_screen.display_buttons.off").color(TextFormatting.RED).get()).get(),
-            () -> this.object.shouldShowButtons(),
+            checked -> TextComponents.translation("movingelevators.elevator_screen.hide_controls", checked ? TextComponents.translation("movingelevators.elevator_screen.hide_controls.on").color(TextFormatting.GREEN).get() : TextComponents.translation("movingelevators.elevator_screen.hide_controls.off").color(TextFormatting.RED).get()).get(),
+            () -> this.object.areControlsHidden(),
             checked -> MovingElevators.CHANNEL.sendToServer(new PacketToggleShowControllerButtons(this.blockEntityPos))
         ));
 

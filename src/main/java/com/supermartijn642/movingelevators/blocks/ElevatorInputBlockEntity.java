@@ -46,6 +46,15 @@ public abstract class ElevatorInputBlockEntity extends CamoBlockEntity implement
     public abstract EnumFacing getFacing();
 
     /**
+     * Whether this block's face controls are hidden, and with them disabled.
+     * <p>
+     * Only the elevator controller offers this; remote panels exist to be pressed.
+     */
+    public boolean areControlsHidden(){
+        return false;
+    }
+
+    /**
      * Determines whether the buttons are rendered grayed-out
      */
     public boolean canReceiveInput(){

@@ -134,6 +134,13 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Changed
 
+- The elevator controller's "Show buttons" option is now **"Hide controls"**, and it disables the
+  controls rather than only hiding them. Previously the face stayed clickable with the graphics
+  turned off, so an invisible button still drove the elevator. Hiding them pairs a plain controller —
+  still needed to mark a floor — with the new wall panels. The setting is the same underlying flag,
+  so existing elevators keep whatever they had, and the config screen still opens from any other side
+  of the block, so controls can always be turned back on.
+
 - `mcmod.info` now identifies the fork rather than the official mod: the in-game author is Mica
   Technologies, the URL points at this repository instead of upstream's CurseForge page, and the
   credits field names SuperMartijn642 as the original author while stating that this build is

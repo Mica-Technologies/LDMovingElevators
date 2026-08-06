@@ -28,7 +28,9 @@ public class ElevatorInputBlock extends CamoBlock {
     protected boolean onRightClick(IBlockState state, World level, CamoBlockEntity blockEntity, BlockPos pos, EntityPlayer player, EnumHand hand, EnumFacing hitSide, Vec3d hitLocation){
         if(blockEntity instanceof ElevatorInputBlockEntity){
             ElevatorInputBlockEntity inputEntity = (ElevatorInputBlockEntity)blockEntity;
-            if(inputEntity.getFacing() == hitSide && inputEntity.hasGroup()){
+            // Hidden controls are disabled controls. Hiding only the graphics left an invisible
+            // button that still drove the elevator, which is worse than showing it.
+            if(inputEntity.getFacing() == hitSide && inputEntity.hasGroup() && !inputEntity.areControlsHidden()){
                 if(!level.isRemote){
                     double y = hitLocation.y - pos.getY();
                     inputEntity.getGroup().onButtonPress(y > 2 / 3D, y < 1 / 3D, inputEntity.getFloorLevel(), player);

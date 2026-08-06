@@ -100,6 +100,15 @@ public class ControllerBlockEntity extends ElevatorInputBlockEntity {
         return this.showButtons;
     }
 
+    /**
+     * Kept as the inverse of the existing "showButtons" flag rather than a new one, so elevators
+     * built before this option existed keep their setting instead of silently changing.
+     */
+    @Override
+    public boolean areControlsHidden(){
+        return !this.showButtons;
+    }
+
     public void toggleShowButtons(){
         this.showButtons = !this.showButtons;
         this.dataChanged();
