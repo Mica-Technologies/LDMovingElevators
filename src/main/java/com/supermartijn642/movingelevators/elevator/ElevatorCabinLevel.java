@@ -1,5 +1,6 @@
 package com.supermartijn642.movingelevators.elevator;
 
+import com.supermartijn642.movingelevators.MovingElevatorsConfig;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
@@ -53,10 +54,19 @@ public class ElevatorCabinLevel extends World {
      * arrival. Flooring the block-light component at what the cabin itself emits keeps a lit cabin lit
      * while it travels, without pretending an unlit one is bright.
      */
+    /**
+     * @return the light this cabin provides for itself: whatever its own blocks emit, but never less
+     * than the configured courtesy light
+     */
+    private int getCabinLight(){
+        int emitted = this.cage == null ? 0 : this.cage.getLightLevel();
+        return Math.max(emitted, MovingElevatorsConfig.movingCabinLight.get());
+    }
+
     @Override
     public int getCombinedLight(BlockPos pos, int lightValue){
         int combined = this.level.getCombinedLight(pos, lightValue);
-        int cabinLight = this.cage == null ? 0 : this.cage.getLightLevel();
+        int cabinLight = this.getCabinLight();
         if(cabinLight <= 0)
             return combined;
         int sky = combined >> 20 & 0xF;

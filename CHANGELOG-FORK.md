@@ -96,6 +96,10 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- A moving cabin now carries its own courtesy light (`movingCabinLight`, level 6 by default, 0 to
+  turn it off). A cabin with no light source of its own has nothing to be lit by while it travels —
+  it is a pocket of air in an unlit shaft — so it went dark regardless. This lights the cabin, not
+  the shaft around it.
 - A moving cabin went dark inside, even one with a glowstone floor. A cabin's blocks are lifted out
   of the world while it travels, so anything luminous in it stops lighting anything; the cabin was
   lit only by whatever the shaft happened to be at the height it was passing. Its lighting is now
