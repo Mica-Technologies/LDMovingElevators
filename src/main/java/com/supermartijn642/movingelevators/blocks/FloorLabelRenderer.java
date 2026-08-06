@@ -43,6 +43,17 @@ final class FloorLabelRenderer {
     private static final int SCREEN_R = 16, SCREEN_G = 16, SCREEN_B = 18, SCREEN_A = 240;
 
     /**
+     * Call arrow colours, against the near-black screen above.
+     * <p>
+     * The first attempt used a dark slate for the unlit state, which scored 2.24 against that screen
+     * and was effectively invisible in game. An unlit button still has to read as a button, so the
+     * "off" grey is now a clearly legible 6.84, and "on" is a warm amber at 12.36 -- unmistakably
+     * lit, and distinct from the white floor readout above it.
+     */
+    private static final int UNLIT_R = 150, UNLIT_G = 156, UNLIT_B = 160;
+    private static final int LIT_R = 255, LIT_G = 200, LIT_B = 90;
+
+    /**
      * WCAG's AA threshold for large text. The label is a big glyph rather than body copy, and the
      * stricter 4.5 body-text bar also rejected colours that read perfectly well here -- magenta
      * scores 4.45 against the screen. At 3.0 the six genuinely dark dyes are replaced (grey, brown,
@@ -114,11 +125,15 @@ final class FloorLabelRenderer {
         drawScreen(centerX - halfWidth * 1.4f, centerY - halfHeight * 1.5f,
             centerX + halfWidth * 1.4f, centerY + halfHeight * 1.5f);
 
-        int r = lit ? 90 : 70, g = lit ? 220 : 78, b = lit ? 110 : 82;
+        int r = lit ? LIT_R : UNLIT_R, g = lit ? LIT_G : UNLIT_G, b = lit ? LIT_B : UNLIT_B;
 
         GlStateManager.disableTexture2D();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        // The surrounding transform mirrors this space, which flips triangle winding -- so of the two
+        // arrows one came out back-facing and was culled away entirely. Rather than hand-winding each
+        // one for a mirrored frame, just draw both faces.
+        GlStateManager.disableCull();
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
         buffer.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_COLOR);
@@ -129,6 +144,7 @@ final class FloorLabelRenderer {
         buffer.pos(centerX + halfWidth, baseY, -0.005).color(r, g, b, 255).endVertex();
         Tessellator.getInstance().draw();
 
+        GlStateManager.enableCull();
         GlStateManager.disableBlend();
         GlStateManager.enableTexture2D();
     }
