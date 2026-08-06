@@ -109,7 +109,7 @@ public class ElevatorGroup {
      * of choosing a different set, not hunting down every playSound call.
      */
     /** Gap between the two notes of the arrival chime, in ticks. */
-    private static final int DING_GAP_TICKS = 4;
+    private static final int DING_GAP_TICKS = 6;
 
     private boolean soundsEnabled = true;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */

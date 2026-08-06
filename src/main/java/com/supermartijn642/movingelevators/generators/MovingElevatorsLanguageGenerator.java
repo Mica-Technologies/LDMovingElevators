@@ -106,7 +106,7 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.elevator_screen.hide_controls.off", "False");
 
         // Elevator arrive sound
-        this.translation("movingelevators.elevator.arrive_sound", "Elevator arrived");
+        this.translation("movingelevators.elevator.arrive_sound", "Elevator stops");
         this.translation("movingelevators.elevator.passing_floor_sound", "Elevator passes a floor");
         this.translation("movingelevators.elevator.arrive_ding_sound", "Elevator chimes");
         this.translation("movingelevators.elevator.door_open_sound", "Elevator doors open");

@@ -29,12 +29,19 @@ public enum ElevatorSoundScheme {
     STANDARD {
         @Override
         protected void fill(Map<Moment,Entry> entries){
-            entries.put(Moment.PASSING_FLOOR, new Entry(() -> MovingElevators.passing_floor_sound, 0.25f, 1.6f));
-            entries.put(Moment.ARRIVED, new Entry(() -> MovingElevators.arrive_sound, 0.4f, 0.5f));
-            entries.put(Moment.ARRIVAL_CHIME, new Entry(() -> MovingElevators.arrive_ding_sound, 0.5f, 1.2f));
-            entries.put(Moment.ARRIVAL_CHIME_SECOND, new Entry(() -> MovingElevators.arrive_ding_sound, 0.5f, 1.5f));
-            entries.put(Moment.DOORS_OPENING, new Entry(() -> MovingElevators.door_open_sound, 0.35f, 1.4f));
-            entries.put(Moment.DOORS_CLOSING, new Entry(() -> MovingElevators.door_close_sound, 0.35f, 1.3f));
+            // A mellow single bell as each floor goes by -- present, but well under the arrival so
+            // passing a floor never sounds like getting to one.
+            entries.put(Moment.PASSING_FLOOR, new Entry(() -> MovingElevators.passing_floor_sound, 0.45f, 0.8f));
+            // The car settling, not a chime: a short hydraulic thump under the two notes.
+            entries.put(Moment.ARRIVED, new Entry(() -> MovingElevators.arrive_sound, 0.35f, 0.55f));
+            // Ding-dong. The two notes are a falling fourth (1.5 -> 1.12), which is the interval the
+            // real two-tone gongs use; the same note twice reads as a stutter rather than a chime.
+            entries.put(Moment.ARRIVAL_CHIME, new Entry(() -> MovingElevators.arrive_ding_sound, 1f, 1.5f));
+            entries.put(Moment.ARRIVAL_CHIME_SECOND, new Entry(() -> MovingElevators.arrive_ding_sound, 1f, 1.12f));
+            // Pitched down from the piston default, since a big sliding door should sound heavier and
+            // slower than a block being shoved.
+            entries.put(Moment.DOORS_OPENING, new Entry(() -> MovingElevators.door_open_sound, 0.45f, 0.8f));
+            entries.put(Moment.DOORS_CLOSING, new Entry(() -> MovingElevators.door_close_sound, 0.45f, 0.75f));
             // DEPARTING, CALL_ACCEPTED and OBSTRUCTED are intentionally silent for now.
         }
     };

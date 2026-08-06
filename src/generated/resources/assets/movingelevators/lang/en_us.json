@@ -67,7 +67,7 @@
   "movingelevators.elevator_screen.hide_controls": "Hide controls: %s",
   "movingelevators.elevator_screen.hide_controls.on": "True",
   "movingelevators.elevator_screen.hide_controls.off": "False",
-  "movingelevators.elevator.arrive_sound": "Elevator arrived",
+  "movingelevators.elevator.arrive_sound": "Elevator stops",
   "movingelevators.elevator.passing_floor_sound": "Elevator passes a floor",
   "movingelevators.elevator.arrive_ding_sound": "Elevator chimes",
   "movingelevators.elevator.door_open_sound": "Elevator doors open",

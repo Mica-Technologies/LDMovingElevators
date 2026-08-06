@@ -17,22 +17,22 @@
         9.0
       ],
       "faces": {
-        "east": {
-          "texture": "#metal"
-        },
-        "up": {
+        "south": {
           "texture": "#metal"
         },
         "down": {
           "texture": "#metal"
         },
+        "east": {
+          "texture": "#metal"
+        },
         "north": {
           "texture": "#metal"
         },
-        "west": {
+        "up": {
           "texture": "#metal"
         },
-        "south": {
+        "west": {
           "texture": "#metal"
         }
       }

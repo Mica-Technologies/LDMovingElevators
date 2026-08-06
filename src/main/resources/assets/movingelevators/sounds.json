@@ -3,21 +3,21 @@
     "category": "block",
     "subtitle": "movingelevators.elevator.arrive_sound",
     "sounds": [
-      "random/orb"
+      "tile/piston/in"
     ]
   },
   "passing_floor_sound": {
     "category": "block",
     "subtitle": "movingelevators.elevator.passing_floor_sound",
     "sounds": [
-      "random/click"
+      "note/bell"
     ]
   },
   "arrive_ding_sound": {
     "category": "block",
     "subtitle": "movingelevators.elevator.arrive_ding_sound",
     "sounds": [
-      "note/pling"
+      "note/bell"
     ]
   },
   "door_open_sound": {
