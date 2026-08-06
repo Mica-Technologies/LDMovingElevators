@@ -7,6 +7,74 @@ plugins {
     id "me.modmuss50.mod-publish-plugin" version "0.5.2"
 }
 
+// ---------------------------------------------------------------------------
+// Mod version resolution (Mica Technologies fork)
+//
+// The GitHub Actions workflows create a git tag immediately before building, so the
+// version that ends up in the jar name, mcmod.info and the release entry all come from
+// that tag. Resolution order:
+//
+//   1. -PmodVersionOverride=... or the MOD_VERSION environment variable -- escape hatch
+//      for one-off builds; nothing in CI sets it today.
+//   2. The newest release-shaped git tag on HEAD: 'YYYY.MM.DD' for a release,
+//      'YYYY.MM.DD-pre.HHMM.<tz>+<sha>' for a pre-release. Matching is restricted to that
+//      shape so upstream's 'archive/1.16.1'-style tags can never be picked up.
+//   3. mod_version from gradle.properties -- the upstream base version this fork sits on.
+//      This is what a fresh clone with no Mica tags (and every local dev build) gets.
+//
+// Everything downstream keeps reading the plain `mod_version` property, so the resolved
+// value flows into processResources, prepareDataResources and publishMods unchanged.
+// ---------------------------------------------------------------------------
+
+/** Release/pre-release tags created by .github/workflows/. Deliberately narrow. */
+ext.micaReleaseTagGlob = "20[0-9][0-9].[0-9][0-9].[0-9][0-9]*"
+
+/** Runs a git command in the project root, returning trimmed stdout or null on any failure. */
+ext.runGit = { List<String> args ->
+    try {
+        def stdout = new ByteArrayOutputStream()
+        def stderr = new ByteArrayOutputStream()
+        def process = (["git"] + args).execute(null, project.rootDir)
+        process.waitForProcessOutput(stdout, stderr)
+        return process.exitValue() == 0 ? stdout.toString().trim() : null
+    } catch (Exception ignored) {
+        // git missing, or this is a source archive rather than a checkout
+        return null
+    }
+}
+
+ext.resolveModVersion = {
+    String override = (project.findProperty("modVersionOverride") ?: System.getenv("MOD_VERSION")) as String
+    if (override?.trim())
+        return override.trim()
+
+    // Tags on HEAD first: that is the case in CI, where the tag was just pushed.
+    List<String> candidates = []
+    String pointsAt = runGit(["tag", "--points-at", "HEAD", "--list", micaReleaseTagGlob])
+    if (pointsAt)
+        candidates = pointsAt.readLines()*.trim().findAll { !it.isEmpty() }
+
+    // Otherwise the most recent reachable tag, so local builds off a tagged history still
+    // identify themselves sensibly.
+    if (candidates.isEmpty()) {
+        String described = runGit(["describe", "--tags", "--abbrev=0", "--match", micaReleaseTagGlob])
+        if (described)
+            candidates = [described]
+    }
+
+    if (!candidates.isEmpty()) {
+        // A full release tag outranks a pre-release tag sitting on the same commit;
+        // otherwise take the highest-sorting tag.
+        return candidates.toSorted { a, b ->
+            (a.contains("-pre.") <=> b.contains("-pre.")) ?: (b <=> a)
+        }.first()
+    }
+
+    return mod_version
+}
+
+project.setProperty("mod_version", resolveModVersion())
+
 version = mod_version + "-forge-" + minecraft_suffix
 group = maven_group
 base.archivesName = mod_id
@@ -64,9 +132,15 @@ processResources {
     // Replace the mod version
     Map<String, ?> copyProperties = project.properties.clone() as Map<String, ?>
     //noinspection UnnecessaryQualifiedReference
-    var matcher = java.util.regex.Pattern.compile("[^.0-9]").matcher(copyProperties.mod_version as String)
-    if (matcher.find())
-        copyProperties.mod_version = copyProperties.mod_version.substring(0, matcher.start()) + "+" + copyProperties.mod_version.substring(matcher.start())
+    String rawModVersion = copyProperties.mod_version as String
+    //noinspection UnnecessaryQualifiedReference
+    var matcher = java.util.regex.Pattern.compile("[^.0-9]").matcher(rawModVersion)
+    // Upstream rewrites '1.4.9a' into '1.4.9+a' so mcmod.info carries a comparable version.
+    // Skip that when the suffix already opens with a SemVer separator: the release tags this
+    // fork builds from ('2026.08.06-pre.0742.UTC+0000+<sha>') are well-formed already and
+    // would otherwise be mangled into '2026.08.06+-pre....'.
+    if (matcher.find() && !(rawModVersion.substring(matcher.start()) =~ /^[-+]/))
+        copyProperties.mod_version = rawModVersion.substring(0, matcher.start()) + "+" + rawModVersion.substring(matcher.start())
 
     filesMatching(["mcmod.info", "modid.mixins.json", "pack.mcmeta"]) {
         expand copyProperties
@@ -194,9 +268,15 @@ tasks.register('prepareDataResources', Sync) {
     // Replace the mod version
     Map<String, ?> copyProperties = project.properties.clone() as Map<String, ?>
     //noinspection UnnecessaryQualifiedReference
-    var matcher = java.util.regex.Pattern.compile("[^.0-9]").matcher(copyProperties.mod_version as String)
-    if (matcher.find())
-        copyProperties.mod_version = copyProperties.mod_version.substring(0, matcher.start()) + "+" + copyProperties.mod_version.substring(matcher.start())
+    String rawModVersion = copyProperties.mod_version as String
+    //noinspection UnnecessaryQualifiedReference
+    var matcher = java.util.regex.Pattern.compile("[^.0-9]").matcher(rawModVersion)
+    // Upstream rewrites '1.4.9a' into '1.4.9+a' so mcmod.info carries a comparable version.
+    // Skip that when the suffix already opens with a SemVer separator: the release tags this
+    // fork builds from ('2026.08.06-pre.0742.UTC+0000+<sha>') are well-formed already and
+    // would otherwise be mangled into '2026.08.06+-pre....'.
+    if (matcher.find() && !(rawModVersion.substring(matcher.start()) =~ /^[-+]/))
+        copyProperties.mod_version = rawModVersion.substring(0, matcher.start()) + "+" + rawModVersion.substring(matcher.start())
 
     filesMatching(["mcmod.info", "modid.mixins.json", "pack.mcmeta"]) {
         expand copyProperties
@@ -256,4 +336,37 @@ tasks.publishMods.group = "other"
 tasks.register("publishAll") {
     group = "publishing"
     dependsOn(tasks.publishMods)
+}
+
+// ---------------------------------------------------------------------------
+// Tools for GitHub Actions (Mica Technologies fork)
+//
+// The release workflows shell out to these to name the jar and fill in the release body.
+// Their names are a contract with .github/workflows/build-mod-release-pre-release-main.yml
+// -- renaming one breaks the release build. Note that this build script prints a JVM banner
+// during configuration which `-q` does not suppress, so the workflow reads the last line
+// only (`| tail -n 1 | xargs`).
+// ---------------------------------------------------------------------------
+tasks.register("printModVersion") {
+    group = "other"
+    description = "Prints the full project version, e.g. 2026.08.06-forge-mc1.12"
+    doLast { println project.version }
+}
+
+tasks.register("printArchivesBaseName") {
+    group = "other"
+    description = "Prints the jar's base name, e.g. movingelevators"
+    doLast { println project.base.archivesName.get() }
+}
+
+tasks.register("printModName") {
+    group = "other"
+    description = "Prints the human-readable mod name, e.g. Moving Elevators"
+    doLast { println mod_name }
+}
+
+tasks.register("printMinecraftVersion") {
+    group = "other"
+    description = "Prints the targeted Minecraft version, e.g. 1.12.2"
+    doLast { println minecraft_version }
 }
