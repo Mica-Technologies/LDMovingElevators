@@ -55,6 +55,10 @@ public class MovingElevators {
     public static RemoteIndicatorBlock remote_indicator_block;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "remoteindicatortile", registry = RegistryEntryAcceptor.Registry.BLOCK_ENTITY_TYPES)
     public static BaseBlockEntityType<RemoteIndicatorBlockEntity> remote_indicator_tile;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "remote_call_panel_block", registry = RegistryEntryAcceptor.Registry.BLOCKS)
+    public static RemoteCallPanelBlock remote_call_panel_block;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "remotecallpaneltile", registry = RegistryEntryAcceptor.Registry.BLOCK_ENTITY_TYPES)
+    public static BaseBlockEntityType<RemoteCallPanelBlockEntity> remote_call_panel_tile;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "arrive_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
     public static SoundEvent arrive_sound;
 
@@ -104,12 +108,14 @@ public class MovingElevators {
         handler.registerBlock("button_block", () -> new RemoteControllerBlock(properties.get()));
         handler.registerBlock("remote_display_block", () -> new RemoteDisplayBlock(properties.get()));
         handler.registerBlock("remote_indicator_block", () -> new RemoteIndicatorBlock(properties.get()));
+        handler.registerBlock("remote_call_panel_block", () -> new RemoteCallPanelBlock(properties.get()));
         // Block entities
         handler.registerBlockEntityType("elevatorblocktile", () -> BaseBlockEntityType.create(ControllerBlockEntity::new, elevator_block));
         handler.registerBlockEntityType("displayblocktile", () -> BaseBlockEntityType.create(DisplayBlockEntity::new, display_block));
         handler.registerBlockEntityType("buttonblocktile", () -> BaseBlockEntityType.create(RemoteControllerBlockEntity::new, button_block));
         handler.registerBlockEntityType("remotedisplaytile", () -> BaseBlockEntityType.create(RemoteDisplayBlockEntity::new, remote_display_block));
         handler.registerBlockEntityType("remoteindicatortile", () -> BaseBlockEntityType.create(RemoteIndicatorBlockEntity::new, remote_indicator_block));
+        handler.registerBlockEntityType("remotecallpaneltile", () -> BaseBlockEntityType.create(RemoteCallPanelBlockEntity::new, remote_call_panel_block));
         // Items
         handler.registerItem("elevator_block", () -> new BaseBlockItem(elevator_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("display_block", () -> new BaseBlockItem(display_block, ItemProperties.create().group(GROUP)));
@@ -118,6 +124,7 @@ public class MovingElevators {
         // off that item class, works for the display too.
         handler.registerItem("remote_display_block", () -> new RemoteControllerBlockItem(remote_display_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("remote_indicator_block", () -> new RemoteControllerBlockItem(remote_indicator_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("remote_call_panel_block", () -> new RemoteControllerBlockItem(remote_call_panel_block, ItemProperties.create().group(GROUP)));
         // Sounds
         handler.registerSoundEvent("arrive_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "arrive_sound")));
     }

@@ -103,6 +103,37 @@ final class FloorLabelRenderer {
     }
 
     /**
+     * A call arrow, drawn as a filled triangle on its own dark inset -- the illuminated look of a
+     * real landing button. Lit arrows use the call colour, unlit ones a dim grey, so a press reads
+     * as registered at a glance.
+     *
+     * @param up whether the triangle points up
+     * @param lit whether there is an outstanding call in this direction
+     */
+    static void drawArrow(float centerX, float centerY, float halfWidth, float halfHeight, boolean up, boolean lit){
+        drawScreen(centerX - halfWidth * 1.4f, centerY - halfHeight * 1.5f,
+            centerX + halfWidth * 1.4f, centerY + halfHeight * 1.5f);
+
+        int r = lit ? 90 : 70, g = lit ? 220 : 78, b = lit ? 110 : 82;
+
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+
+        BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+        buffer.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_COLOR);
+        float tipY = up ? centerY + halfHeight : centerY - halfHeight;
+        float baseY = up ? centerY - halfHeight : centerY + halfHeight;
+        buffer.pos(centerX, tipY, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX - halfWidth, baseY, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX + halfWidth, baseY, -0.005).color(r, g, b, 255).endVertex();
+        Tessellator.getInstance().draw();
+
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+    }
+
+    /**
      * Dark inset the label is drawn on. Without it the label sits directly on whatever texture is
      * behind it -- a mid grey by default, and anything at all once camouflaged -- and the floor's
      * dye colour was regularly too close to the background to read.

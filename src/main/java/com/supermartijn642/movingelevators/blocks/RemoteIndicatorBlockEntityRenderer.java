@@ -30,10 +30,10 @@ public class RemoteIndicatorBlockEntityRenderer implements CustomBlockEntityRend
      * <p>
      * The full-block displays use -0.51, which is 0.01 outside a face sitting at the block edge. The
      * plate is mounted against the far wall instead, so its face is {@link
-     * RemoteIndicatorBlock#PLATE_DEPTH} in from that edge and the label has to come with it --
+     * WallPanelBlock#PLATE_DEPTH} in from that edge and the label has to come with it --
      * otherwise it hangs in the air where the block face would have been.
      */
-    private static final double LABEL_DEPTH = 0.5 - RemoteIndicatorBlock.PLATE_DEPTH - 0.01;
+    private static final double LABEL_DEPTH = 0.5 - WallPanelBlock.PLATE_DEPTH - 0.01;
 
     @Override
     public void render(RemoteIndicatorBlockEntity entity, float partialTicks, int combinedOverlay, float alpha){

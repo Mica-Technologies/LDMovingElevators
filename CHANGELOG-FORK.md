@@ -25,6 +25,11 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Remote Elevator Call Panel.** A tall wall-mounted landing panel: floor readout at the top, up
+  and down call buttons below. The buttons are real hall calls rather than the existing "move the
+  cabin one floor" arrows — pressing either fetches the cabin to that landing and tells the elevator
+  which way you then want to travel, so it joins the call queue and gets served in sweep order. The
+  arrows light while a call is outstanding.
 - **Remote Elevator Indicator.** A second style of the same readout: a slim metal plate that mounts
   on the face of the block behind it, like a real hall indicator above a lift door, rather than
   filling a whole block. It is directional — the plate exists on one side only — and pops off if the

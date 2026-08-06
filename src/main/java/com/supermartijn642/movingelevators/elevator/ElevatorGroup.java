@@ -46,6 +46,8 @@ public class ElevatorGroup {
      * chance to step in or out.
      */
     private static final int DWELL_TICKS = 20;
+    /** Hall call direction flags, stored as a mask per floor. */
+    private static final int CALL_UP = 1, CALL_DOWN = 2;
 
     public final World level;
     public final int x, z;
@@ -84,6 +86,12 @@ public class ElevatorGroup {
      */
     private int lastDirection = 0;
     private int dwellCounter = 0;
+    /**
+     * Direction each hall call asked to travel, keyed by floor y-level, as a mask of
+     * {@link #CALL_UP} / {@link #CALL_DOWN} -- a landing can have both pressed at once. Used to
+     * light the landing panel's arrows, and to pick the sweep direction on arrival.
+     */
+    private final Map<Integer,Integer> callDirections = new HashMap<>();
 
     public ElevatorGroup(World level, int x, int z, EnumFacing facing){
         this.level = level;
@@ -197,6 +205,53 @@ public class ElevatorGroup {
     }
 
     /**
+     * A hall call: "bring the cabin to this floor, I want to go {@code up}".
+     * <p>
+     * Unlike {@link #onButtonPress}'s arrows, which mean "take the cabin from this floor to the next
+     * one" and therefore only work while it is standing here, this always fetches the cabin --
+     * that is what a landing button does. The requested direction is remembered so the sweep carries
+     * on the way the caller wanted once it arrives.
+     */
+    public void onHallCall(int yLevel, boolean up, EntityPlayer requester){
+        if(!this.floors.contains(yLevel))
+            return;
+
+        this.callDirections.merge(yLevel, up ? CALL_UP : CALL_DOWN, (a, b) -> a | b);
+
+        if(this.isMoving){
+            this.queueCall(yLevel);
+            return;
+        }
+
+        int floor = this.getFloorNumber(yLevel);
+        // Cabin is already standing here, so there is nothing to fetch.
+        if(floor != -1 && this.isCageAvailableAt(floor, true, null)){
+            this.clearHallCall(yLevel, up);
+            return;
+        }
+        this.onButtonPress(false, false, yLevel, requester);
+    }
+
+    /**
+     * @return whether the floor at the given y-level has an outstanding hall call in this direction
+     */
+    public boolean hasHallCall(int yLevel, boolean up){
+        return (this.callDirections.getOrDefault(yLevel, 0) & (up ? CALL_UP : CALL_DOWN)) != 0;
+    }
+
+    private void clearHallCall(int yLevel, boolean up){
+        Integer directions = this.callDirections.get(yLevel);
+        if(directions == null)
+            return;
+        int remaining = directions & ~(up ? CALL_UP : CALL_DOWN);
+        if(remaining == 0)
+            this.callDirections.remove(yLevel);
+        else
+            this.callDirections.put(yLevel, remaining);
+        this.shouldBeSynced = true;
+    }
+
+    /**
      * Records a call for the floor at the given y-level, to be served once the cabin is free.
      */
     private void queueCall(int yLevel){
@@ -233,6 +288,11 @@ public class ElevatorGroup {
         // Arriving satisfies any call for this floor, and starts the dwell before the next one.
         this.callQueue.remove(this.targetY);
         this.dwellCounter = DWELL_TICKS;
+        // Carry on the way whoever called from this landing wanted to travel. With both arrows
+        // pressed the current direction wins, which is what a real elevator does.
+        Integer directions = this.callDirections.remove(this.targetY);
+        if(directions != null && directions != (CALL_UP | CALL_DOWN))
+            this.lastDirection = directions == CALL_UP ? 1 : -1;
 
         this.cage.place(this.level, this.getCageAnchorBlockPos(this.targetY));
         this.floorData.get(this.getFloorNumber(this.targetY)).isCageAvailable = true;
@@ -378,6 +438,7 @@ public class ElevatorGroup {
         // Drop any outstanding call for the floor before it stops existing, so the queue can never
         // dispatch to a y-level that is no longer a floor.
         this.callQueue.remove(this.floors.get(floor));
+        this.callDirections.remove(this.floors.get(floor));
         this.floors.remove(floor);
         this.floorData.remove(floor);
         if(this.floors.isEmpty()){
@@ -781,6 +842,14 @@ public NBTTagCompound write(){
     for(int y : this.callQueue)
         queue[queueIndex++] = y;
     compound.setIntArray("callQueue", queue);
+    // Flattened y/mask pairs, so a landing's lit arrows survive a reload alongside its queued call.
+    int[] directions = new int[this.callDirections.size() * 2];
+    int directionIndex = 0;
+    for(Map.Entry<Integer,Integer> entry : this.callDirections.entrySet()){
+        directions[directionIndex++] = entry.getKey();
+        directions[directionIndex++] = entry.getValue();
+    }
+    compound.setIntArray("callDirections", directions);
     compound.setInteger("lastDirection", this.lastDirection);
     compound.setInteger("dwellCounter", this.dwellCounter);
     NBTTagList floorDataTag = new NBTTagList();
@@ -846,6 +915,11 @@ public void read(NBTTagCompound compound){
     this.callQueue.clear();
     for(int y : compound.getIntArray("callQueue"))
         this.callQueue.add(y);
+    this.callDirections.clear();
+    int[] directions = compound.getIntArray("callDirections");
+    // Guard the length: a truncated or hand-edited array must not throw here.
+    for(int i = 0; i + 1 < directions.length; i += 2)
+        this.callDirections.put(directions[i], directions[i + 1]);
     this.lastDirection = compound.getInteger("lastDirection");
     this.dwellCounter = compound.getInteger("dwellCounter");
     this.floorData.clear();

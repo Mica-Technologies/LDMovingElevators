@@ -1,0 +1,48 @@
+{
+  "parent": "minecraft:recipes/root",
+  "display": {
+    "icon": {
+      "item": "movingelevators:remote_call_panel_block"
+    },
+    "title": {
+      "translate": "movingelevators.advancement.recipes/remote_call_panel_block.title"
+    },
+    "description": {
+      "translate": "movingelevators.advancement.recipes/remote_call_panel_block.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "movingelevators:remote_call_panel_block"
+      }
+    },
+    "recipe_condition": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "item": "movingelevators:elevator_block",
+            "data": 0
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "recipe_condition"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "movingelevators:remote_call_panel_block"
+    ]
+  }
+}

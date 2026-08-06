@@ -45,6 +45,14 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
             .element(element -> element.shape(1, 5.5f, 14, 15, 10.5f, 16).allFaces(face -> face.texture("metal")));
+        // Tall narrow landing panel: readout at the top, call buttons below.
+        this.model("block/remote_call_panel_block")
+            .parent("minecraft", "block/block")
+            .texture("particle", "blocks/metal_silver")
+            .texture("metal", "blocks/metal_silver")
+            .element(element -> element.shape(5, 1, 14, 11, 15, 16).allFaces(face -> face.texture("metal")));
+        this.model("item/remote_call_panel_block")
+            .parent("block/remote_call_panel_block");
         this.model("item/remote_indicator_block")
             .parent("block/remote_indicator_block");
         this.model("item/remote_display_block")

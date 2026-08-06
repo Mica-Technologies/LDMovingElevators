@@ -3,7 +3,7 @@ package com.supermartijn642.movingelevators.generators;
 import com.supermartijn642.core.generator.BlockStateGenerator;
 import com.supermartijn642.core.generator.ResourceCache;
 import com.supermartijn642.movingelevators.MovingElevators;
-import com.supermartijn642.movingelevators.blocks.RemoteIndicatorBlock;
+import com.supermartijn642.movingelevators.blocks.WallPanelBlock;
 import net.minecraft.util.EnumFacing;
 
 /**
@@ -22,10 +22,14 @@ public class MovingElevatorsBlockStateGenerator extends BlockStateGenerator {
         this.blockState(MovingElevators.button_block).emptyVariant(builder -> builder.model("block/button_block"));
         this.blockState(MovingElevators.remote_display_block).emptyVariant(builder -> builder.model("block/remote_display_block"));
         // The plate model is authored facing north, so each variant just spins it around Y.
-        this.blockState(MovingElevators.remote_indicator_block).variantsForAll((state, builder) -> {
-            EnumFacing facing = state.get(RemoteIndicatorBlock.FACING);
-            int rotation = facing == EnumFacing.EAST ? 90 : facing == EnumFacing.SOUTH ? 180 : facing == EnumFacing.WEST ? 270 : 0;
-            builder.model("block/remote_indicator_block", 0, rotation);
-        });
+        this.blockState(MovingElevators.remote_indicator_block).variantsForAll((state, builder) ->
+            builder.model("block/remote_indicator_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
+        this.blockState(MovingElevators.remote_call_panel_block).variantsForAll((state, builder) ->
+            builder.model("block/remote_call_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
+    }
+
+    /** Wall panel models are authored facing north, so each variant just spins them around Y. */
+    private static int wallPanelRotation(EnumFacing facing){
+        return facing == EnumFacing.EAST ? 90 : facing == EnumFacing.SOUTH ? 180 : facing == EnumFacing.WEST ? 270 : 0;
     }
 }
