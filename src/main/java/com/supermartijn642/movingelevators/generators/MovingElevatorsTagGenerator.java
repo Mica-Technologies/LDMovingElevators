@@ -15,6 +15,6 @@ public class MovingElevatorsTagGenerator extends TagGenerator {
 
     @Override
     public void generate(){
-        this.blockMineableWithPickaxe().add(MovingElevators.elevator_block).add(MovingElevators.display_block).add(MovingElevators.button_block).add(MovingElevators.remote_display_block).add(MovingElevators.remote_indicator_block).add(MovingElevators.remote_call_panel_block).add(MovingElevators.elevator_car_panel_block).add(MovingElevators.elevator_door_block);
+        this.blockMineableWithPickaxe().add(MovingElevators.elevator_block).add(MovingElevators.display_block).add(MovingElevators.button_block).add(MovingElevators.remote_display_block).add(MovingElevators.remote_indicator_block).add(MovingElevators.remote_call_panel_block).add(MovingElevators.elevator_car_panel_block).add(MovingElevators.elevator_door_block).add(MovingElevators.elevator_single_door_block);
     }
 }

@@ -29,9 +29,27 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
     private long lastOpenRequest, lastCloseRequest;
     /** Ticks left before the doors close on their own. */
     private int openTicks;
+    /**
+     * Whether this block is the upper half of its doorway.
+     * <p>
+     * Kept here rather than in the block state on purpose. Inferring it from the block below --
+     * "same block, same facing, so I must be the top" -- is ambiguous the moment two doorways are
+     * stacked, and 1.12's four bits of metadata cannot hold facing, side, open and half at once. A
+     * block entity has no such limit.
+     */
+    private boolean top;
 
     public ElevatorDoorBlockEntity(){
         super(MovingElevators.elevator_door_tile);
+    }
+
+    public void setTop(boolean top){
+        this.top = top;
+        this.dataChanged();
+    }
+
+    public boolean isTop(){
+        return this.top;
     }
 
     /**
@@ -92,14 +110,15 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
 
     private void setOpen(boolean open){
         IBlockState state = this.world.getBlockState(this.pos);
-        if(state.getBlock() instanceof ElevatorDoorBlock && state.getValue(ElevatorDoorBlock.OPEN) != open)
-            this.world.setBlockState(this.pos, state.withProperty(ElevatorDoorBlock.OPEN, open), 3);
+        if(state.getBlock() instanceof ElevatorDoorBlockBase && state.getValue(ElevatorDoorBlockBase.OPEN) != open)
+            this.world.setBlockState(this.pos, state.withProperty(ElevatorDoorBlockBase.OPEN, open), 3);
     }
 
     @Override
     protected NBTTagCompound writeData(){
         NBTTagCompound compound = super.writeData();
         compound.setInteger("openTicks", this.openTicks);
+        compound.setBoolean("top", this.top);
         return compound;
     }
 
@@ -107,5 +126,6 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
     protected void readData(NBTTagCompound compound){
         super.readData(compound);
         this.openTicks = compound.getInteger("openTicks");
+        this.top = compound.getBoolean("top");
     }
 }
