@@ -43,6 +43,13 @@ public class MovingElevatorsRecipeGenerator extends RecipeGenerator {
             .input('B', "dustRedstone")
             .input('C', Items.ENDER_PEARL)
             .unlockedBy(MovingElevators.elevator_block.asItem());
+        this.shaped(MovingElevators.elevator_door_block.asItem())
+            .pattern("AA")
+            .pattern("AA")
+            .pattern("AB")
+            .input('A', "ingotIron")
+            .input('B', "dustRedstone")
+            .unlockedBy(MovingElevators.elevator_block.asItem());
         this.shaped(MovingElevators.elevator_car_panel_block.asItem())
             .pattern("ABA")
             .pattern("ACA")

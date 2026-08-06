@@ -63,6 +63,10 @@ public class MovingElevators {
     public static ElevatorCarPanelBlock elevator_car_panel_block;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "elevatorcarpaneltile", registry = RegistryEntryAcceptor.Registry.BLOCK_ENTITY_TYPES)
     public static BaseBlockEntityType<ElevatorCarPanelBlockEntity> elevator_car_panel_tile;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "elevator_door_block", registry = RegistryEntryAcceptor.Registry.BLOCKS)
+    public static ElevatorDoorBlock elevator_door_block;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "elevatordoortile", registry = RegistryEntryAcceptor.Registry.BLOCK_ENTITY_TYPES)
+    public static BaseBlockEntityType<ElevatorDoorBlockEntity> elevator_door_tile;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "arrive_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
     public static SoundEvent arrive_sound;
 
@@ -86,6 +90,7 @@ public class MovingElevators {
         CHANNEL.registerMessage(PacketOnElevator.class, PacketOnElevator::new, true);
         CHANNEL.registerMessage(PacketRemoveElevatorGroup.class, PacketRemoveElevatorGroup::new, true);
         CHANNEL.registerMessage(PacketRequestFloor.class, PacketRequestFloor::new, true);
+        CHANNEL.registerMessage(PacketDoorControl.class, PacketDoorControl::new, true);
         CHANNEL.registerMessage(PacketSetFloorName.class, PacketSetFloorName::new, true);
         CHANNEL.registerMessage(PacketSyncElevatorMovement.class, PacketSyncElevatorMovement::new, true);
         CHANNEL.registerMessage(PacketToggleShowControllerButtons.class, PacketToggleShowControllerButtons::new, true);
@@ -115,6 +120,7 @@ public class MovingElevators {
         handler.registerBlock("remote_indicator_block", () -> new RemoteIndicatorBlock(properties.get()));
         handler.registerBlock("remote_call_panel_block", () -> new RemoteCallPanelBlock(properties.get()));
         handler.registerBlock("elevator_car_panel_block", () -> new ElevatorCarPanelBlock(properties.get()));
+        handler.registerBlock("elevator_door_block", () -> new ElevatorDoorBlock(properties.get()));
         // Block entities
         handler.registerBlockEntityType("elevatorblocktile", () -> BaseBlockEntityType.create(ControllerBlockEntity::new, elevator_block));
         handler.registerBlockEntityType("displayblocktile", () -> BaseBlockEntityType.create(DisplayBlockEntity::new, display_block));
@@ -123,6 +129,7 @@ public class MovingElevators {
         handler.registerBlockEntityType("remoteindicatortile", () -> BaseBlockEntityType.create(RemoteIndicatorBlockEntity::new, remote_indicator_block));
         handler.registerBlockEntityType("remotecallpaneltile", () -> BaseBlockEntityType.create(RemoteCallPanelBlockEntity::new, remote_call_panel_block));
         handler.registerBlockEntityType("elevatorcarpaneltile", () -> BaseBlockEntityType.create(ElevatorCarPanelBlockEntity::new, elevator_car_panel_block));
+        handler.registerBlockEntityType("elevatordoortile", () -> BaseBlockEntityType.create(ElevatorDoorBlockEntity::new, elevator_door_block));
         // Items
         handler.registerItem("elevator_block", () -> new BaseBlockItem(elevator_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("display_block", () -> new BaseBlockItem(display_block, ItemProperties.create().group(GROUP)));
@@ -133,6 +140,7 @@ public class MovingElevators {
         handler.registerItem("remote_indicator_block", () -> new RemoteControllerBlockItem(remote_indicator_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("remote_call_panel_block", () -> new RemoteControllerBlockItem(remote_call_panel_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_car_panel_block", () -> new RemoteControllerBlockItem(elevator_car_panel_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("elevator_door_block", () -> new RemoteControllerBlockItem(elevator_door_block, ItemProperties.create().group(GROUP)));
         // Sounds
         handler.registerSoundEvent("arrive_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "arrive_sound")));
     }

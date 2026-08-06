@@ -25,12 +25,18 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Elevator Door.** Sliding double doors for a landing: two leaves that meet in the middle and
+  retract into the frame when open. They open when the cabin arrives, and when a landing button is
+  pressed while it is already there; they close on their own after a configurable dwell
+  (`doorAutoCloseTicks`, 12 seconds by default), and immediately if the cabin leaves — a landing
+  door never stands open on an empty shaft. Redstone power forces them open as an emergency
+  override. Stack them for a taller doorway; each binds to a controller like the other fixtures.
 - **Elevator Car Panel.** The fixture you ride with: a wall plate showing the current floor and
   direction of travel, over a bank of buttons that light for the floors currently selected. Clicking
   it opens a floor list rather than mapping hits onto the drawn buttons — floors are added and
   removed at will, so a fixed grid can never match a shaft, and a block face is far too small to
   hit-test a dozen buttons. Destinations join the same call queue as landing calls, so a full trip
-  is served in one sweep.
+  is served in one sweep. The screen also carries "Open doors" and "Close doors".
 - **Remote Elevator Call Panel.** A tall wall-mounted landing panel: floor readout at the top, up
   and down call buttons below. The buttons are real hall calls rather than the existing "move the
   cabin one floor" arrows — pressing either fetches the cabin to that landing and tells the elevator

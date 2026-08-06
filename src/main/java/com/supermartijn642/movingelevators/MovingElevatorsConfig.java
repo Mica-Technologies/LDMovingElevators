@@ -13,6 +13,7 @@ public class MovingElevatorsConfig {
     public static final Supplier<Integer> maxCabinHorizontalSize;
     public static final Supplier<Integer> maxCabinVerticalSize;
     public static final Supplier<Boolean> allowUnbreakableBlocks;
+    public static final Supplier<Integer> doorAutoCloseTicks;
 
     static{
         IConfigBuilder builder = ConfigBuilders.newTomlConfig("movingelevators", null, false);
@@ -21,6 +22,7 @@ public class MovingElevatorsConfig {
         maxCabinHorizontalSize = builder.comment("What should be the maximum width of an elevator cabin? Higher numbers may cause lag.").define("maxCabinHorizontalSize", 11, 1, 15);
         maxCabinVerticalSize = builder.comment("What should be the maximum height of an elevator cabin? Higher numbers may cause lag.").define("maxCabinVerticalSize", 11, 1, 15);
         allowUnbreakableBlocks = builder.comment("Is the elevator allowed to move unbreakable blocks? If set to true, this may allow players to move blocks like bedrock and portals using elevators!").define("allowUnbreakableBlocks", false);
+        doorAutoCloseTicks = builder.comment("How long elevator doors stay open before closing on their own, in ticks. 20 ticks is one second.").define("doorAutoCloseTicks", 240, 20, 1200);
         builder.pop();
 
         builder.build();

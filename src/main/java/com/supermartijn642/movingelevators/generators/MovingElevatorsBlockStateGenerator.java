@@ -3,6 +3,7 @@ package com.supermartijn642.movingelevators.generators;
 import com.supermartijn642.core.generator.BlockStateGenerator;
 import com.supermartijn642.core.generator.ResourceCache;
 import com.supermartijn642.movingelevators.MovingElevators;
+import com.supermartijn642.movingelevators.blocks.ElevatorDoorBlock;
 import com.supermartijn642.movingelevators.blocks.WallPanelBlock;
 import net.minecraft.util.EnumFacing;
 
@@ -28,6 +29,10 @@ public class MovingElevatorsBlockStateGenerator extends BlockStateGenerator {
             builder.model("block/remote_call_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
         this.blockState(MovingElevators.elevator_car_panel_block).variantsForAll((state, builder) ->
             builder.model("block/elevator_car_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
+        // Doors carry an extra OPEN property, so each facing has an open and a closed variant.
+        this.blockState(MovingElevators.elevator_door_block).variantsForAll((state, builder) ->
+            builder.model(state.get(ElevatorDoorBlock.OPEN) ? "block/elevator_door_block_open" : "block/elevator_door_block_closed",
+                0, wallPanelRotation(state.get(ElevatorDoorBlock.FACING))));
     }
 
     /** Wall panel models are authored facing north, so each variant just spins them around Y. */

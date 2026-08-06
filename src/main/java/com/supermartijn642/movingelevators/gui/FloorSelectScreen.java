@@ -9,6 +9,7 @@ import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import com.supermartijn642.movingelevators.blocks.ElevatorCarPanelBlockEntity;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
+import com.supermartijn642.movingelevators.packets.PacketDoorControl;
 import com.supermartijn642.movingelevators.packets.PacketRequestFloor;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
@@ -29,6 +30,8 @@ import javax.annotation.Nonnull;
 public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlockEntity> {
 
     private static final int BUTTON_SIZE = 22, GAP = 3, PADDING = 7, HEADER = 22;
+    /** Door controls sit under the grid, in their own row. */
+    private static final int DOOR_ROW_HEIGHT = 20, DOOR_ROW_GAP = 5, DOOR_LABEL_PADDING = 6;
     /** Rows before the grid grows sideways instead, so a tall shaft cannot run off the screen. */
     private static final int MAX_ROWS = 8;
 
@@ -74,6 +77,12 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     private static int headerWidth(ElevatorCarPanelBlockEntity blockEntity){
         FontRenderer fontRenderer = ClientUtils.getFontRenderer();
         int widest = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.title").format());
+        // The door row is two buttons side by side, so the panel has to be wide enough for both
+        // labels plus a little padding inside each button, or the text spills over the edges.
+        int doorOpen = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.door_open").format());
+        int doorClose = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.door_close").format());
+        widest = Math.max(widest, doorOpen + doorClose + DOOR_LABEL_PADDING * 2 + GAP);
+
         ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
         if(group != null){
             for(int floor = 0; floor < group.getFloorCount(); floor++){
@@ -88,7 +97,8 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     @Override
     protected int height(ElevatorCarPanelBlockEntity blockEntity){
         int rows = rowsFor(floorCount(blockEntity));
-        return PADDING + HEADER + rows * BUTTON_SIZE + (rows - 1) * GAP + PADDING;
+        return PADDING + HEADER + rows * BUTTON_SIZE + (rows - 1) * GAP
+            + DOOR_ROW_GAP + DOOR_ROW_HEIGHT + PADDING;
     }
 
     private static int floorCount(ElevatorCarPanelBlockEntity blockEntity){
@@ -138,6 +148,29 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
                 TextComponents.string(name).get(),
                 () -> MovingElevators.CHANNEL.sendToServer(new PacketRequestFloor(this.blockEntityPos, floorY))));
         }
+
+        this.addDoorControls(blockEntity, rows);
+    }
+
+    /**
+     * "Open doors" and "Close doors", the two controls a real car station has that are not floors.
+     * They act on whichever floor the cabin is parked at, so they do nothing while it is in motion.
+     */
+    private void addDoorControls(ElevatorCarPanelBlockEntity blockEntity, int rows){
+        int y = PADDING + HEADER + rows * BUTTON_SIZE + (rows - 1) * GAP + DOOR_ROW_GAP;
+        int available = this.width(blockEntity) - PADDING * 2 - GAP;
+        int buttonWidth = available / 2;
+
+        this.addWidget(new FloorButtonWidget(PADDING, y, buttonWidth, DOOR_ROW_HEIGHT,
+            () -> TextComponents.translation("movingelevators.floor_select.door_open").format(),
+            () -> false, () -> false,
+            TextComponents.translation("movingelevators.floor_select.door_open").get(),
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketDoorControl(this.blockEntityPos, true))));
+        this.addWidget(new FloorButtonWidget(PADDING + buttonWidth + GAP, y, available - buttonWidth, DOOR_ROW_HEIGHT,
+            () -> TextComponents.translation("movingelevators.floor_select.door_close").format(),
+            () -> false, () -> false,
+            TextComponents.translation("movingelevators.floor_select.door_close").get(),
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketDoorControl(this.blockEntityPos, false))));
     }
 
     /**

@@ -54,6 +54,12 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.floor_select.title", "Select a floor");
         this.translation("movingelevators.floor_select.current", "Currently at %s");
 
+        // Elevator doors
+        this.block(MovingElevators.elevator_door_block, "Elevator Door");
+        this.translation("movingelevators.elevator_door.tooltip", "Sliding doors that open when the elevator is at this floor and close again on their own. Redstone power forces them open. Bind them to an elevator controller by right-clicking on it");
+        this.translation("movingelevators.floor_select.door_open", "Open doors");
+        this.translation("movingelevators.floor_select.door_close", "Close doors");
+
         // Floor name
         this.translation("movingelevators.floor_name", "Floor %d");
 

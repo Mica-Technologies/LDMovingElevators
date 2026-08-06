@@ -92,6 +92,15 @@ public class ElevatorGroup {
      * light the landing panel's arrows, and to pick the sweep direction on arrival.
      */
     private final Map<Integer,Integer> callDirections = new HashMap<>();
+    /**
+     * When each floor last asked its doors to open or close, as world time.
+     * <p>
+     * A stamp rather than a flag that doors consume: a doorway is several blocks, and every one of
+     * them has to see the same request. Each door remembers the last stamp it acted on. Not
+     * persisted -- a request is a momentary thing, and doors close on their own anyway.
+     */
+    private final Map<Integer,Long> doorOpenRequests = new HashMap<>();
+    private final Map<Integer,Long> doorCloseRequests = new HashMap<>();
 
     public ElevatorGroup(World level, int x, int z, EnumFacing facing){
         this.level = level;
@@ -224,9 +233,11 @@ public class ElevatorGroup {
         }
 
         int floor = this.getFloorNumber(yLevel);
-        // Cabin is already standing here, so there is nothing to fetch.
+        // Cabin is already standing here, so there is nothing to fetch -- but pressing the button
+        // should still open the doors, which is what a waiting passenger expects.
         if(floor != -1 && this.isCageAvailableAt(floor, true, null)){
             this.clearHallCall(yLevel, up);
+            this.requestDoorOpen(yLevel);
             return;
         }
         this.onButtonPress(false, false, yLevel, requester);
@@ -258,6 +269,47 @@ public class ElevatorGroup {
      */
     public int getTravelDirection(){
         return this.isMoving ? (int)Math.signum(this.targetY - this.currentY) : 0;
+    }
+
+    /**
+     * Asks the doors at a floor to open. They only actually open if the cabin is standing there --
+     * an open door onto an empty shaft would be both wrong and lethal.
+     */
+    public void requestDoorOpen(int yLevel){
+        if(this.level != null)
+            this.doorOpenRequests.put(yLevel, this.level.getTotalWorldTime());
+    }
+
+    /**
+     * Asks the doors at a floor to close early, before their dwell runs out.
+     */
+    public void requestDoorClose(int yLevel){
+        if(this.level != null)
+            this.doorCloseRequests.put(yLevel, this.level.getTotalWorldTime());
+    }
+
+    /**
+     * @return world time of the last open request for this floor, or 0 if there has never been one
+     */
+    public long getDoorOpenRequest(int yLevel){
+        return this.doorOpenRequests.getOrDefault(yLevel, 0L);
+    }
+
+    /**
+     * @return world time of the last close request for this floor, or 0 if there has never been one
+     */
+    public long getDoorCloseRequest(int yLevel){
+        return this.doorCloseRequests.getOrDefault(yLevel, 0L);
+    }
+
+    /**
+     * @return whether the cabin is parked at this floor, i.e. whether it is safe to open its doors
+     */
+    public boolean isCabinAt(int yLevel){
+        if(this.isMoving)
+            return false;
+        int floor = this.getFloorNumber(yLevel);
+        return floor != -1 && floor == this.getCabinFloorNumber();
     }
 
     /**
@@ -321,6 +373,8 @@ public class ElevatorGroup {
         Integer directions = this.callDirections.remove(this.targetY);
         if(directions != null && directions != (CALL_UP | CALL_DOWN))
             this.lastDirection = directions == CALL_UP ? 1 : -1;
+        // Arriving opens the doors, exactly as a real elevator does.
+        this.requestDoorOpen(this.targetY);
 
         this.cage.place(this.level, this.getCageAnchorBlockPos(this.targetY));
         this.floorData.get(this.getFloorNumber(this.targetY)).isCageAvailable = true;
