@@ -53,18 +53,23 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .element(element -> element.shape(5, 1, 14, 11, 15, 16).allFaces(face -> face.texture("metal")));
         // Sliding double doors. Closed, two leaves meet in the middle with a seam between them;
         // open, each has retracted into its side of the frame. Authored facing north.
+        // One leaf per block: closed it fills its own block, open it retracts into its own side of
+        // the frame. Two blocks side by side make the double door.
         this.model("block/elevator_door_block_closed")
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(0, 0, 7, 7.9f, 16, 9).allFaces(face -> face.texture("metal")))
-            .element(element -> element.shape(8.1f, 0, 7, 16, 16, 9).allFaces(face -> face.texture("metal")));
-        this.model("block/elevator_door_block_open")
+            .element(element -> element.shape(0, 0, 7, 16, 16, 9).allFaces(face -> face.texture("metal")));
+        this.model("block/elevator_door_block_open_left")
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(0, 0, 7, 2, 16, 9).allFaces(face -> face.texture("metal")))
-            .element(element -> element.shape(14, 0, 7, 16, 16, 9).allFaces(face -> face.texture("metal")));
+            .element(element -> element.shape(0, 0, 7, 3, 16, 9).allFaces(face -> face.texture("metal")));
+        this.model("block/elevator_door_block_open_right")
+            .parent("minecraft", "block/block")
+            .texture("particle", "blocks/metal_silver")
+            .texture("metal", "blocks/metal_silver")
+            .element(element -> element.shape(13, 0, 7, 16, 16, 9).allFaces(face -> face.texture("metal")));
         this.model("item/elevator_door_block")
             .parent("block/elevator_door_block_closed");
         this.model("block/elevator_car_panel_block")

@@ -25,8 +25,8 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
-- **Elevator Door.** Sliding double doors for a landing: two leaves that meet in the middle and
-  retract into the frame when open. They open when the cabin arrives, and when a landing button is
+- **Elevator Door.** A 2x2 sliding doorway for a landing, placed as one item: two leaves that meet
+  in the middle and retract into the frame when open. They open when the cabin arrives, and when a landing button is
   pressed while it is already there; they close on their own after a configurable dwell
   (`doorAutoCloseTicks`, 12 seconds by default), and immediately if the cabin leaves — a landing
   door never stands open on an empty shaft. Redstone power forces them open as an emergency

@@ -1,32 +1,62 @@
 {
   "variants": {
-    "facing=north,open=true": {
-      "model": "movingelevators:elevator_door_block_open"
+    "facing=north,open=true,right=true": {
+      "model": "movingelevators:elevator_door_block_open_right"
     },
-    "facing=north,open=false": {
+    "facing=north,open=true,right=false": {
+      "model": "movingelevators:elevator_door_block_open_left"
+    },
+    "facing=north,open=false,right=true": {
       "model": "movingelevators:elevator_door_block_closed"
     },
-    "facing=south,open=true": {
-      "model": "movingelevators:elevator_door_block_open",
+    "facing=north,open=false,right=false": {
+      "model": "movingelevators:elevator_door_block_closed"
+    },
+    "facing=south,open=true,right=true": {
+      "model": "movingelevators:elevator_door_block_open_right",
       "y": 180
     },
-    "facing=south,open=false": {
+    "facing=south,open=true,right=false": {
+      "model": "movingelevators:elevator_door_block_open_left",
+      "y": 180
+    },
+    "facing=south,open=false,right=true": {
       "model": "movingelevators:elevator_door_block_closed",
       "y": 180
     },
-    "facing=west,open=true": {
-      "model": "movingelevators:elevator_door_block_open",
+    "facing=south,open=false,right=false": {
+      "model": "movingelevators:elevator_door_block_closed",
+      "y": 180
+    },
+    "facing=west,open=true,right=true": {
+      "model": "movingelevators:elevator_door_block_open_right",
       "y": 270
     },
-    "facing=west,open=false": {
+    "facing=west,open=true,right=false": {
+      "model": "movingelevators:elevator_door_block_open_left",
+      "y": 270
+    },
+    "facing=west,open=false,right=true": {
       "model": "movingelevators:elevator_door_block_closed",
       "y": 270
     },
-    "facing=east,open=true": {
-      "model": "movingelevators:elevator_door_block_open",
+    "facing=west,open=false,right=false": {
+      "model": "movingelevators:elevator_door_block_closed",
+      "y": 270
+    },
+    "facing=east,open=true,right=true": {
+      "model": "movingelevators:elevator_door_block_open_right",
       "y": 90
     },
-    "facing=east,open=false": {
+    "facing=east,open=true,right=false": {
+      "model": "movingelevators:elevator_door_block_open_left",
+      "y": 90
+    },
+    "facing=east,open=false,right=true": {
+      "model": "movingelevators:elevator_door_block_closed",
+      "y": 90
+    },
+    "facing=east,open=false,right=false": {
       "model": "movingelevators:elevator_door_block_closed",
       "y": 90
     }

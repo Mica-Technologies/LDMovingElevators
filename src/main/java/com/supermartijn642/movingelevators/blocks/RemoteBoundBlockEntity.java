@@ -23,7 +23,7 @@ import net.minecraftforge.common.util.Constants;
  */
 public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
 
-    private BlockPos controllerPos = BlockPos.ORIGIN;
+    protected BlockPos controllerPos = BlockPos.ORIGIN;
     private EnumFacing controllerFacing = null;
 
     protected RemoteBoundBlockEntity(BaseBlockEntityType<?> blockEntityType){
@@ -57,6 +57,13 @@ public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
      */
     public int getFloorLevel(){
         return this.controllerPos.getY();
+    }
+
+    /**
+     * @return whether this fixture has been bound to a controller at all
+     */
+    public boolean isBound(){
+        return this.controllerFacing != null;
     }
 
     /**

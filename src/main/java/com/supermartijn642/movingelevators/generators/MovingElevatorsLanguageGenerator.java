@@ -56,7 +56,9 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
 
         // Elevator doors
         this.block(MovingElevators.elevator_door_block, "Elevator Door");
-        this.translation("movingelevators.elevator_door.tooltip", "Sliding doors that open when the elevator is at this floor and close again on their own. Redstone power forces them open. Bind them to an elevator controller by right-clicking on it");
+        this.translation("movingelevators.elevator_door.tooltip", "A 2x2 sliding doorway that opens when the elevator reaches this floor and closes again on its own. Redstone power forces it open. Bind it to an elevator controller by right-clicking on it");
+        this.translation("movingelevators.elevator_door.not_bound", "These doors are not bound to an elevator controller!");
+        this.translation("movingelevators.elevator_door.no_room", "Not enough room: elevator doors need a 2x2 opening.");
         this.translation("movingelevators.floor_select.door_open", "Open doors");
         this.translation("movingelevators.floor_select.door_close", "Close doors");
 
