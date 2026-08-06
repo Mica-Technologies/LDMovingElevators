@@ -35,7 +35,11 @@ Based on upstream **Moving Elevators 1.4.12**.
 - `README.md`, which the `forge-1.12` branch previously lacked entirely. Identifies the fork as
   unofficial, unaffiliated with and unendorsed by SuperMartijn642, and Forge 1.12 only.
 - `CLAUDE.md` with build commands, architecture notes and the fork-specific gotchas.
-- This changelog.
+- This changelog, split from upstream's `changelog.md`.
+- GitHub release bodies now state the upstream release each build is based on, parsed from the
+  newest heading in `changelog.md`. Date-versioned releases otherwise lose that lineage entirely.
+  The same step warns if `mod_version` and `changelog.md` disagree, which is the usual symptom of a
+  half-finished upstream merge.
 
 ### Fixed
 
