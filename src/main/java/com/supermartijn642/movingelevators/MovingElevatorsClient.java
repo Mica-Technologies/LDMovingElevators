@@ -132,8 +132,18 @@ public class MovingElevatorsClient {
         ClientUtils.displayScreen(WidgetScreen.of(new FloorSelectScreen(pos)));
     }
 
+    /**
+     * The name shown for a floor: whatever it was named, or a generated one.
+     * <p>
+     * Generated names count from one, so the lowest floor of a shaft is "Floor 1". The index stays
+     * zero-based everywhere else -- this is the one place an index becomes something a player reads,
+     * which is why the offset lives here and not in the elevator itself. Naming a floor by hand still
+     * overrides it entirely.
+     *
+     * @param floor zero-based floor index
+     */
     public static String formatFloorDisplayName(String name, int floor){
-        return name == null ? TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor).get()).format() : name;
+        return name == null ? TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor + 1).get()).format() : name;
     }
 
     @SubscribeEvent
