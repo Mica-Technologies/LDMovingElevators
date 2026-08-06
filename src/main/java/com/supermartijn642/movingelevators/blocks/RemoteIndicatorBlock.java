@@ -46,15 +46,23 @@ public class RemoteIndicatorBlock extends BaseBlock implements EntityHoldingBloc
     /** The direction the plate faces, i.e. away from the wall it is mounted on. */
     public static final PropertyDirection FACING = BlockHorizontal.FACING;
 
-    /** Plate geometry, in sixteenths, authored for {@link EnumFacing#NORTH}. */
+    /**
+     * Plate geometry, in sixteenths.
+     * <p>
+     * The plate hugs the wall it is mounted on, which is the neighbour <em>opposite</em> the way it
+     * faces: a north-facing plate is read from the north, so its wall is the south neighbour and the
+     * metal sits at high Z. Getting this backwards leaves the plate floating a block clear of the
+     * wall, which is exactly how the first version looked in game.
+     */
     private static final double MIN_X = 1 / 16d, MAX_X = 15 / 16d;
     private static final double MIN_Y = 5.5 / 16d, MAX_Y = 10.5 / 16d;
-    private static final double DEPTH = 2 / 16d;
+    /** Thickness of the plate. Shared with the renderer, which puts the label just proud of it. */
+    public static final double PLATE_DEPTH = 2 / 16d;
 
-    private static final AxisAlignedBB SHAPE_NORTH = new AxisAlignedBB(MIN_X, MIN_Y, 0, MAX_X, MAX_Y, DEPTH);
-    private static final AxisAlignedBB SHAPE_SOUTH = new AxisAlignedBB(MIN_X, MIN_Y, 1 - DEPTH, MAX_X, MAX_Y, 1);
-    private static final AxisAlignedBB SHAPE_WEST = new AxisAlignedBB(0, MIN_Y, MIN_X, DEPTH, MAX_Y, MAX_X);
-    private static final AxisAlignedBB SHAPE_EAST = new AxisAlignedBB(1 - DEPTH, MIN_Y, MIN_X, 1, MAX_Y, MAX_X);
+    private static final AxisAlignedBB SHAPE_NORTH = new AxisAlignedBB(MIN_X, MIN_Y, 1 - PLATE_DEPTH, MAX_X, MAX_Y, 1);
+    private static final AxisAlignedBB SHAPE_SOUTH = new AxisAlignedBB(MIN_X, MIN_Y, 0, MAX_X, MAX_Y, PLATE_DEPTH);
+    private static final AxisAlignedBB SHAPE_WEST = new AxisAlignedBB(1 - PLATE_DEPTH, MIN_Y, MIN_X, 1, MAX_Y, MAX_X);
+    private static final AxisAlignedBB SHAPE_EAST = new AxisAlignedBB(0, MIN_Y, MIN_X, PLATE_DEPTH, MAX_Y, MAX_X);
 
     public RemoteIndicatorBlock(BlockProperties properties){
         super(false, properties);

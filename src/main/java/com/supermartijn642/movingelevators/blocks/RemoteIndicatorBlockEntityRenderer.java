@@ -25,6 +25,15 @@ public class RemoteIndicatorBlockEntityRenderer implements CustomBlockEntityRend
     private static final float MAX_SCALE = 1 / 44f, MAX_WIDTH = 0.5f, PADDING = 0.025f;
     /** Vertical centre of the plate, matching RemoteIndicatorBlock's geometry. */
     private static final float PLATE_CENTER_Y = 8 / 16f;
+    /**
+     * How far to step from the block centre to land just proud of the plate's face.
+     * <p>
+     * The full-block displays use -0.51, which is 0.01 outside a face sitting at the block edge. The
+     * plate is mounted against the far wall instead, so its face is {@link
+     * RemoteIndicatorBlock#PLATE_DEPTH} in from that edge and the label has to come with it --
+     * otherwise it hangs in the air where the block face would have been.
+     */
+    private static final double LABEL_DEPTH = 0.5 - RemoteIndicatorBlock.PLATE_DEPTH - 0.01;
 
     @Override
     public void render(RemoteIndicatorBlockEntity entity, float partialTicks, int combinedOverlay, float alpha){
@@ -50,11 +59,10 @@ public class RemoteIndicatorBlockEntityRenderer implements CustomBlockEntityRend
 
         GlStateManager.pushMatrix();
 
-        // Same framing as the other displays, except the plate's front face sits flush with the
-        // block face, so the label plane is unchanged.
+        // Same framing as the other displays, but the label plane is pulled back to the plate.
         GlStateManager.translate(0.5, 0.5, 0.5);
         GlStateManager.rotate(180 - facing.getHorizontalAngle(), 0, 1, 0);
-        GlStateManager.translate(-0.5, -0.5, -0.51);
+        GlStateManager.translate(-0.5, -0.5, LABEL_DEPTH);
 
         FloorLabelRenderer.drawCenteredLabel(label, group.getFloorDisplayColor(floor),
             0.5f, PLATE_CENTER_Y, MAX_SCALE, MAX_WIDTH, PADDING);

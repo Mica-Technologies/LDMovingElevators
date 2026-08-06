@@ -10,11 +10,11 @@
       "required": true
     },
     {
-      "id": "movingelevators:remote_display_block",
+      "id": "movingelevators:remote_indicator_block",
       "required": true
     },
     {
-      "id": "movingelevators:remote_indicator_block",
+      "id": "movingelevators:remote_display_block",
       "required": true
     },
     {
