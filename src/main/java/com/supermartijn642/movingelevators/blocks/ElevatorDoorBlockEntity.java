@@ -5,7 +5,10 @@ import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.movingelevators.MovingElevatorsConfig;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import net.minecraft.block.state.IBlockState;
+import com.supermartijn642.core.TextComponents;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
 
 /**
  * Decides when a doorway should be open, and holds the dwell that closes it again.
@@ -128,6 +131,45 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         IBlockState state = this.world.getBlockState(this.pos);
         return state.getBlock() instanceof ElevatorDoorBlockBase
             && ((ElevatorDoorBlockBase)state.getBlock()).isDoorwayPowered(this.world, this.pos, state);
+    }
+
+    /**
+     * Tells a player exactly what this door believes, in order of what has to be true for it to work.
+     * Whichever line reads wrong is the failure.
+     */
+    public void reportStatus(net.minecraft.entity.player.EntityPlayer player){
+        ElevatorGroup group = this.getGroup();
+        player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.header").color(TextFormatting.AQUA).get());
+
+        if(!this.isBound()){
+            player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.unbound").color(TextFormatting.RED).get());
+            return;
+        }
+        BlockPos controller = this.getControllerPos();
+        player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.bound",
+            TextComponents.number(controller.getX()).get(), TextComponents.number(controller.getY()).get(),
+            TextComponents.number(controller.getZ()).get()).color(TextFormatting.GRAY).get());
+
+        if(group == null){
+            player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.no_group").color(TextFormatting.RED).get());
+            return;
+        }
+
+        int floorLevel = this.getFloorLevel();
+        boolean matched = group.hasControllerAt(floorLevel);
+        player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.landing",
+            TextComponents.number(this.pos.getY()).get(), TextComponents.number(floorLevel).get())
+            .color(matched ? TextFormatting.GRAY : TextFormatting.RED).get());
+
+        boolean cabinHere = group.isCabinAt(floorLevel);
+        player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.cabin",
+            TextComponents.string(Boolean.toString(cabinHere)).get(),
+            TextComponents.number(group.getCabinFloorNumber()).get())
+            .color(cabinHere ? TextFormatting.GREEN : TextFormatting.YELLOW).get());
+
+        player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.half",
+            TextComponents.string(Boolean.toString(this.top)).get(),
+            TextComponents.number(this.openTicks).get()).color(TextFormatting.GRAY).get());
     }
 
     private void setOpen(boolean open){

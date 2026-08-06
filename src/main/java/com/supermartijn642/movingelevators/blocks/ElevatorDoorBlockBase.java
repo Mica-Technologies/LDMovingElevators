@@ -31,6 +31,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 
 import javax.annotation.Nullable;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -59,6 +63,9 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
      * those removals fires this block's break handling again.
      */
     private static boolean removingDoorway = false;
+
+    /** A doorway is at most four blocks, so a walk that finds more has strayed into a neighbour. */
+    private static final int MAX_DOORWAY_CELLS = 4;
 
     protected ElevatorDoorBlockBase(BlockProperties properties){
         super(false, properties);
@@ -95,10 +102,41 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
     }
 
     /**
+     * Every door block reachable from this one, found by walking neighbours rather than by computing
+     * the doorway from an origin.
+     * <p>
+     * Deliberately independent of which half a block believes it is. The origin calculation depends
+     * on that flag, and when it was wrong the two halves disagreed about their own doorway -- power
+     * at the bottom opened only the bottom, while power at the top opened everything, because each
+     * block was looking at a different set of neighbours. A walk cannot disagree with itself.
+     */
+    private Set<BlockPos> connectedCells(World level, BlockPos pos, IBlockState state){
+        EnumFacing facing = state.getValue(FACING);
+        EnumFacing side = sideOf(state);
+        Set<BlockPos> found = new HashSet<>();
+        Deque<BlockPos> pending = new ArrayDeque<>();
+        found.add(pos);
+        pending.add(pos);
+        while(!pending.isEmpty() && found.size() < MAX_DOORWAY_CELLS){
+            BlockPos current = pending.removeFirst();
+            for(BlockPos next : new BlockPos[]{current.up(), current.down(), current.offset(side), current.offset(side.getOpposite())}){
+                if(found.contains(next))
+                    continue;
+                IBlockState neighbour = level.getBlockState(next);
+                if(neighbour.getBlock() == this && neighbour.getValue(FACING) == facing){
+                    found.add(next);
+                    pending.add(next);
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
      * @return whether any block of this doorway is receiving redstone power
      */
     public boolean isDoorwayPowered(World level, BlockPos pos, IBlockState state){
-        for(BlockPos cell : this.cellsFromOrigin(this.originOf(level, pos, state), state))
+        for(BlockPos cell : this.connectedCells(level, pos, state))
             if(level.isBlockPowered(cell))
                 return true;
         return false;
@@ -164,21 +202,12 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
 
     @Override
     protected InteractionFeedback interact(IBlockState state, World level, BlockPos pos, EntityPlayer player, EnumHand hand, EnumFacing hitSide, Vec3d hitLocation){
+        // Reported from the server, because the server's answers are the ones that decide whether the
+        // doors move. A door that silently does nothing gives a player -- and anyone debugging it --
+        // no way to tell which of binding, landing or cabin position is the missing piece.
         TileEntity entity = level.getTileEntity(pos);
-        if(entity instanceof ElevatorDoorBlockEntity && level.isRemote){
-            ElevatorDoorBlockEntity door = (ElevatorDoorBlockEntity)entity;
-            if(!door.isBound())
-                // Silent doors were the single most confusing thing about the first version: an
-                // unbound doorway looks identical to a working one and simply never moves.
-                player.sendStatusMessage(TextComponents.translation("movingelevators.elevator_door.not_bound").color(TextFormatting.RED).get(), true);
-            else{
-                BlockPos controllerPos = door.getControllerPos();
-                ITextComponent x = TextComponents.number(controllerPos.getX()).color(TextFormatting.GOLD).get();
-                ITextComponent y = TextComponents.number(controllerPos.getY()).color(TextFormatting.GOLD).get();
-                ITextComponent z = TextComponents.number(controllerPos.getZ()).color(TextFormatting.GOLD).get();
-                player.sendStatusMessage(TextComponents.translation("movingelevators.remote_controller.controller_location", x, y, z).get(), true);
-            }
-        }
+        if(entity instanceof ElevatorDoorBlockEntity && !level.isRemote)
+            ((ElevatorDoorBlockEntity)entity).reportStatus(player);
         return InteractionFeedback.SUCCESS;
     }
 
