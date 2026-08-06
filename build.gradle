@@ -141,6 +141,13 @@ processResources {
     if (matcher.find() && !(rawModVersion.substring(matcher.start()) =~ /^[-+]/))
         copyProperties.mod_version = rawModVersion.substring(0, matcher.start()) + "+" + rawModVersion.substring(matcher.start())
 
+    // NOTE (Mica fork): `expand` below substitutes project properties into mcmod.info,
+    // modid.mixins.json and pack.mcmeta, but upstream declared only `version` as a task input.
+    // Gradle therefore considered this task UP-TO-DATE after a gradle.properties edit, and
+    // silently packaged stale metadata -- changing mod_description had no effect on the jar until
+    // something else forced a re-run. Declare the values that actually feed `expand`.
+    inputs.property "expandedProperties", copyProperties.findAll { it.value instanceof String }
+
     filesMatching(["mcmod.info", "modid.mixins.json", "pack.mcmeta"]) {
         expand copyProperties
     }
@@ -283,6 +290,13 @@ tasks.register('prepareDataResources', Sync) {
     // would otherwise be mangled into '2026.08.06+-pre....'.
     if (matcher.find() && !(rawModVersion.substring(matcher.start()) =~ /^[-+]/))
         copyProperties.mod_version = rawModVersion.substring(0, matcher.start()) + "+" + rawModVersion.substring(matcher.start())
+
+    // NOTE (Mica fork): `expand` below substitutes project properties into mcmod.info,
+    // modid.mixins.json and pack.mcmeta, but upstream declared only `version` as a task input.
+    // Gradle therefore considered this task UP-TO-DATE after a gradle.properties edit, and
+    // silently packaged stale metadata -- changing mod_description had no effect on the jar until
+    // something else forced a re-run. Declare the values that actually feed `expand`.
+    inputs.property "expandedProperties", copyProperties.findAll { it.value instanceof String }
 
     filesMatching(["mcmod.info", "modid.mixins.json", "pack.mcmeta"]) {
         expand copyProperties

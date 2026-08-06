@@ -64,6 +64,11 @@ Based on upstream **Moving Elevators 1.4.12**.
   with "permission denied". Now `100755`, matching the sibling mods.
 - A pre-release version rendered into `mcmod.info` as `2026.08.06+-pre.…`, because upstream's
   `1.4.9` → `1.4.9+a` rewrite fired on versions whose suffix already began with a SemVer separator.
+- `processResources` and `prepareDataResources` packaged stale metadata. They substitute project
+  properties into `mcmod.info`, `modid.mixins.json` and `pack.mcmeta`, but declared only `version`
+  as a task input — so editing any `mod_*` value in `gradle.properties` left Gradle considering the
+  task up to date, and the change never reached the jar. The values that feed the substitution are
+  now declared as inputs.
 
 ### Changed
 
@@ -72,6 +77,10 @@ Based on upstream **Moving Elevators 1.4.12**.
   credits field names SuperMartijn642 as the original author while stating that this build is
   unofficial and unendorsed. `mod_sources` and `mod_issues` were repointed here too, so upstream's
   issue tracker is no longer advertised to players running our build.
+- The mod description is prefixed `[Unofficial Fork]`, so the in-game mod list shows it at a
+  glance. `mod_id`, `mod_name`, `mod_package` and `maven_group` are deliberately left as upstream's
+  — the id is a compatibility contract with existing saves, packs and dependent mods, and the
+  package is load-bearing for coremod and mixin discovery.
 
 ### Removed
 
