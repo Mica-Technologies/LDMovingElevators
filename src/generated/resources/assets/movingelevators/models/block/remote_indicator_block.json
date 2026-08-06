@@ -1,0 +1,41 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "movingelevators:blocks/metal_silver",
+    "metal": "movingelevators:blocks/metal_silver"
+  },
+  "elements": [
+    {
+      "from": [
+        1.0,
+        5.5,
+        0.0
+      ],
+      "to": [
+        15.0,
+        10.5,
+        2.0
+      ],
+      "faces": {
+        "south": {
+          "texture": "#metal"
+        },
+        "down": {
+          "texture": "#metal"
+        },
+        "east": {
+          "texture": "#metal"
+        },
+        "north": {
+          "texture": "#metal"
+        },
+        "up": {
+          "texture": "#metal"
+        },
+        "west": {
+          "texture": "#metal"
+        }
+      }
+    }
+  ]
+}

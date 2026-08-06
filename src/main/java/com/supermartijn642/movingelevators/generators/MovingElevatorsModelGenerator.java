@@ -37,6 +37,14 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("overlay", "blocks/buttons")
             .element(element -> element.shape(0, 0, 0, 16, 16, 16).allFaces(face -> face.texture("all")))
             .element(element -> element.shape(0, 0, 0, 16, 16, 16).face(EnumFacing.NORTH, face -> face.texture("overlay").uv(0, 0, 11.5f, 11.5f)));
+        // Slim wall plate, authored facing north; the block state rotates it for the other sides.
+        this.model("block/remote_indicator_block")
+            .parent("minecraft", "block/block")
+            .texture("particle", "blocks/metal_silver")
+            .texture("metal", "blocks/metal_silver")
+            .element(element -> element.shape(1, 5.5f, 0, 15, 10.5f, 2).allFaces(face -> face.texture("metal")));
+        this.model("item/remote_indicator_block")
+            .parent("block/remote_indicator_block");
         this.model("item/remote_display_block")
             .parent("block/remote_display_block")
             .texture("overlay", "blocks/display_overlay")

@@ -3,6 +3,8 @@ package com.supermartijn642.movingelevators.generators;
 import com.supermartijn642.core.generator.BlockStateGenerator;
 import com.supermartijn642.core.generator.ResourceCache;
 import com.supermartijn642.movingelevators.MovingElevators;
+import com.supermartijn642.movingelevators.blocks.RemoteIndicatorBlock;
+import net.minecraft.util.EnumFacing;
 
 /**
  * Created 12/09/2022 by SuperMartijn642
@@ -19,5 +21,11 @@ public class MovingElevatorsBlockStateGenerator extends BlockStateGenerator {
         this.blockState(MovingElevators.display_block).emptyVariant(builder -> builder.model("block/display_block"));
         this.blockState(MovingElevators.button_block).emptyVariant(builder -> builder.model("block/button_block"));
         this.blockState(MovingElevators.remote_display_block).emptyVariant(builder -> builder.model("block/remote_display_block"));
+        // The plate model is authored facing north, so each variant just spins it around Y.
+        this.blockState(MovingElevators.remote_indicator_block).variantsForAll((state, builder) -> {
+            EnumFacing facing = state.get(RemoteIndicatorBlock.FACING);
+            int rotation = facing == EnumFacing.EAST ? 90 : facing == EnumFacing.SOUTH ? 180 : facing == EnumFacing.WEST ? 270 : 0;
+            builder.model("block/remote_indicator_block", 0, rotation);
+        });
     }
 }

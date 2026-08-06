@@ -25,6 +25,12 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Remote Elevator Indicator.** A second style of the same readout: a slim metal plate that mounts
+  on the face of the block behind it, like a real hall indicator above a lift door, rather than
+  filling a whole block. It is directional — the plate exists on one side only — and pops off if the
+  wall behind it is removed. No camouflage, unlike the full-cube display, since a two-pixel plate has
+  nothing to disguise; both styles exist side by side. Uses a silver brushed-metal texture carried
+  over from Mica's City Super Mod.
 - **Remote Elevator Display.** A new block that shows which floor an elevator is currently at,
   bindable to any controller the same way the Remote Elevator Panel is: right-click a controller
   with it, then place it anywhere. It only reports — it has no buttons and takes no redstone input —

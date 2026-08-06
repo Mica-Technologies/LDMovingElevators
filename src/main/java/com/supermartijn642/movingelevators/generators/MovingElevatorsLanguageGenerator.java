@@ -40,6 +40,10 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.block(MovingElevators.remote_display_block, "Remote Elevator Display");
         this.translation("movingelevators.remote_display.tooltip", "Shows the floor an elevator is currently at. Bind it to an elevator controller by right-clicking on it");
 
+        // Remote elevator indicator
+        this.block(MovingElevators.remote_indicator_block, "Remote Elevator Indicator");
+        this.translation("movingelevators.remote_indicator.tooltip", "A slim wall-mounted panel showing the floor an elevator is currently at. Bind it to an elevator controller by right-clicking on it");
+
         // Floor name
         this.translation("movingelevators.floor_name", "Floor %d");
 

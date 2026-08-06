@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "movingelevators:remote_indicator_block"
+    },
+    "facing=south": {
+      "model": "movingelevators:remote_indicator_block",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "movingelevators:remote_indicator_block",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "movingelevators:remote_indicator_block",
+      "y": 90
+    }
+  }
+}

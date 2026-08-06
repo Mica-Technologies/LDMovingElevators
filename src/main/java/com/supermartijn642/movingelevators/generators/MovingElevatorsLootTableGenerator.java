@@ -19,5 +19,6 @@ public class MovingElevatorsLootTableGenerator extends LootTableGenerator {
         this.dropSelf(MovingElevators.display_block);
         this.dropSelf(MovingElevators.button_block);
         this.dropSelf(MovingElevators.remote_display_block);
+        this.dropSelf(MovingElevators.remote_indicator_block);
     }
 }

@@ -10,22 +10,24 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 /**
- * Draws the floor label for a {@link RemoteDisplayBlockEntity} on its facing side.
+ * Draws the floor label on the slim plate of a {@link RemoteIndicatorBlockEntity}.
  * <p>
  * Created for the Mica Technologies fork.
  */
-public class RemoteDisplayBlockEntityRenderer implements CustomBlockEntityRenderer<RemoteDisplayBlockEntity> {
+public class RemoteIndicatorBlockEntityRenderer implements CustomBlockEntityRenderer<RemoteIndicatorBlockEntity> {
 
-    /**
-     * Font rendering is expensive, so skip it past this distance. Matches
-     * {@link DisplayBlockEntityRenderer}.
-     */
+    /** Font rendering is expensive, so skip it past this distance. */
     private static final double TEXT_RENDER_DISTANCE = 15 * 15;
-    /** Full-block face, so the label can be large. */
-    private static final float MAX_SCALE = 1 / 12f, MAX_WIDTH = 0.7f, PADDING = 0.06f;
+    /**
+     * The plate is only 5 pixels tall, so the label has to be far smaller than the full-cube
+     * display's -- these keep the screen inside the metal rather than overhanging it.
+     */
+    private static final float MAX_SCALE = 1 / 44f, MAX_WIDTH = 0.5f, PADDING = 0.025f;
+    /** Vertical centre of the plate, matching RemoteIndicatorBlock's geometry. */
+    private static final float PLATE_CENTER_Y = 8 / 16f;
 
     @Override
-    public void render(RemoteDisplayBlockEntity entity, float partialTicks, int combinedOverlay, float alpha){
+    public void render(RemoteIndicatorBlockEntity entity, float partialTicks, int combinedOverlay, float alpha){
         ElevatorGroup group = entity.getGroup();
         if(group == null)
             return;
@@ -48,14 +50,14 @@ public class RemoteDisplayBlockEntityRenderer implements CustomBlockEntityRender
 
         GlStateManager.pushMatrix();
 
-        // Same framing as DisplayBlockEntityRenderer: move to the block centre, turn to face the
-        // display's side, then step just proud of that face so the label is not z-fighting the block.
+        // Same framing as the other displays, except the plate's front face sits flush with the
+        // block face, so the label plane is unchanged.
         GlStateManager.translate(0.5, 0.5, 0.5);
         GlStateManager.rotate(180 - facing.getHorizontalAngle(), 0, 1, 0);
         GlStateManager.translate(-0.5, -0.5, -0.51);
 
         FloorLabelRenderer.drawCenteredLabel(label, group.getFloorDisplayColor(floor),
-            0.5f, 0.5f, MAX_SCALE, MAX_WIDTH, PADDING);
+            0.5f, PLATE_CENTER_Y, MAX_SCALE, MAX_WIDTH, PADDING);
 
         GlStateManager.popMatrix();
     }

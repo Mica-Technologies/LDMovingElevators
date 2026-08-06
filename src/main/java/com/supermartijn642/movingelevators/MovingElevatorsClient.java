@@ -9,6 +9,7 @@ import com.supermartijn642.movingelevators.blocks.CamoBlockEntity;
 import com.supermartijn642.movingelevators.blocks.DisplayBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.ElevatorInputBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.RemoteDisplayBlockEntityRenderer;
+import com.supermartijn642.movingelevators.blocks.RemoteIndicatorBlockEntityRenderer;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
 import com.supermartijn642.movingelevators.gui.ElevatorScreen;
 import com.supermartijn642.movingelevators.model.CamoBakedModel;
@@ -39,6 +40,7 @@ public class MovingElevatorsClient {
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.display_tile, DisplayBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.button_tile, ElevatorInputBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.remote_display_tile, RemoteDisplayBlockEntityRenderer::new);
+        handler.registerCustomBlockEntityRenderer(() -> MovingElevators.remote_indicator_tile, RemoteIndicatorBlockEntityRenderer::new);
         // Register texture
         handler.registerAtlasSprite(TextureAtlases.getBlocks(), OVERLAY_TEXTURE_LOCATION.getResourcePath());
         // Baked models

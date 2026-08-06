@@ -23,7 +23,7 @@
         "down": {
           "texture": "#all"
         },
-        "west": {
+        "east": {
           "texture": "#all"
         },
         "north": {
@@ -32,7 +32,7 @@
         "up": {
           "texture": "#all"
         },
-        "east": {
+        "west": {
           "texture": "#all"
         }
       }

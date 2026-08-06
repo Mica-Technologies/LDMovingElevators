@@ -1,0 +1,26 @@
+{
+  "type": "forge:ore_shaped",
+  "pattern": [
+    "AAA",
+    "BCB"
+  ],
+  "key": {
+    "A": {
+      "type": "forge:ore_dict",
+      "ore": "ingotIron"
+    },
+    "B": {
+      "type": "forge:ore_dict",
+      "ore": "dustRedstone"
+    },
+    "C": [
+      {
+        "type": "minecraft:item",
+        "item": "minecraft:ender_pearl"
+      }
+    ]
+  },
+  "result": {
+    "item": "movingelevators:remote_indicator_block"
+  }
+}
