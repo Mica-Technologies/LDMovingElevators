@@ -5,6 +5,7 @@ import com.supermartijn642.core.TextComponents;
 import com.supermartijn642.core.gui.WidgetScreen;
 import com.supermartijn642.core.registry.ClientRegistrationHandler;
 import com.supermartijn642.core.render.TextureAtlases;
+import com.supermartijn642.movingelevators.blocks.BankLobbyPanelBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.CamoBlockEntity;
 import com.supermartijn642.movingelevators.blocks.DisplayBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.ElevatorInputBlockEntityRenderer;
@@ -15,6 +16,7 @@ import com.supermartijn642.movingelevators.blocks.RemoteCallPanelBlockEntityRend
 import com.supermartijn642.movingelevators.blocks.RemoteIndicatorBlockEntityRenderer;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
 import com.supermartijn642.movingelevators.gui.ElevatorScreen;
+import com.supermartijn642.movingelevators.gui.BankLobbyScreen;
 import com.supermartijn642.movingelevators.gui.FloorSelectScreen;
 import com.supermartijn642.movingelevators.model.CamoBakedModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -53,6 +55,7 @@ public class MovingElevatorsClient {
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.remote_indicator_tile, RemoteIndicatorBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.remote_call_panel_tile, RemoteCallPanelBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_car_panel_tile, ElevatorCarPanelBlockEntityRenderer::new);
+        handler.registerCustomBlockEntityRenderer(() -> MovingElevators.bank_lobby_panel_tile, BankLobbyPanelBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_door_tile, ElevatorDoorBlockEntityRenderer::new);
         // Register texture
         handler.registerAtlasSprite(TextureAtlases.getBlocks(), OVERLAY_TEXTURE_LOCATION.getResourcePath());
@@ -130,6 +133,10 @@ public class MovingElevatorsClient {
 
     public static void openFloorSelectScreen(BlockPos pos){
         ClientUtils.displayScreen(WidgetScreen.of(new FloorSelectScreen(pos)));
+    }
+
+    public static void openBankLobbyScreen(BlockPos pos){
+        ClientUtils.displayScreen(WidgetScreen.of(new BankLobbyScreen(pos)));
     }
 
     /**

@@ -30,6 +30,8 @@ public class MovingElevatorsBlockStateGenerator extends BlockStateGenerator {
             builder.model("block/remote_call_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
         this.blockState(MovingElevators.elevator_car_panel_block).variantsForAll((state, builder) ->
             builder.model("block/elevator_car_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
+        this.blockState(MovingElevators.bank_lobby_panel_block).variantsForAll((state, builder) ->
+            builder.model("block/bank_lobby_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
         // Doors carry an extra OPEN property, so each facing has an open and a closed variant.
         // Both doors render through their block entity so they can animate; see the model generator.
         this.blockState(MovingElevators.elevator_single_door_block).variantsForAll((state, builder) ->

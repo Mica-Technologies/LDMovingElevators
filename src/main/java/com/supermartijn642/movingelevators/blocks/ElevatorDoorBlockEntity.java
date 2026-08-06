@@ -153,7 +153,9 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
                 // Only honour it if the cabin is here; otherwise the request is simply spent, and the
                 // arrival will raise a fresh one.
                 if(cabinHere)
-                    this.openTicks = MovingElevatorsConfig.doorAutoCloseTicks.get();
+                    // A bank dispatch asks for a longer hold than the configured default, since
+                    // whoever called the car is walking to it rather than standing at the doors.
+                    this.openTicks = Math.max(MovingElevatorsConfig.doorAutoCloseTicks.get(), group.getDoorHoldTicks(floorLevel));
             }
             long closeRequest = group.getDoorCloseRequest(floorLevel);
             if(closeRequest > this.lastCloseRequest){

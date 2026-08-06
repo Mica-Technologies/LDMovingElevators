@@ -46,6 +46,30 @@ public class ElevatorGroup {
      * chance to step in or out.
      */
     private static final int DWELL_TICKS = 20;
+    /**
+     * How long the cabin holds a landing it was dispatched to by a bank lobby panel: 15 seconds.
+     * <p>
+     * Far longer than the ordinary dwell because nobody is standing at the cabin when it is sent --
+     * they are at a panel that may be across the lobby, and they pressed it before it arrived. The
+     * "close doors" button cuts it short, so nobody has to wait out the full spell.
+     */
+    private static final int BANKED_DWELL_TICKS = 300;
+
+    /**
+     * Destinations to add to the queue once the cabin actually reaches a pickup floor, keyed by that
+     * floor's y level.
+     * <p>
+     * Held back rather than queued when the call is placed, because a destination in the queue is
+     * indistinguishable from a floor the cabin should already be going to. Someone at floor 1 asking
+     * for floor 3 while the cabin sits at floor 5 would otherwise have it stop at 3 on the way down,
+     * find nobody, and carry on to 1 -- having already served the floor they were going to.
+     * <p>
+     * A set per floor, so several people waiting at one landing for the same car all get their
+     * destinations added when it arrives. That merging is the point of a bank.
+     */
+    private final Map<Integer,Set<Integer>> bankedDestinations = new HashMap<>();
+    /** How long the doors at a floor should be held open, when longer than the configured default. */
+    private final Map<Integer,Integer> doorHoldTicks = new HashMap<>();
     /** Hall call direction flags, stored as a mask per floor. */
     private static final int CALL_UP = 1, CALL_DOWN = 2;
 
@@ -318,9 +342,47 @@ public class ElevatorGroup {
     /**
      * Asks the doors at a floor to close early, before their dwell runs out.
      */
+    /**
+     * A destination-dispatch call: "send a car to {@code pickupY}, and it is going to {@code destY}".
+     * <p>
+     * Unlike a hall call, the destination is known before boarding, which is what lets a bank put
+     * two people going the same way into the same cabin.
+     */
+    public void onBankedCall(int pickupY, int destinationY, EntityPlayer requester){
+        if(pickupY == destinationY)
+            return;
+        this.bankedDestinations.computeIfAbsent(pickupY, y -> new LinkedHashSet<>()).add(destinationY);
+        this.onHallCall(pickupY, destinationY > pickupY, requester);
+    }
+
+    /**
+     * Whether a car is already booked to collect from {@code pickupY} and carry on {@code up}.
+     * Dispatch uses it to put riders going the same way together rather than sending a second car.
+     */
+    public boolean hasBankedCallFrom(int pickupY, boolean up){
+        Set<Integer> destinations = this.bankedDestinations.get(pickupY);
+        if(destinations == null)
+            return false;
+        for(int destination : destinations)
+            if((destination > pickupY) == up)
+                return true;
+        return false;
+    }
+
+    /** How long the doors at a floor should stay open, in ticks. */
+    public int getDoorHoldTicks(int yLevel){
+        return this.doorHoldTicks.getOrDefault(yLevel, 0);
+    }
+
     public void requestDoorClose(int yLevel){
         if(this.level != null)
             this.doorCloseRequests.put(yLevel, this.level.getTotalWorldTime());
+        // Closing the doors ends the long hold a bank dispatch put on this landing. Whoever is
+        // aboard has said they are ready, and not having to wait out the full fifteen seconds is
+        // the entire reason the button exists.
+        this.doorHoldTicks.remove(yLevel);
+        if(this.dwellCounter > DWELL_TICKS && this.isCabinAt(yLevel))
+            this.dwellCounter = 0;
     }
 
     /**
@@ -503,7 +565,19 @@ public class ElevatorGroup {
 
         // Arriving satisfies any call for this floor, and starts the dwell before the next one.
         this.callQueue.remove(this.targetY);
-        this.dwellCounter = DWELL_TICKS;
+        // Anyone who asked for this car from a lobby panel is boarding now, so their destinations
+        // become real calls -- all of them, which is how two people going the same way end up
+        // sharing the trip.
+        Set<Integer> banked = this.bankedDestinations.remove(this.targetY);
+        boolean collecting = banked != null && !banked.isEmpty();
+        if(collecting){
+            for(int destination : banked)
+                if(destination != this.targetY && this.getFloorNumber(destination) != -1)
+                    this.callQueue.add(destination);
+            this.doorHoldTicks.put(this.targetY, BANKED_DWELL_TICKS);
+        }else
+            this.doorHoldTicks.remove(this.targetY);
+        this.dwellCounter = collecting ? BANKED_DWELL_TICKS : DWELL_TICKS;
         // Carry on the way whoever called from this landing wanted to travel. With both arrows
         // pressed the current direction wins, which is what a real elevator does.
         Integer directions = this.callDirections.remove(this.targetY);

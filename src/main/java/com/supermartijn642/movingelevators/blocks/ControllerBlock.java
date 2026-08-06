@@ -37,6 +37,15 @@ public class ControllerBlock extends ElevatorInputBlock {
 
     @Override
     protected boolean onRightClick(IBlockState state, World level, CamoBlockEntity blockEntity, BlockPos pos, EntityPlayer player, EnumHand hand, EnumFacing hitSide, Vec3d hitLocation){
+        // Mica: a bank lobby panel collects controllers rather than remembering the last one, so it
+        // takes this path instead of the single-binding one below. Clicking the same controller twice
+        // takes it back out of the bank.
+        if(player != null && player.getHeldItem(hand).getItem() instanceof BankLobbyPanelBlockItem && blockEntity instanceof ControllerBlockEntity){
+            if(!level.isRemote)
+                BankLobbyPanelBlockItem.toggleBinding(player, player.getHeldItem(hand), pos, ((ControllerBlockEntity)blockEntity).getFacing());
+            return true;
+        }
+
         if(player != null && player.getHeldItem(hand).getItem() instanceof RemoteControllerBlockItem && blockEntity instanceof ControllerBlockEntity){
             if(!level.isRemote){
                 ItemStack stack = player.getHeldItem(hand);

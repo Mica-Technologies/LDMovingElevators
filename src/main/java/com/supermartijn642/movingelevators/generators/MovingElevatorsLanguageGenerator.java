@@ -54,6 +54,17 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.floor_select.title", "Select a floor");
         this.translation("movingelevators.floor_select.current", "Currently at %s");
 
+        // Bank lobby panel
+        this.block(MovingElevators.bank_lobby_panel_block, "Elevator Bank Lobby Panel");
+        this.translation("movingelevators.bank_lobby_panel.tooltip", "Bind it to several elevator controllers by right-clicking each one with it. Right-click a placed, configured panel with another panel item to copy its whole set of bindings");
+        this.translation("movingelevators.bank_lobby.title", "Enter your destination floor");
+        this.translation("movingelevators.bank_lobby.unbound", "This panel isn't linked to any elevators yet");
+        this.translation("movingelevators.bank_lobby.no_car", "No linked elevator can reach that floor");
+        this.translation("movingelevators.bank_lobby.dispatched", "A car is on its way to %s");
+        this.translation("movingelevators.bank_lobby_panel.bound", "Bound to %s elevator controllers!");
+        this.translation("movingelevators.bank_lobby_panel.unbound_one", "Unbound from an elevator controller, %s remaining!");
+        this.translation("movingelevators.bank_lobby_panel.copied", "Copied bindings for %s elevator controllers!");
+
         // Elevator doors
         this.block(MovingElevators.elevator_door_block, "Elevator Door");
         this.translation("movingelevators.elevator_door.tooltip", "A 2x2 sliding doorway. Place it at an elevator landing and it finds that elevator by itself: it opens when the cabin arrives and closes again on its own. Redstone power forces it open");

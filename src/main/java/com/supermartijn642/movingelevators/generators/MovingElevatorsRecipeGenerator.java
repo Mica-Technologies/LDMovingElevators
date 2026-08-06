@@ -65,6 +65,15 @@ public class MovingElevatorsRecipeGenerator extends RecipeGenerator {
             .input('B', "dustRedstone")
             .input('C', Items.ENDER_PEARL)
             .unlockedBy(MovingElevators.elevator_block.asItem());
+        this.shaped(MovingElevators.bank_lobby_panel_block.asItem())
+            .pattern("ABA")
+            .pattern("CDC")
+            .pattern("ABA")
+            .input('A', "ingotIron")
+            .input('B', "dustRedstone")
+            .input('C', Items.ENDER_PEARL)
+            .input('D', Item.getItemFromBlock(Blocks.OBSERVER))
+            .unlockedBy(MovingElevators.elevator_block.asItem());
         this.shaped(MovingElevators.remote_call_panel_block.asItem())
             .pattern("AAA")
             .pattern("ACA")
