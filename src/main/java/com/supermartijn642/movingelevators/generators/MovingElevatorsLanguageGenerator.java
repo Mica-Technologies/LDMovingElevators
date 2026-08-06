@@ -48,6 +48,12 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.block(MovingElevators.remote_call_panel_block, "Remote Elevator Call Panel");
         this.translation("movingelevators.remote_call_panel.tooltip", "A wall-mounted landing panel with a floor readout and up/down call buttons. Bind it to an elevator controller by right-clicking on it");
 
+        // Elevator car panel
+        this.block(MovingElevators.elevator_car_panel_block, "Elevator Car Panel");
+        this.translation("movingelevators.elevator_car_panel.tooltip", "The panel you ride with: shows the current floor and direction, and opens a floor list when clicked. Bind it to an elevator controller by right-clicking on it");
+        this.translation("movingelevators.floor_select.title", "Select a floor");
+        this.translation("movingelevators.floor_select.current", "Currently at %s");
+
         // Floor name
         this.translation("movingelevators.floor_name", "Floor %d");
 

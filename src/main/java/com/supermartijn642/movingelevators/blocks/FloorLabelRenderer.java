@@ -9,9 +9,6 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.item.EnumDyeColor;
 import org.lwjgl.opengl.GL11;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
  * Shared drawing for the "which floor is the cabin at" label, used by every remote display style.
  * <p>
@@ -22,22 +19,6 @@ import java.util.regex.Pattern;
  * Created for the Mica Technologies fork.
  */
 final class FloorLabelRenderer {
-
-    /**
-     * Leading "Floor" wording, in any capitalisation, plus whatever separates it from the actual
-     * floor identifier.
-     * <p>
-     * Two details that are easy to get wrong, and did get wrong first time round:
-     * <ul>
-     * <li>The lookahead is {@code (?![a-z])} rather than {@code \b}. There is no word boundary
-     *     between the "r" of "Floor" and the "3" of "Floor3" -- both are word characters -- so
-     *     {@code \b} silently failed to strip that form. The lookahead still protects "Flooring".
-     * <li>A hyphen only counts as a separator when it is tight against the word. "Floor-5" is floor
-     *     5, but "Floor -3" is floor <em>minus</em> 3, and treating that hyphen as a separator would
-     *     display a different floor from the one named.
-     * </ul>
-     */
-    private static final Pattern FLOOR_PREFIX = Pattern.compile("^\\s*floor(?![a-z])[-:._#]?[\\s:._#]*", Pattern.CASE_INSENSITIVE);
 
     /** Inset screen the label sits on, so it stays readable whatever is behind it. */
     private static final int SCREEN_R = 16, SCREEN_G = 16, SCREEN_B = 18, SCREEN_A = 240;
@@ -69,24 +50,6 @@ final class FloorLabelRenderer {
     private static final double MIN_CONTRAST = 3;
 
     private FloorLabelRenderer(){
-    }
-
-    /**
-     * Drops a leading "Floor" from a label, so a panel reads "3" rather than "Floor 3". The default
-     * floor names are "Floor 0", "Floor 1" and so on, and a panel has no room to repeat the word on
-     * every floor.
-     *
-     * @return the identifier alone, or the original label if stripping would leave nothing
-     */
-    static String stripFloorPrefix(String label){
-        if(label == null)
-            return null;
-        Matcher matcher = FLOOR_PREFIX.matcher(label);
-        if(!matcher.find())
-            return label;
-        String remainder = label.substring(matcher.end()).trim();
-        // A floor genuinely named just "Floor" keeps its name rather than rendering blank.
-        return remainder.isEmpty() ? label.trim() : remainder;
     }
 
     /**
@@ -149,6 +112,34 @@ final class FloorLabelRenderer {
         buffer.pos(centerX, tipY, -0.005).color(r, g, b, 255).endVertex();
         buffer.pos(centerX - halfWidth, baseY, -0.005).color(r, g, b, 255).endVertex();
         buffer.pos(centerX + halfWidth, baseY, -0.005).color(r, g, b, 255).endVertex();
+        Tessellator.getInstance().draw();
+
+        GlStateManager.enableCull();
+        GlStateManager.disableBlend();
+        GlStateManager.enableTexture2D();
+    }
+
+    /**
+     * A round-ish floor button on the car panel's bank: a dark socket with a lamp in it, lit when
+     * that floor is a selected destination.
+     */
+    static void drawButton(float centerX, float centerY, float half, boolean lit){
+        drawScreen(centerX - half - ARROW_BEZEL, centerY - half - ARROW_BEZEL,
+            centerX + half + ARROW_BEZEL, centerY + half + ARROW_BEZEL);
+
+        int r = lit ? LIT_R : UNLIT_R, g = lit ? LIT_G : UNLIT_G, b = lit ? LIT_B : UNLIT_B;
+
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager.disableCull();
+
+        BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        buffer.pos(centerX - half, centerY + half, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX + half, centerY + half, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX + half, centerY - half, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX - half, centerY - half, -0.005).color(r, g, b, 255).endVertex();
         Tessellator.getInstance().draw();
 
         GlStateManager.enableCull();

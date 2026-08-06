@@ -39,7 +39,7 @@ public class RemoteDisplayBlockEntityRenderer implements CustomBlockEntityRender
         if(cameraPos.squareDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > TEXT_RENDER_DISTANCE)
             return;
 
-        String label = FloorLabelRenderer.stripFloorPrefix(
+        String label = MovingElevatorsClient.stripFloorPrefix(
             MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(floor), floor));
         if(label == null || label.isEmpty())
             return;

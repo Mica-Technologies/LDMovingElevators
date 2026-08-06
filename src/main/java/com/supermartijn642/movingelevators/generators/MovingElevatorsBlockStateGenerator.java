@@ -26,6 +26,8 @@ public class MovingElevatorsBlockStateGenerator extends BlockStateGenerator {
             builder.model("block/remote_indicator_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
         this.blockState(MovingElevators.remote_call_panel_block).variantsForAll((state, builder) ->
             builder.model("block/remote_call_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
+        this.blockState(MovingElevators.elevator_car_panel_block).variantsForAll((state, builder) ->
+            builder.model("block/elevator_car_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
     }
 
     /** Wall panel models are authored facing north, so each variant just spins them around Y. */

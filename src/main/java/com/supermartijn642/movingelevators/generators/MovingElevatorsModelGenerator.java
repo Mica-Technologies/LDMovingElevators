@@ -51,6 +51,13 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
             .element(element -> element.shape(5, 1, 14, 11, 15, 16).allFaces(face -> face.texture("metal")));
+        this.model("block/elevator_car_panel_block")
+            .parent("minecraft", "block/block")
+            .texture("particle", "blocks/metal_silver")
+            .texture("metal", "blocks/metal_silver")
+            .element(element -> element.shape(2, 1, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
+        this.model("item/elevator_car_panel_block")
+            .parent("block/elevator_car_panel_block");
         this.model("item/remote_call_panel_block")
             .parent("block/remote_call_panel_block");
         this.model("item/remote_indicator_block")

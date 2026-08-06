@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "movingelevators:elevator_car_panel_block"
+    },
+    "facing=south": {
+      "model": "movingelevators:elevator_car_panel_block",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "movingelevators:elevator_car_panel_block",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "movingelevators:elevator_car_panel_block",
+      "y": 90
+    }
+  }
+}

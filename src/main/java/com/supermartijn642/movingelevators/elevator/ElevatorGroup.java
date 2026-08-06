@@ -233,6 +233,34 @@ public class ElevatorGroup {
     }
 
     /**
+     * A car call: "I am in the cabin, take me to this floor".
+     * <p>
+     * There is only ever one cabin, so fetching it to a floor and riding it to a floor are the same
+     * movement -- the difference is only that a car call carries no direction, since the passenger is
+     * already aboard and has said where they are going.
+     */
+    public void onCarCall(int yLevel, EntityPlayer requester){
+        if(!this.floors.contains(yLevel))
+            return;
+        if(this.isMoving){
+            this.queueCall(yLevel);
+            return;
+        }
+        int floor = this.getFloorNumber(yLevel);
+        // Already standing at the requested floor.
+        if(floor != -1 && this.isCageAvailableAt(floor, true, null))
+            return;
+        this.onButtonPress(false, false, yLevel, requester);
+    }
+
+    /**
+     * @return +1 while travelling up, -1 while travelling down, 0 when stopped
+     */
+    public int getTravelDirection(){
+        return this.isMoving ? (int)Math.signum(this.targetY - this.currentY) : 0;
+    }
+
+    /**
      * @return whether the floor at the given y-level has an outstanding hall call in this direction
      */
     public boolean hasHallCall(int yLevel, boolean up){
