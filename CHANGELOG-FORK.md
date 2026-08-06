@@ -96,6 +96,15 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- A moving cabin went dark inside, even one with a glowstone floor. A cabin's blocks are lifted out
+  of the world while it travels, so anything luminous in it stops lighting anything; the cabin was
+  lit only by whatever the shaft happened to be at the height it was passing. Its lighting is now
+  floored at what the cabin itself emits, so a lit cabin stays lit on the way — without pretending an
+  unlit one is bright.
+- Panel readouts, call arrows and floor lamps now draw at full brightness, as lit displays should.
+  This matters most inside a moving cabin, which is the dimmest place a panel is ever mounted and
+  exactly when you want to read the floor.
+
 - Fall damage stayed cancelled long after leaving an elevator. The grace period compares
   `ticksExisted` against a snapshot stored in the entity's Forge data, which persists to NBT while
   `ticksExisted` restarts at 0 when the entity is reconstructed — so after a relog, or a mob's chunk

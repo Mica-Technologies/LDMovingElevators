@@ -130,6 +130,29 @@ public class ElevatorCage {
             new ElevatorCage(xSize, ySize, zSize, states, entities, entityItemStacks, shape.toBoxes());
     }
 
+    /** Lazily worked out from the cage's own blocks; -1 until asked for. */
+    private int cachedLightLevel = -1;
+
+    /**
+     * The brightest light any block in this cabin gives off.
+     * <p>
+     * A cabin's blocks are taken out of the world while it moves, so anything luminous inside it
+     * stops lighting the world -- a glowstone floor goes dark the moment the doors shut. This is what
+     * the cabin's own lighting is floored to instead.
+     */
+    public int getLightLevel(){
+        if(this.cachedLightLevel < 0){
+            int brightest = 0;
+            for(IBlockState[][] column : this.blockStates)
+                for(IBlockState[] row : column)
+                    for(IBlockState state : row)
+                        if(state != null)
+                            brightest = Math.max(brightest, state.getLightValue());
+            this.cachedLightLevel = brightest;
+        }
+        return this.cachedLightLevel;
+    }
+
     public static boolean canCreateCage(World level, BlockPos startPos, int xSize, int ySize, int zSize, EntityPlayer requester){
         boolean hasBlocks = false;
         for(int x = 0; x < xSize; x++){

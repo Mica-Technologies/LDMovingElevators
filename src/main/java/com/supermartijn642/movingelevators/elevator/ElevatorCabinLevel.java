@@ -44,6 +44,26 @@ public class ElevatorCabinLevel extends World {
         this.maxPos = anchorPos.add(cage.xSize - 1, cage.ySize - 1, cage.zSize - 1);
     }
 
+    /**
+     * Lighting for the blocks riding in the cabin.
+     * <p>
+     * Without this the cabin is lit by whatever the shaft happens to be at the height it is passing
+     * through, which is usually nothing: its own blocks are no longer in the world to light it, so a
+     * cabin with a glowstone floor went dark the instant it started moving and lit up again on
+     * arrival. Flooring the block-light component at what the cabin itself emits keeps a lit cabin lit
+     * while it travels, without pretending an unlit one is bright.
+     */
+    @Override
+    public int getCombinedLight(BlockPos pos, int lightValue){
+        int combined = this.level.getCombinedLight(pos, lightValue);
+        int cabinLight = this.cage == null ? 0 : this.cage.getLightLevel();
+        if(cabinLight <= 0)
+            return combined;
+        int sky = combined >> 20 & 0xF;
+        int block = Math.max(combined >> 4 & 0xF, cabinLight);
+        return sky << 20 | block << 4;
+    }
+
     public ElevatorGroup getElevatorGroup(){
         return this.group;
     }

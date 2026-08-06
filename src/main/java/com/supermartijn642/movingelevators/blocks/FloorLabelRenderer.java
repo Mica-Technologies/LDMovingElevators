@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.item.EnumDyeColor;
 import org.lwjgl.opengl.GL11;
 
@@ -53,6 +54,23 @@ final class FloorLabelRenderer {
     }
 
     /**
+     * Draws at full brightness, whatever the light is where the panel is standing.
+     * <p>
+     * These are lit displays -- the readout, the call arrows, the floor lamps -- so they should look
+     * lit. It matters most exactly where it is hardest: inside a moving cabin, which is the dimmest
+     * place a panel is ever mounted and the moment you most want to read the floor.
+     */
+    private static void fullBright(Runnable draw){
+        float lastX = OpenGlHelper.lastBrightnessX, lastY = OpenGlHelper.lastBrightnessY;
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+        try{
+            draw.run();
+        }finally{
+            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lastX, lastY);
+        }
+    }
+
+    /**
      * Converts an x stated as the player sees it into the mirrored space these panels draw in.
      * <p>
      * The surrounding transform flips x -- which is why the label below is scaled by a negative
@@ -75,6 +93,11 @@ final class FloorLabelRenderer {
      */
     static void drawFittedLabel(String label, EnumDyeColor color, float centerX, float centerY,
                                 float halfWidth, float halfHeight, float padding){
+        fullBright(() -> drawFittedLabelUnlit(label, color, centerX, centerY, halfWidth, halfHeight, padding));
+    }
+
+    private static void drawFittedLabelUnlit(String label, EnumDyeColor color, float centerX, float centerY,
+                                             float halfWidth, float halfHeight, float padding){
         FontRenderer fontRenderer = ClientUtils.getFontRenderer();
         int width = Math.max(fontRenderer.getStringWidth(label), 1);
         float scale = Math.min((halfHeight - padding) * 2 / fontRenderer.FONT_HEIGHT,
@@ -102,6 +125,11 @@ final class FloorLabelRenderer {
      */
     static void drawCenteredLabel(String label, EnumDyeColor color, float centerX, float centerY,
                                   float maxScale, float maxWidth, float padding){
+        fullBright(() -> drawCenteredLabelUnlit(label, color, centerX, centerY, maxScale, maxWidth, padding));
+    }
+
+    private static void drawCenteredLabelUnlit(String label, EnumDyeColor color, float centerX, float centerY,
+                                               float maxScale, float maxWidth, float padding){
         FontRenderer fontRenderer = ClientUtils.getFontRenderer();
         int width = Math.max(fontRenderer.getStringWidth(label), 1);
         // Shrink long floor names so they stay on the panel instead of spilling past its edges.
@@ -133,6 +161,10 @@ final class FloorLabelRenderer {
      * @param lit whether there is an outstanding call in this direction
      */
     static void drawArrow(float x, float centerY, float halfWidth, float halfHeight, boolean up, boolean lit){
+        fullBright(() -> drawArrowUnlit(x, centerY, halfWidth, halfHeight, up, lit));
+    }
+
+    private static void drawArrowUnlit(float x, float centerY, float halfWidth, float halfHeight, boolean up, boolean lit){
         float centerX = mirrorX(x);
         drawScreen(centerX - halfWidth - ARROW_BEZEL, centerY - halfHeight - ARROW_BEZEL,
             centerX + halfWidth + ARROW_BEZEL, centerY + halfHeight + ARROW_BEZEL);
@@ -166,6 +198,10 @@ final class FloorLabelRenderer {
      * that floor is a selected destination.
      */
     static void drawButton(float x, float centerY, float half, boolean lit){
+        fullBright(() -> drawButtonUnlit(x, centerY, half, lit));
+    }
+
+    private static void drawButtonUnlit(float x, float centerY, float half, boolean lit){
         float centerX = mirrorX(x);
         drawScreen(centerX - half - ARROW_BEZEL, centerY - half - ARROW_BEZEL,
             centerX + half + ARROW_BEZEL, centerY + half + ARROW_BEZEL);
