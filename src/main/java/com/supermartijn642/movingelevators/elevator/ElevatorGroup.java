@@ -211,6 +211,9 @@ public class ElevatorGroup {
                 && this.tickCounter % SHAFT_SCAN_INTERVAL == 0 && this.isShaftObstructedByPlayer())
                 this.triggerEmergencyStop();
 
+            if(!this.level.isRemote)
+                this.considerRetarget();
+
             if(this.currentY != this.targetY)
                 this.lastY = this.currentY;
             if(Math.abs(this.targetY - this.currentY) / this.speed < (this.speed - 0.01) / ACCELERATION)
@@ -285,6 +288,58 @@ public class ElevatorGroup {
         // button press: it picks the nearest floor holding a cabin and checks the destination is
         // clear. A null requester means no chat feedback, which is right for an automatic dispatch.
         this.onButtonPress(false, false, target, null);
+    }
+
+    /**
+     * Collects a call that has come in ahead of the cabin, mid-trip, rather than sailing past it.
+     * <p>
+     * {@link #pickNextCall} only runs while stopped, so a cabin travelling from the first floor to
+     * the tenth would pass somebody calling from the fifth and only fetch them on the way back. Real
+     * collective control stops on the way, and the whole point of a call queue is that it does.
+     * <p>
+     * Only calls the cabin can still stop for are taken, which is what makes this safe to do while
+     * moving: the swapped-in floor is never one it would have to overshoot and come back to. The
+     * displaced target goes back in the queue, so nothing is lost by taking the nearer one first.
+     */
+    private void considerRetarget(){
+        // An emergency stop is on its way somewhere specific and must not be diverted.
+        if(this.emergencyState != EmergencyState.NONE || this.callQueue.isEmpty())
+            return;
+        double direction = Math.signum(this.targetY - this.currentY);
+        if(direction == 0)
+            return;
+
+        double remaining = Math.abs(this.targetY - this.currentY);
+        Integer best = null;
+        double bestDistance = remaining;
+        for(int y : this.callQueue){
+            // Ahead of the cabin, the way it is already going, and nearer than where it is headed.
+            if(Math.signum(y - this.currentY) != direction)
+                continue;
+            double distance = Math.abs(y - this.currentY);
+            if(distance >= bestDistance || !this.canStopBy(distance) || this.getFloorNumber(y) == -1)
+                continue;
+            best = y;
+            bestDistance = distance;
+        }
+        if(best == null)
+            return;
+
+        this.callQueue.remove(best);
+        this.callQueue.add(this.targetY);
+        this.targetY = best;
+        // Clients drive their own copy of the movement from targetY, so a diversion they are not
+        // told about would leave the cabin visibly in the wrong place until the next resync.
+        this.shouldBeSynced = true;
+    }
+
+    /**
+     * Whether the cabin can still come to rest within {@code distance}, using the same braking
+     * relation the movement code applies -- so a floor accepted here is one the mover agrees it can
+     * stop at, rather than a second opinion that could disagree with it.
+     */
+    private boolean canStopBy(double distance){
+        return distance / this.speed >= (this.speed - 0.01) / ACCELERATION;
     }
 
     /**
