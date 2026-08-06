@@ -278,16 +278,34 @@ public class ElevatorGroup {
         this.callQueue.remove(target);
 
         int targetFloor = this.getFloorNumber(target);
-        if(targetFloor == -1)
+        if(targetFloor == -1){
+            // The floor has stopped existing, so its arrows have to go out with it.
+            this.clearHallCalls(target);
             return;
+        }
         // Cabin is already sitting there, so the call is already satisfied.
-        if(this.isCageAvailableAt(targetFloor, true, null))
+        if(this.isCageAvailableAt(targetFloor, true, null)){
+            this.clearHallCalls(target);
+            this.requestDoorOpen(target);
             return;
+        }
 
         // Reuse the existing "bring the cabin here" path so queued calls behave exactly like a
         // button press: it picks the nearest floor holding a cabin and checks the destination is
         // clear. A null requester means no chat feedback, which is right for an automatic dispatch.
         this.onButtonPress(false, false, target, null);
+        // Nothing came of it -- obstructed, or there was no cabin to fetch -- so the call has been
+        // dropped. Every path out of this method that discards a call now puts its arrow out too:
+        // a lit arrow with no call behind it is worse than no arrow, because pressing it again
+        // looks like it did nothing.
+        if(!this.isMoving)
+            this.clearHallCalls(target);
+    }
+
+    /** Puts out both arrows at a landing, for the paths that discard the call entirely. */
+    private void clearHallCalls(int yLevel){
+        if(this.callDirections.remove(yLevel) != null)
+            this.shouldBeSynced = true;
     }
 
     /**
@@ -793,9 +811,21 @@ public class ElevatorGroup {
         }
         // Carry on the way whoever called from this landing wanted to travel. With both arrows
         // pressed the current direction wins, which is what a real elevator does.
-        Integer directions = this.callDirections.remove(this.targetY);
-        if(directions != null && directions != (CALL_UP | CALL_DOWN))
-            this.lastDirection = directions == CALL_UP ? 1 : -1;
+        Integer directions = this.callDirections.get(this.targetY);
+        if(directions != null){
+            int served = directions == CALL_UP ? 1
+                : directions == CALL_DOWN ? -1
+                // Both arrows are lit and only one journey is about to happen, so the car answers
+                // the one it is already set up for.
+                : this.lastDirection != 0 ? this.lastDirection : 1;
+            this.lastDirection = served;
+            // Only the direction being served. Clearing the pair meant arriving to collect somebody
+            // going up also put out the down arrow and threw that call away with it, leaving whoever
+            // pressed it waiting for a car that was no longer coming.
+            this.clearHallCall(this.targetY, served > 0);
+            if(this.callDirections.containsKey(this.targetY))
+                this.queueCall(this.targetY);
+        }
         // Arriving opens the doors, exactly as a real elevator does.
         this.requestDoorOpen(this.targetY);
 
