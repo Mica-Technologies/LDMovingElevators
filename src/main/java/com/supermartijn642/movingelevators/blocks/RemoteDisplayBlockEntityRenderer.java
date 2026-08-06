@@ -48,7 +48,7 @@ public class RemoteDisplayBlockEntityRenderer implements CustomBlockEntityRender
             return;
 
         String label = MovingElevatorsClient.stripFloorPrefix(
-            MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(floor), floor));
+            MovingElevatorsClient.formatDisplayLabel(group, floor));
         if(label == null || label.isEmpty())
             return;
 

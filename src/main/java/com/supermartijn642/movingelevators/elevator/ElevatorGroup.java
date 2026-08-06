@@ -11,6 +11,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.EnumDyeColor;
@@ -155,6 +156,35 @@ public class ElevatorGroup {
     private int alarmTicks;
     private int alarmStrikeCounter;
 
+    /**
+     * What the elevator is doing about somebody being in its shaft: nothing, crawling to the nearest
+     * floor, or sitting there waiting for them to leave.
+     * <p>
+     * Per elevator, never per bank. A bank shares dispatch, not shafts -- halting every car in a
+     * building because one shaft has a person in it would strand everybody else, which is its own
+     * hazard rather than a cure for this one.
+     */
+    public enum EmergencyState {
+        NONE, LEVELLING, HOLDING
+    }
+
+    /** Ticks between shaft sweeps. Cheap enough at this rate to run on every moving elevator. */
+    private static final int SHAFT_SCAN_INTERVAL = 100;
+    /** How far above and below the cabin counts as being in its way. */
+    private static final int SHAFT_SCAN_REACH = 10;
+    /**
+     * Levelling speed: a crawl. The point of an emergency stop is to end the movement that put
+     * somebody at risk, not to replace it with a sudden one.
+     */
+    private static final double EMERGENCY_SPEED = 0.02;
+    /** Thirty seconds sitting at the floor before it will even consider going back into service. */
+    private static final int EMERGENCY_HOLD_TICKS = 600;
+    /** Half a second on each half of the flashing readout. */
+    private static final int EMERGENCY_FLASH_TICKS = 10;
+
+    private EmergencyState emergencyState = EmergencyState.NONE;
+    private int emergencyHold;
+
     public ElevatorGroup(World level, int x, int z, EnumFacing facing){
         this.level = level;
         this.x = x;
@@ -175,12 +205,21 @@ public class ElevatorGroup {
         }
 
         if(this.isMoving){
+            // Swept while moving only: a parked cabin is not a hazard to stand next to, and this is
+            // the one state where somebody in the shaft is about to be run into.
+            if(!this.level.isRemote && this.emergencyState == EmergencyState.NONE
+                && this.tickCounter % SHAFT_SCAN_INTERVAL == 0 && this.isShaftObstructedByPlayer())
+                this.triggerEmergencyStop();
+
             if(this.currentY != this.targetY)
                 this.lastY = this.currentY;
             if(Math.abs(this.targetY - this.currentY) / this.speed < (this.speed - 0.01) / ACCELERATION)
                 this.speed = Math.max(0.01, this.speed - ACCELERATION);
             else if(this.speed < this.targetSpeed)
                 this.speed = Math.min(this.targetSpeed, this.speed + ACCELERATION);
+            // Applied after the ordinary acceleration so it cannot be accelerated back out of.
+            if(this.emergencyState == EmergencyState.LEVELLING)
+                this.speed = Math.min(this.speed, EMERGENCY_SPEED);
             if(this.currentY == this.targetY)
                 this.stopElevator();
             else if(Math.abs(this.targetY - this.currentY) < this.speed){
@@ -202,8 +241,13 @@ public class ElevatorGroup {
                 this.syncCounter = 0;
             }
             this.syncCounter++;
-        }else if(!this.level.isRemote)
-            this.updateCallQueue();
+        }else if(!this.level.isRemote){
+            this.updateEmergencyHold();
+            // An elevator in emergency takes no calls. They keep their place in the queue and are
+            // served once it is back in service, so nobody has to press anything again.
+            if(this.emergencyState == EmergencyState.NONE)
+                this.updateCallQueue();
+        }
     }
 
     /**
@@ -506,6 +550,90 @@ public class ElevatorGroup {
         }
     }
 
+    /**
+     * Whether anybody is standing in the shaft outside the cabin, within reach above or below it.
+     * <p>
+     * The cabin's own footprint extended vertically, rather than a sphere or the whole chunk: the
+     * shaft is exactly the column the cabin sweeps, and somebody on a landing beside it is in no
+     * danger and must not stop the lift.
+     */
+    private boolean isShaftObstructedByPlayer(){
+        Vec3d anchor = this.getCageAnchorPos(this.currentY);
+        AxisAlignedBB cabin = new AxisAlignedBB(anchor.x, anchor.y, anchor.z,
+            anchor.x + this.cageSizeX, anchor.y + this.cageSizeY, anchor.z + this.cageSizeZ);
+        AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, cabin.minY - SHAFT_SCAN_REACH, cabin.minZ,
+            cabin.maxX, cabin.maxY + SHAFT_SCAN_REACH, cabin.maxZ);
+        // Grown, because a passenger standing against the cabin wall pokes marginally outside it and
+        // must not be mistaken for somebody in the shaft -- that would stop the lift they are riding.
+        AxisAlignedBB passengers = cabin.grow(0.25);
+        for(EntityPlayer player : this.level.getEntitiesWithinAABB(EntityPlayer.class, shaft)){
+            if(player.isSpectator())
+                continue;
+            if(!passengers.intersects(player.getEntityBoundingBox()))
+                return true;
+        }
+        return false;
+    }
+
+    /** Redirects the cabin to the nearest floor at a crawl. */
+    private void triggerEmergencyStop(){
+        this.emergencyState = EmergencyState.LEVELLING;
+        this.targetY = this.nearestFloorTo(this.currentY);
+        this.speed = Math.min(this.speed, EMERGENCY_SPEED);
+        this.playAtCabin(ElevatorSoundScheme.Moment.OBSTRUCTED);
+        this.shouldBeSynced = true;
+    }
+
+    private int nearestFloorTo(double y){
+        int best = this.targetY;
+        double bestDistance = Double.MAX_VALUE;
+        for(int floor = 0; floor < this.getFloorCount(); floor++){
+            int floorY = this.getFloorYLevel(floor);
+            double distance = Math.abs(floorY - y);
+            if(distance < bestDistance){
+                bestDistance = distance;
+                best = floorY;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Counts down the wait at the floor, and only returns to service once the shaft is actually
+     * clear -- the timer is a minimum, not a licence. Somebody still standing there buys another
+     * thirty seconds rather than getting run into by an elevator that decided its wait was up.
+     */
+    private void updateEmergencyHold(){
+        if(this.emergencyState != EmergencyState.HOLDING)
+            return;
+        if(this.emergencyHold > 0){
+            this.emergencyHold--;
+            return;
+        }
+        if(this.isShaftObstructedByPlayer()){
+            this.emergencyHold = EMERGENCY_HOLD_TICKS;
+            return;
+        }
+        this.emergencyState = EmergencyState.NONE;
+        this.requestDoorClose(this.targetY);
+        this.shouldBeSynced = true;
+    }
+
+    /**
+     * Text the readouts should show in place of a floor, or null in normal service. Flashes between
+     * "E" and "ST" off world time, so every readout in the building is on the same beat without
+     * anything having to synchronise them.
+     */
+    public String getEmergencyDisplay(){
+        if(this.emergencyState == EmergencyState.NONE || this.level == null)
+            return null;
+        return (this.level.getTotalWorldTime() / EMERGENCY_FLASH_TICKS) % 2 == 0 ? "E" : "ST";
+    }
+
+    public boolean isEmergencyStopped(){
+        return this.emergencyState != EmergencyState.NONE;
+    }
+
     public ElevatorSoundScheme getSoundScheme(){
         return this.soundScheme;
     }
@@ -578,6 +706,15 @@ public class ElevatorGroup {
         }else
             this.doorHoldTicks.remove(this.targetY);
         this.dwellCounter = collecting ? BANKED_DWELL_TICKS : DWELL_TICKS;
+        // Levelled after an emergency stop: sit here with the doors open. Open rather than shut
+        // because whoever is in the shaft may well want to get out through the cabin, and whoever is
+        // inside it should not be held in a box that has just stopped for an emergency.
+        if(this.emergencyState == EmergencyState.LEVELLING){
+            this.emergencyState = EmergencyState.HOLDING;
+            this.emergencyHold = EMERGENCY_HOLD_TICKS;
+            this.dwellCounter = EMERGENCY_HOLD_TICKS;
+            this.doorHoldTicks.put(this.targetY, EMERGENCY_HOLD_TICKS);
+        }
         // Carry on the way whoever called from this landing wanted to travel. With both arrows
         // pressed the current direction wins, which is what a real elevator does.
         Integer directions = this.callDirections.remove(this.targetY);
@@ -1175,6 +1312,8 @@ public NBTTagCompound write(){
     compound.setIntArray("callDirections", directions);
     compound.setBoolean("soundsEnabled", this.soundsEnabled);
     compound.setString("soundScheme", this.soundScheme.name());
+    compound.setString("emergencyState", this.emergencyState.name());
+    compound.setInteger("emergencyHold", this.emergencyHold);
     compound.setInteger("lastDirection", this.lastDirection);
     compound.setInteger("dwellCounter", this.dwellCounter);
     NBTTagList floorDataTag = new NBTTagList();
@@ -1248,6 +1387,11 @@ public void read(NBTTagCompound compound){
     // Absent in saves from before sounds existed, where the elevator should start out audible.
     this.soundsEnabled = !compound.hasKey("soundsEnabled") || compound.getBoolean("soundsEnabled");
     this.soundScheme = ElevatorSoundScheme.byName(compound.getString("soundScheme"));
+    this.emergencyState = EmergencyState.NONE;
+    for(EmergencyState state : EmergencyState.values())
+        if(state.name().equals(compound.getString("emergencyState")))
+            this.emergencyState = state;
+    this.emergencyHold = compound.getInteger("emergencyHold");
     this.lastDirection = compound.getInteger("lastDirection");
     this.dwellCounter = compound.getInteger("dwellCounter");
     this.floorData.clear();

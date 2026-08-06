@@ -66,7 +66,7 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
         // Readout
         if(cabinFloor >= 0 && cabinFloor < group.getFloorCount()){
             String label = MovingElevatorsClient.stripFloorPrefix(
-                MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(cabinFloor), cabinFloor));
+                MovingElevatorsClient.formatDisplayLabel(group, cabinFloor));
             if(label != null && !label.isEmpty())
                 FloorLabelRenderer.drawFittedLabel(label, group.getFloorDisplayColor(cabinFloor),
                     SCREEN_X, SCREEN_Y, SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT, SCREEN_PADDING);

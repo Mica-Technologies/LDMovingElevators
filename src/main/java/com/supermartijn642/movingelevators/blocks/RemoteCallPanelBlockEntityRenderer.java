@@ -59,7 +59,7 @@ public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRend
         int floor = group.getCabinFloorNumber();
         if(floor >= 0 && floor < group.getFloorCount()){
             String label = MovingElevatorsClient.stripFloorPrefix(
-                MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(floor), floor));
+                MovingElevatorsClient.formatDisplayLabel(group, floor));
             if(label != null && !label.isEmpty())
                 FloorLabelRenderer.drawCenteredLabel(label, group.getFloorDisplayColor(floor),
                     0.5f, SCREEN_CENTER_Y, MAX_SCALE, MAX_WIDTH, PADDING);

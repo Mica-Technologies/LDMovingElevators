@@ -14,6 +14,7 @@ import com.supermartijn642.movingelevators.blocks.ElevatorCarPanelBlockEntityRen
 import com.supermartijn642.movingelevators.blocks.ElevatorDoorBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.RemoteCallPanelBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.RemoteIndicatorBlockEntityRenderer;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
 import com.supermartijn642.movingelevators.gui.ElevatorScreen;
 import com.supermartijn642.movingelevators.gui.BankLobbyScreen;
@@ -151,6 +152,26 @@ public class MovingElevatorsClient {
      */
     public static String formatFloorDisplayName(String name, int floor){
         return name == null ? TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor + 1).get()).format() : name;
+    }
+
+    /**
+     * What a readout should actually show: the emergency notice while the elevator is stopped for
+     * one, and the floor name otherwise.
+     * <p>
+     * Every readout in the mod has to agree about an emergency. A panel still calmly showing a floor
+     * next to one flashing "E"/"ST" reads as a broken panel rather than a stopped elevator, so the
+     * choice is made here once instead of being repeated -- and eventually forgotten -- at each
+     * renderer.
+     *
+     * @param floor zero-based floor index
+     */
+    public static String formatDisplayLabel(ElevatorGroup group, int floor){
+        // A readout that has lost its shaft has nothing to report an emergency about, so it falls
+        // back to the plain floor name rather than going blank.
+        if(group == null)
+            return formatFloorDisplayName(null, floor);
+        String emergency = group.getEmergencyDisplay();
+        return emergency == null ? formatFloorDisplayName(group.getFloorDisplayName(floor), floor) : emergency;
     }
 
     @SubscribeEvent

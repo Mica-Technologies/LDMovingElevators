@@ -91,7 +91,10 @@ public class DisplayBlockEntityRenderer implements CustomBlockEntityRenderer<Dis
             if(drawText){
                 GlStateManager.pushMatrix();
                 GlStateManager.translate(18.5 / 32d, 0, 0);
-                this.drawString(combinedLight, MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(startIndex + i), startIndex + i));
+                // Every line of the column resolves through the same helper, so an emergency
+                // replaces the whole list at once. Half the rows reading floors and half reading
+                // "E"/"ST" would look like a rendering fault rather than a stopped elevator.
+                this.drawString(combinedLight, MovingElevatorsClient.formatDisplayLabel(group, startIndex + i));
                 GlStateManager.popMatrix();
                 ScreenUtils.bindTexture(TextureAtlases.getBlocks());
             }

@@ -50,7 +50,10 @@ public enum ElevatorSoundScheme {
             entries.put(Moment.DOORS_CLOSING, new Entry(() -> MovingElevators.door_close_sound, 0.45f, 0.75f));
             // High and hard: an alarm has to cut through whatever else is going on.
             entries.put(Moment.ALARM, new Entry(() -> MovingElevators.alarm_sound, 1f, 1.9f));
-            // DEPARTING, CALL_ACCEPTED and OBSTRUCTED are intentionally silent.
+            // The same bell struck low and once. An emergency stop should be heard by whoever caused
+            // it, and read as something going wrong rather than as another chime.
+            entries.put(Moment.OBSTRUCTED, new Entry(() -> MovingElevators.alarm_sound, 0.9f, 0.6f));
+            // DEPARTING and CALL_ACCEPTED are intentionally silent.
         }
     },
 
@@ -82,6 +85,7 @@ public enum ElevatorSoundScheme {
             // Same bell as Standard rather than this scheme's chime: an alarm should not sound like
             // a pleasant arrival, whatever the rest of the scheme sounds like.
             entries.put(Moment.ALARM, new Entry(() -> MovingElevators.alarm_sound, 1f, 2f));
+            entries.put(Moment.OBSTRUCTED, new Entry(() -> MovingElevators.alarm_sound, 0.9f, 0.7f));
         }
 
         @Override
