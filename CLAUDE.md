@@ -37,7 +37,7 @@ JAVA_HOME="/path/to/jdk-17" ./gradlew build       # compile + jar -> build/libs/
 JAVA_HOME="/path/to/jdk-17" ./gradlew runClient    # dev client
 JAVA_HOME="/path/to/jdk-17" ./gradlew runServer    # dev dedicated server
 JAVA_HOME="/path/to/jdk-17" ./gradlew runData      # regenerate src/generated/resources
-JAVA_HOME="/path/to/jdk-17" ./gradlew clean
+JAVA_HOME="/path/to/jdk-17" ./gradlew clean       # NOT `clean build` -- see gotchas below
 ```
 
 There are no unit tests (`:test` is `NO-SOURCE`). Verification means building and launching.
@@ -135,15 +135,23 @@ up. The resolved value is written back onto the `mod_version` property, so `proc
   off Windows the build tries to create `/sources` at the filesystem root and dies. An upstream
   merge will try to reintroduce this — there is a comment on `processSources` explaining it.
 
-### Publishing is wired to upstream's projects — do not run it
+### Publishing was removed
 
-`publishMods` in `build.gradle` is configured with **SuperMartijn642's own project IDs**
-(`curseforge_project_id=373051`, `modrinth_project_id=9KZOe6HD`). Running `./gradlew publishAll`
-with `CURSEFORGE_TOKEN` / `MODRINTH_TOKEN` set would attempt to publish this fork's build to *his*
-CurseForge and Modrinth listings.
+Upstream published to CurseForge and Modrinth from Gradle. That `publishMods` block, the
+`me.modmuss50.mod-publish-plugin` plugin and the `publishing_*` / `curseforge_*` / `modrinth_*`
+properties are **gone** from this fork: they carried SuperMartijn642's own project IDs (CurseForge
+`373051`, Modrinth `9KZOe6HD`), so running the task would have pushed our builds to his listings.
 
-Nothing in CI calls it — the workflows only run `build` — and it should stay that way unless and
-until those IDs are repointed at our own projects, or the task is removed.
+We have no projects on either site. Releases go to **GitHub Releases** via `.github/workflows/`.
+Only re-add publishing alongside real project IDs of our own — `build.gradle` carries a note at the
+removal site.
+
+### `clean build` in one invocation fails
+
+Run them separately. ForgeGradle resolves the Minecraft dependency during configuration, and
+`clean` then deletes what it resolved, so `./gradlew clean build` dies in `compileJava` with
+`package net.minecraft does not exist`. `./gradlew clean` followed by `./gradlew build` is fine,
+and CI only ever runs `build`.
 
 ### Changelogs are split — respect the split
 

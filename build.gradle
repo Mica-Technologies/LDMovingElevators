@@ -4,7 +4,6 @@ plugins {
     id "java-library"
     id "net.minecraftforge.gradle" version "6.0.25"
     id "org.spongepowered.mixin" version "0.7.+"
-    id "me.modmuss50.mod-publish-plugin" version "0.5.2"
 }
 
 // ---------------------------------------------------------------------------
@@ -23,7 +22,7 @@ plugins {
 //      This is what a fresh clone with no Mica tags (and every local dev build) gets.
 //
 // Everything downstream keeps reading the plain `mod_version` property, so the resolved
-// value flows into processResources, prepareDataResources and publishMods unchanged.
+// value flows into processResources and prepareDataResources unchanged.
 // ---------------------------------------------------------------------------
 
 /** Release/pre-release tags created by .github/workflows/. Deliberately narrow. */
@@ -304,46 +303,12 @@ tasks.configureEach {
 // Force the jar to be reobfuscated
 jar.finalizedBy('reobfJar')
 
-publishMods {
-    file = jar.archiveFile
-    displayName = "${mod_name} ${mod_version} for Forge ${minecraft_suffix.substring(2)}"
-    version = project.version
-    //noinspection UnnecessaryQualifiedReference
-    type = me.modmuss50.mpp.ReleaseType.of(publishing_release_type.toUpperCase())
-    changelog = file("changelog.md").text
-    modLoaders.add("forge")
-    maxRetries = 2
-
-    curseforge {
-        accessToken = System.getenv("CURSEFORGE_TOKEN")
-        projectId = curseforge_project_id
-        if (!curseforge_required_dependency_ids.isEmpty())
-            curseforge_required_dependency_ids.split(" ").each it::requires
-        if (!curseforge_optional_dependency_ids.isEmpty())
-            curseforge_optional_dependency_ids.split(" ").each it::optional
-        publishing_game_versions.split(" ").each minecraftVersions::add
-        clientRequired = true
-        serverRequired = true
-    }
-
-    modrinth {
-        accessToken = System.getenv("MODRINTH_TOKEN")
-        projectId = modrinth_project_id
-        displayName = "${mod_name} ${mod_version}"
-        if (!modrinth_required_dependency_ids.isEmpty())
-            modrinth_required_dependency_ids.split(" ").each it::requires
-        if (!modrinth_optional_dependency_ids.isEmpty())
-            modrinth_optional_dependency_ids.split(" ").each it::optional
-        publishing_game_versions.split(" ").each minecraftVersions::add
-    }
-}
-
-// Rename the 'publishMods' task
-tasks.publishMods.group = "other"
-tasks.register("publishAll") {
-    group = "publishing"
-    dependsOn(tasks.publishMods)
-}
+// NOTE (Mica fork): upstream's `publishMods` block was removed here, along with the
+// me.modmuss50.mod-publish-plugin plugin and the publishing_* / curseforge_* / modrinth_*
+// properties in gradle.properties. It was configured with SuperMartijn642's own CurseForge
+// (373051) and Modrinth (9KZOe6HD) project IDs, so running it would have published this fork's
+// builds to his listings. We have no CurseForge or Modrinth projects of our own; releases are
+// published to GitHub Releases by .github/workflows/. Re-add it only alongside real project IDs.
 
 // ---------------------------------------------------------------------------
 // Tools for GitHub Actions (Mica Technologies fork)

@@ -67,6 +67,20 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Changed
 
+- `mcmod.info` now identifies the fork rather than the official mod: the in-game author is Mica
+  Technologies, the URL points at this repository instead of upstream's CurseForge page, and the
+  credits field names SuperMartijn642 as the original author while stating that this build is
+  unofficial and unendorsed. `mod_sources` and `mod_issues` were repointed here too, so upstream's
+  issue tracker is no longer advertised to players running our build.
+
+### Removed
+
+- CurseForge and Modrinth publishing: the `publishMods` block, the
+  `me.modmuss50.mod-publish-plugin` plugin, and the `publishing_*` / `curseforge_*` / `modrinth_*`
+  properties. They carried SuperMartijn642's own project IDs (CurseForge 373051, Modrinth
+  9KZOe6HD), so running the task would have published our builds to his listings. We have no
+  projects on either site; releases go to GitHub Releases.
+
 - Removed upstream's Discord invite from our documentation. Reproducing it implies it is a support
   channel for this fork, which it is not. The upstream repository and README are linked instead.
 - `.gitignore` and `.gitattributes` aligned with the Mica scaffolding, with fork additions in a

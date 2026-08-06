@@ -7,8 +7,8 @@
   "mcversion": "${minecraft_version}",
   "url": "${mod_page}",
   "updateUrl": "",
-  "authorList": ["SuperMartijn642"],
-  "credits": "",
+  "authorList": ["Mica Technologies"],
+  "credits": "Unofficial fork of Moving Elevators by SuperMartijn642, maintained for Forge 1.12. Not affiliated with or endorsed by SuperMartijn642 - please do not report issues with this build to him.",
   "logoFile": "${mod_id}.png",
   "screenshots": [],
   "dependencies": []
