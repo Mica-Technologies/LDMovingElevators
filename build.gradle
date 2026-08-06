@@ -190,14 +190,21 @@ minecraft {
             property "--generatorModid", mod_id
             property "--output", file("src/generated/resources/")
             //noinspection GroovyAssignabilityCheck
-            property "--existing", layout.buildDirectory.file("/data_resources").map { it.asFile }.get()
+            property "--existing", layout.buildDirectory.file("data_resources").map { it.asFile }.get()
         }
     }
 }
 
+// NOTE (Mica fork): the build-directory paths in this task, in prepareDataResources and in the
+// data run's "--existing" property were written upstream as "/sources" and "/data_resources".
+// A leading slash makes Gradle resolve them as absolute paths, so on Linux and macOS the build
+// tries to create /sources at the filesystem root and dies with "Failed to create directory".
+// It only goes unnoticed upstream because Windows resolves a bare "/..." onto the current drive.
+// Keep these relative -- the GitHub Actions runners are Ubuntu, so re-adding the slash on an
+// upstream merge breaks every CI build.
 tasks.register('processSources', Sync) {
     from sourceSets.main.java
-    into layout.buildDirectory.dir("/sources")
+    into layout.buildDirectory.dir("sources")
     inputs.property 'version', version
 
     // Replace mod properties in main mod class
@@ -262,7 +269,7 @@ jar.finalizedBy('reobfJar')
 
 tasks.register('prepareDataResources', Sync) {
     from file("src/main/resources")
-    into layout.buildDirectory.dir("/data_resources")
+    into layout.buildDirectory.dir("data_resources")
     inputs.property "version", version
 
     // Replace the mod version
