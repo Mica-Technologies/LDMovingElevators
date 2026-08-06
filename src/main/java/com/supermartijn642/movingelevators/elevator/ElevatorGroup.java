@@ -461,6 +461,13 @@ public class ElevatorGroup {
                 }
             }
         }else{
+            // The cabin is already standing here, so there is nothing to fetch -- but the press still
+            // means "let me in". The search below skips this floor entirely, so without this a call
+            // button did nothing at all once the cabin had arrived, and its doors stayed shut.
+            if(this.isCageAvailableAt(entityFloor, true, null)){
+                this.requestDoorOpen(yLevel);
+                return;
+            }
             List<Integer> floorIndices = IntStream.range(0, this.floors.size()).boxed().sorted(Comparator.comparingInt(i -> Math.abs(this.floors.get(i) - yLevel))).collect(Collectors.toList());
             for(int floor : floorIndices){
                 if(floor == entityFloor)
