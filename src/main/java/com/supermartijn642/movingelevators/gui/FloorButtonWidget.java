@@ -24,8 +24,16 @@ public class FloorButtonWidget extends AbstractButtonWidget {
      * same meaning and actually reads.
      */
     private static final int SELECTED_COLOR = 0xFF663F00;
-    private static final int CURRENT_COLOR = 0xFF0F5218;
     private static final int DEFAULT_COLOR = 0xFF404040;
+
+    /**
+     * The floor the cabin is on is inverted instead of merely recoloured: light on dark rather than
+     * dark on light. Two dark inks on the same pale button read as almost the same thing at a glance,
+     * whereas a flipped button is obvious without having to compare hues.
+     */
+    private static final int CURRENT_BACKGROUND = 0xFF23281F;
+    private static final int CURRENT_BORDER = 0xFF7FBF8C;
+    private static final int CURRENT_COLOR = 0xFFA8FFB4;
 
     private final Supplier<String> label;
     private final Supplier<Boolean> isSelected;
@@ -52,8 +60,15 @@ public class FloorButtonWidget extends AbstractButtonWidget {
 
     @Override
     public void render(int mouseX, int mouseY){
-        ScreenUtils.drawButtonBackground(this.x, this.y, this.width, this.height, this.isFocused() ? 1 : 0);
-        int color = this.isCurrentFloor.get() ? CURRENT_COLOR : this.isSelected.get() ? SELECTED_COLOR : DEFAULT_COLOR;
+        boolean current = this.isCurrentFloor.get();
+        if(current){
+            ScreenUtils.fillRect(this.x, this.y, this.width, this.height, CURRENT_BORDER);
+            ScreenUtils.fillRect(this.x + 1, this.y + 1, this.width - 2, this.height - 2, CURRENT_BACKGROUND);
+            if(this.isFocused())
+                ScreenUtils.fillRect(this.x + 1, this.y + 1, this.width - 2, this.height - 2, 0x30FFFFFF);
+        }else
+            ScreenUtils.drawButtonBackground(this.x, this.y, this.width, this.height, this.isFocused() ? 1 : 0);
+        int color = current ? CURRENT_COLOR : this.isSelected.get() ? SELECTED_COLOR : DEFAULT_COLOR;
         ScreenUtils.drawCenteredString(com.supermartijn642.core.TextComponents.string(this.label.get()).get(),
             this.x + this.width / 2f, this.y + (this.height - 8) / 2f, color);
     }
