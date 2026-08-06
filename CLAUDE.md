@@ -118,6 +118,22 @@ CurseForge and Modrinth listings.
 Nothing in CI calls it — the workflows only run `build` — and it should stay that way unless and
 until those IDs are repointed at our own projects, or the task is removed.
 
+### Changelogs are split — respect the split
+
+- **`changelog.md` is an unmodified upstream mirror.** Never add fork entries to it, not even a
+  header comment. Upstream prepends new sections to the very top of that file, so anything we put
+  there guarantees a merge conflict on every single upstream release — which is precisely what the
+  split exists to prevent.
+- **`CHANGELOG-FORK.md` is ours**, keyed by the `YYYY.MM.DD` release tags this repo publishes. Add
+  entries under `## Unreleased`.
+- It is named `CHANGELOG-FORK.md` and not `CHANGELOG.md` because macOS checkouts are
+  case-insensitive: `CHANGELOG.md` and `changelog.md` collapse into one file locally while staying
+  two files on the Linux runners. Don't "fix" the name.
+- The newest `### Moving Elevators X.Y.Z` heading in `changelog.md` is the upstream release this
+  fork sits on. It should match `mod_version` in `gradle.properties`, and the release workflow
+  parses it (`Extract Upstream Lineage`) to print the fork's lineage in every release body — the
+  step fails the build if that heading shape stops parsing. Keep it intact.
+
 ### Fork hygiene
 
 - Keep the diff against upstream small and legible. Where a fork-specific change is needed in a file

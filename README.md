@@ -159,6 +159,18 @@ JAVA_HOME="/path/to/jdk-17" ./gradlew runServer
 JAVA_HOME="/path/to/jdk-17" ./gradlew runData
 ```
 
+### Changelogs
+
+Two files, kept deliberately separate:
+
+| File | Contents |
+|---|---|
+| [`changelog.md`](changelog.md) | **Upstream's** release notes, an unmodified mirror of SuperMartijn642's file. Never add fork entries here — upstream prepends to the top of it, so anything we put there conflicts on every merge. |
+| [`CHANGELOG-FORK.md`](CHANGELOG-FORK.md) | **This fork's** changes, keyed by the `YYYY.MM.DD` release tags we publish. |
+
+The newest heading in `changelog.md` doubles as the upstream release this fork sits on; the release
+workflow parses it and prints it in each GitHub release body.
+
 ### Versioning
 
 Release builds take their version from the git tag that CI creates immediately before building
