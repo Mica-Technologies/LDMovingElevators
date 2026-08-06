@@ -1321,6 +1321,7 @@ public class ElevatorGroup {
         FloorData floorData = this.floorData.get(floor);
         if(forceRefresh || (this.tickCounter - floorData.lastCageCheck > CAGE_CHECK_INTERVAL && this.cageChecks < MAX_CAGE_CHECKS_PER_TICK && this.level.isBlockLoaded(this.getPos(this.getFloorYLevel(floor))))){
             boolean isCageAvailable = ElevatorCage.canCreateCage(this.level, this.getCageAnchorBlockPos(this.getFloorYLevel(floor)), this.cageSizeX, this.cageSizeY, this.cageSizeZ, requester);
+            this.cageChecks++;
             if(isCageAvailable != floorData.isCageAvailable)
                 this.shouldBeSynced = true;
             floorData.isCageAvailable = isCageAvailable;
