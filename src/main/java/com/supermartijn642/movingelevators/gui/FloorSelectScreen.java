@@ -1,6 +1,7 @@
 package com.supermartijn642.movingelevators.gui;
 
 import com.supermartijn642.core.ClientUtils;
+import net.minecraft.client.gui.FontRenderer;
 import com.supermartijn642.core.TextComponents;
 import com.supermartijn642.core.gui.ScreenUtils;
 import com.supermartijn642.core.gui.widget.BlockEntityBaseWidget;
@@ -28,25 +29,60 @@ import javax.annotation.Nonnull;
 public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlockEntity> {
 
     private static final int BUTTON_SIZE = 22, GAP = 3, PADDING = 7, HEADER = 22;
-    /** Floors per column before a second column is started. Keeps tall shafts from running off-screen. */
+    /** Rows before the grid grows sideways instead, so a tall shaft cannot run off the screen. */
     private static final int MAX_ROWS = 8;
 
     public FloorSelectScreen(BlockPos entityPos){
         super(0, 0, 0, 0, ClientUtils.getWorld(), entityPos);
     }
 
+    /**
+     * Columns for a roughly square grid, widening further once it would otherwise get taller than
+     * {@link #MAX_ROWS}.
+     * <p>
+     * Filling one column at a time produced a single tower of buttons -- eight floors gave an eight
+     * high, one wide strip -- and a building with forty floors would have run off the screen
+     * entirely. Square-ish keeps both the common case and the extreme readable.
+     */
     private static int columnsFor(int floorCount){
-        return Math.max(1, (floorCount + MAX_ROWS - 1) / MAX_ROWS);
+        if(floorCount <= 1)
+            return 1;
+        int columns = (int)Math.ceil(Math.sqrt(floorCount));
+        if((floorCount + columns - 1) / columns > MAX_ROWS)
+            columns = (floorCount + MAX_ROWS - 1) / MAX_ROWS;
+        return columns;
     }
 
     private static int rowsFor(int floorCount){
-        return Math.min(Math.max(floorCount, 1), MAX_ROWS);
+        int columns = columnsFor(floorCount);
+        return Math.max(1, (floorCount + columns - 1) / columns);
     }
 
     @Override
     protected int width(ElevatorCarPanelBlockEntity blockEntity){
         int columns = columnsFor(floorCount(blockEntity));
-        return PADDING * 2 + columns * BUTTON_SIZE + (columns - 1) * GAP;
+        int grid = columns * BUTTON_SIZE + (columns - 1) * GAP;
+        // The header has to fit too. With a narrow shaft the grid is only one or two buttons wide,
+        // and the title alone was wider than the whole panel.
+        return PADDING * 2 + Math.max(grid, headerWidth(blockEntity));
+    }
+
+    /**
+     * Measured from the longest floor name rather than the floor the cabin happens to be at, so the
+     * panel keeps one width while the elevator moves instead of resizing under the cursor.
+     */
+    private static int headerWidth(ElevatorCarPanelBlockEntity blockEntity){
+        FontRenderer fontRenderer = ClientUtils.getFontRenderer();
+        int widest = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.title").format());
+        ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
+        if(group != null){
+            for(int floor = 0; floor < group.getFloorCount(); floor++){
+                String name = MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(floor), floor);
+                widest = Math.max(widest, fontRenderer.getStringWidth(
+                    TextComponents.translation("movingelevators.floor_select.current", TextComponents.string(name).get()).format()));
+            }
+        }
+        return widest;
     }
 
     @Override
@@ -74,12 +110,16 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         int floors = group.getFloorCount();
         int rows = rowsFor(floors);
 
+        int columns = columnsFor(floors);
+        int grid = columns * BUTTON_SIZE + (columns - 1) * GAP;
+        int gridLeft = (this.width(blockEntity) - grid) / 2;
+
         for(int floor = 0; floor < floors; floor++){
-            // Lowest floor at the bottom of the first column, filling upwards -- a car station reads
+            // Lowest floor bottom-left, filling rightwards then upwards -- a car station reads
             // bottom-up, not top-down like a list.
-            int column = floor / MAX_ROWS;
-            int row = floor % MAX_ROWS;
-            int x = PADDING + column * (BUTTON_SIZE + GAP);
+            int column = floor % columns;
+            int row = floor / columns;
+            int x = gridLeft + column * (BUTTON_SIZE + GAP);
             int y = PADDING + HEADER + (rows - 1 - row) * (BUTTON_SIZE + GAP);
 
             int floorIndex = floor;

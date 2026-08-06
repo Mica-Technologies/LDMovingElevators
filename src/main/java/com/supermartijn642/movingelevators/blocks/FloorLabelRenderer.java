@@ -53,6 +53,47 @@ final class FloorLabelRenderer {
     }
 
     /**
+     * Converts an x stated as the player sees it into the mirrored space these panels draw in.
+     * <p>
+     * The surrounding transform flips x -- which is why the label below is scaled by a negative
+     * factor, cancelling the flip so the text reads the right way round. Raw geometry gets no such
+     * cancellation, so anything drawn at a literal x lands mirrored about the block centre. That is
+     * how the car panel ended up with its up arrow on the right and its button bank off-centre: both
+     * looked correct in the source and neither was symmetric about 0.5, so the flip showed.
+     * <p>
+     * Every helper here takes coordinates as seen and applies this itself, so callers never have to
+     * think about it.
+     */
+    private static float mirrorX(float x){
+        return 1 - x;
+    }
+
+    /**
+     * Draws the label inside a fixed-size window, scaling the text down to fit rather than sizing the
+     * window to the text. A readout that changes shape with the length of the floor name does not
+     * look like a display; a constant window does.
+     */
+    static void drawFittedLabel(String label, EnumDyeColor color, float centerX, float centerY,
+                                float halfWidth, float halfHeight, float padding){
+        FontRenderer fontRenderer = ClientUtils.getFontRenderer();
+        int width = Math.max(fontRenderer.getStringWidth(label), 1);
+        float scale = Math.min((halfHeight - padding) * 2 / fontRenderer.FONT_HEIGHT,
+            (halfWidth - padding) * 2 / width);
+
+        drawScreen(mirrorX(centerX) - halfWidth, centerY - halfHeight,
+            mirrorX(centerX) + halfWidth, centerY + halfHeight);
+
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(mirrorX(centerX), centerY, -0.005);
+        GlStateManager.scale(-scale, -scale, 1);
+        GlStateManager.enableBlend();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        fontRenderer.drawString(label, -width / 2, -fontRenderer.FONT_HEIGHT / 2, readableColor(color));
+        GlStateManager.disableBlend();
+        GlStateManager.popMatrix();
+    }
+
+    /**
      * Draws the label centred on the given point, on an inset screen sized to fit it.
      *
      * @param maxScale height of one line of text as a fraction of a block
@@ -68,11 +109,11 @@ final class FloorLabelRenderer {
 
         float halfWidth = width * scale / 2;
         float halfHeight = fontRenderer.FONT_HEIGHT * scale / 2;
-        drawScreen(centerX - halfWidth - padding, centerY - halfHeight - padding,
-            centerX + halfWidth + padding, centerY + halfHeight + padding);
+        drawScreen(mirrorX(centerX) - halfWidth - padding, centerY - halfHeight - padding,
+            mirrorX(centerX) + halfWidth + padding, centerY + halfHeight + padding);
 
         GlStateManager.pushMatrix();
-        GlStateManager.translate(centerX, centerY, -0.005);
+        GlStateManager.translate(mirrorX(centerX), centerY, -0.005);
         // Negative on both axes: the surrounding rotation leaves this space mirrored, the same way
         // DisplayBlockEntityRenderer's label drawing compensates for it.
         GlStateManager.scale(-scale, -scale, 1);
@@ -91,7 +132,8 @@ final class FloorLabelRenderer {
      * @param up whether the triangle points up
      * @param lit whether there is an outstanding call in this direction
      */
-    static void drawArrow(float centerX, float centerY, float halfWidth, float halfHeight, boolean up, boolean lit){
+    static void drawArrow(float x, float centerY, float halfWidth, float halfHeight, boolean up, boolean lit){
+        float centerX = mirrorX(x);
         drawScreen(centerX - halfWidth - ARROW_BEZEL, centerY - halfHeight - ARROW_BEZEL,
             centerX + halfWidth + ARROW_BEZEL, centerY + halfHeight + ARROW_BEZEL);
 
@@ -123,7 +165,8 @@ final class FloorLabelRenderer {
      * A round-ish floor button on the car panel's bank: a dark socket with a lamp in it, lit when
      * that floor is a selected destination.
      */
-    static void drawButton(float centerX, float centerY, float half, boolean lit){
+    static void drawButton(float x, float centerY, float half, boolean lit){
+        float centerX = mirrorX(x);
         drawScreen(centerX - half - ARROW_BEZEL, centerY - half - ARROW_BEZEL,
             centerX + half + ARROW_BEZEL, centerY + half + ARROW_BEZEL);
 

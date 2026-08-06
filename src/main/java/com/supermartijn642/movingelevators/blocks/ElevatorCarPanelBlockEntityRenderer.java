@@ -23,21 +23,23 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
 
     private static final double TEXT_RENDER_DISTANCE = 15 * 15;
 
-    // Face layout, in sixteenths. Every one of these was checked against the plate bounds and
-    // against each other rather than eyeballed -- the first guess had the arrow hanging off the
-    // plate, the two arrows on top of each other, and the button rows overlapping.
-    /** Readout, below the direction arrows. */
-    private static final float SCREEN_CENTER_Y = 10.3f / 16f;
-    private static final float MAX_SCALE = 1 / 46f, MAX_WIDTH = 0.30f, PADDING = 0.02f;
-    /** Direction arrows, side by side above the readout. */
-    private static final float ARROW_UP_X = 5.5f / 16f, ARROW_DOWN_X = 8.5f / 16f;
-    private static final float ARROW_Y = 13.6f / 16f, ARROW_HALF = 0.7f / 16f;
+    // Face layout, in sixteenths, stated as the player sees it. Each of these is checked against
+    // the plate bounds, against a half-pixel edge margin, and against every other element before
+    // being trusted -- the previous set had the arrows swapped, the bank off-centre and things
+    // touching the plate edge.
+    /** Readout window. Fixed size, so it looks like a display rather than shrink-wrapping the text. */
+    private static final float SCREEN_X = 8 / 16f, SCREEN_Y = 12.4f / 16f;
+    private static final float SCREEN_HALF_WIDTH = 2.8f / 16f, SCREEN_HALF_HEIGHT = 1.6f / 16f;
+    private static final float SCREEN_PADDING = 0.35f / 16f;
+    /** Direction arrows, flanking the readout like the fixtures these are modelled on. */
+    private static final float ARROW_UP_X = 3.7f / 16f, ARROW_DOWN_X = 12.3f / 16f;
+    private static final float ARROW_Y = 12.4f / 16f, ARROW_HALF = 0.6f / 16f;
 
     /** Button bank: two columns, three rows, filling upwards like a real car station. */
     private static final int BUTTON_COLUMNS = 2, BUTTON_ROWS = 3;
-    private static final float BUTTON_HALF = 0.65f / 16f;
-    private static final float BUTTON_LEFT_X = 4.5f / 16f, BUTTON_COLUMN_GAP = 5f / 16f;
-    private static final float BUTTON_BOTTOM_Y = 2.4f / 16f, BUTTON_ROW_GAP = 2.4f / 16f;
+    private static final float BUTTON_HALF = 0.733f / 16f;
+    private static final float BUTTON_LEFT_X = 5.4f / 16f, BUTTON_COLUMN_GAP = 5.2f / 16f;
+    private static final float BUTTON_BOTTOM_Y = 3.033f / 16f, BUTTON_ROW_GAP = 2.867f / 16f;
 
     private static final double LABEL_DEPTH = 0.5 - WallPanelBlock.PLATE_DEPTH - 0.01;
 
@@ -66,8 +68,8 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
             String label = MovingElevatorsClient.stripFloorPrefix(
                 MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(cabinFloor), cabinFloor));
             if(label != null && !label.isEmpty())
-                FloorLabelRenderer.drawCenteredLabel(label, group.getFloorDisplayColor(cabinFloor),
-                    0.5f, SCREEN_CENTER_Y, MAX_SCALE, MAX_WIDTH, PADDING);
+                FloorLabelRenderer.drawFittedLabel(label, group.getFloorDisplayColor(cabinFloor),
+                    SCREEN_X, SCREEN_Y, SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT, SCREEN_PADDING);
         }
 
         // Direction of travel, lit only while actually moving that way.

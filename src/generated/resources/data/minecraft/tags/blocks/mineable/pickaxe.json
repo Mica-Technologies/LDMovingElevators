@@ -2,15 +2,11 @@
   "replace": false,
   "values": [
     {
-      "id": "movingelevators:button_block",
-      "required": true
-    },
-    {
       "id": "movingelevators:remote_call_panel_block",
       "required": true
     },
     {
-      "id": "movingelevators:remote_indicator_block",
+      "id": "movingelevators:button_block",
       "required": true
     },
     {
@@ -18,7 +14,7 @@
       "required": true
     },
     {
-      "id": "movingelevators:display_block",
+      "id": "movingelevators:remote_display_block",
       "required": true
     },
     {
@@ -26,7 +22,11 @@
       "required": true
     },
     {
-      "id": "movingelevators:remote_display_block",
+      "id": "movingelevators:display_block",
+      "required": true
+    },
+    {
+      "id": "movingelevators:remote_indicator_block",
       "required": true
     }
   ]
