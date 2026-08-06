@@ -70,6 +70,8 @@
   "movingelevators.elevator.arrive_sound": "Elevator arrived",
   "movingelevators.elevator.passing_floor_sound": "Elevator passes a floor",
   "movingelevators.elevator.arrive_ding_sound": "Elevator chimes",
+  "movingelevators.elevator.door_open_sound": "Elevator doors open",
+  "movingelevators.elevator.door_close_sound": "Elevator doors close",
   "movingelevators.elevator.invalid_block": "Invalid block '%s' in cabin at %s.",
   "movingelevators.elevator.empty": "No cabin at the current floor.",
   "movingelevators.elevator.obstructed": "Cabin space is obstructed by block '%s' at %s.",

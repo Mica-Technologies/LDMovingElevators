@@ -19,5 +19,19 @@
     "sounds": [
       "note/pling"
     ]
+  },
+  "door_open_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.door_open_sound",
+    "sounds": [
+      "tile/piston/out"
+    ]
+  },
+  "door_close_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.door_close_sound",
+    "sounds": [
+      "tile/piston/in"
+    ]
   }
 }

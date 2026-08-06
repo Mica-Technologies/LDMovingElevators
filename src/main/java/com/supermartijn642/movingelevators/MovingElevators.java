@@ -75,6 +75,10 @@ public class MovingElevators {
     public static SoundEvent passing_floor_sound;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "arrive_ding_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
     public static SoundEvent arrive_ding_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "door_open_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent door_open_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "door_close_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent door_close_sound;
 
     public static final CreativeItemGroup GROUP = CreativeItemGroup.create("movingelevators", () -> elevator_block.asItem());
 
@@ -154,6 +158,8 @@ public class MovingElevators {
         handler.registerSoundEvent("arrive_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "arrive_sound")));
         handler.registerSoundEvent("passing_floor_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "passing_floor_sound")));
         handler.registerSoundEvent("arrive_ding_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "arrive_ding_sound")));
+        handler.registerSoundEvent("door_open_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "door_open_sound")));
+        handler.registerSoundEvent("door_close_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "door_close_sound")));
     }
 
     private static void registerGenerators(){

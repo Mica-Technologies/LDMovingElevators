@@ -5,10 +5,12 @@ import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.movingelevators.MovingElevatorsConfig;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
+import com.supermartijn642.movingelevators.elevator.ElevatorSoundScheme;
 import com.supermartijn642.core.TextComponents;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextFormatting;
 
 /**
@@ -267,8 +269,33 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         if(this.open == open)
             return;
         this.open = open;
+        if(!this.world.isRemote && this.isDoorwayOrigin())
+            this.playDoorSound(open);
         // Syncs to clients so their leaves start sliding, and marks the chunk so collision follows.
         this.dataChanged();
+    }
+
+    /**
+     * A doorway is up to four blocks with an entity each, all of which open together. Only one of
+     * them is allowed to make the noise, or a single door sounds like four.
+     */
+    private boolean isDoorwayOrigin(){
+        if(this.top)
+            return false;
+        IBlockState state = this.world.getBlockState(this.pos);
+        return !(state.getBlock() instanceof ElevatorDoorBlock) || !state.getValue(ElevatorDoorBlock.RIGHT);
+    }
+
+    private void playDoorSound(boolean open){
+        ElevatorSoundScheme.Moment moment = open ? ElevatorSoundScheme.Moment.DOORS_OPENING : ElevatorSoundScheme.Moment.DOORS_CLOSING;
+        Vec3d pos = new Vec3d(this.pos).addVector(0.5, 0.5, 0.5);
+        ElevatorGroup group = this.getGroup();
+        if(group != null)
+            // Through the group, so the controller's sound toggle covers its landing doors too.
+            group.playAt(pos, moment);
+        else
+            // An unbound door still moves under redstone, and should still be heard doing it.
+            ElevatorSoundScheme.current().play(this.world, pos, moment);
     }
 
     @Override

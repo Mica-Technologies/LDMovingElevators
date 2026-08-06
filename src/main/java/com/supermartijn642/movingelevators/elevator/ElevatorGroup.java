@@ -108,9 +108,7 @@ public class ElevatorGroup {
      * Kept as named constants rather than scattered literals so that adding schemes later is a matter
      * of choosing a different set, not hunting down every playSound call.
      */
-    private static final float PASSING_VOLUME = 0.25f, PASSING_PITCH = 1.6f;
-    private static final float DING_VOLUME = 0.5f, DING_PITCH = 1.5f;
-    /** Gap between the two notes of the arrival ding, in ticks. */
+    /** Gap between the two notes of the arrival chime, in ticks. */
     private static final int DING_GAP_TICKS = 4;
 
     private boolean soundsEnabled = true;
@@ -128,7 +126,7 @@ public class ElevatorGroup {
         this.tickCounter++;
         this.cageChecks = 0;
         if(!this.level.isRemote && this.pendingDing > 0 && --this.pendingDing == 0)
-            this.playSoundAtCabin(MovingElevators.arrive_ding_sound, DING_VOLUME, DING_PITCH);
+            this.playAtCabin(ElevatorSoundScheme.Moment.ARRIVAL_CHIME_SECOND);
         if(!this.level.isRemote && this.shouldBeSynced){
             this.shouldBeSynced = false;
             this.updateGroup();
@@ -399,15 +397,27 @@ public class ElevatorGroup {
             // Strictly greater than 'from' so a floor is not announced twice when the cabin starts
             // moving from a standstill on top of it.
             if(y > from && y <= to)
-                this.playSoundAtCabin(MovingElevators.passing_floor_sound, PASSING_VOLUME, PASSING_PITCH);
+                this.playAtCabin(ElevatorSoundScheme.Moment.PASSING_FLOOR);
         }
     }
 
-    private void playSoundAtCabin(net.minecraft.util.SoundEvent sound, float volume, float pitch){
-        if(this.level.isRemote || !this.soundsEnabled || sound == null)
+    /**
+     * Plays one of this elevator's sounds at the cabin, if sounds are on for this elevator and the
+     * scheme in use has one for that moment.
+     */
+    public void playAtCabin(ElevatorSoundScheme.Moment moment){
+        if(this.level == null || this.level.isRemote || !this.soundsEnabled)
             return;
         Vec3d pos = this.getCageAnchorPos(this.currentY).addVector(this.cageSizeX / 2d, this.cageSizeY / 2d, this.cageSizeZ / 2d);
-        this.level.playSound(null, pos.x, pos.y, pos.z, sound, SoundCategory.BLOCKS, volume, pitch);
+        ElevatorSoundScheme.current().play(this.level, pos, moment);
+    }
+
+    /**
+     * Plays one of this elevator's sounds somewhere other than the cabin -- at a landing's doors, say.
+     */
+    public void playAt(Vec3d pos, ElevatorSoundScheme.Moment moment){
+        if(this.soundsEnabled)
+            ElevatorSoundScheme.current().play(this.level, pos, moment);
     }
 
     private void moveElevator(double oldY, double newY){
@@ -441,10 +451,10 @@ public class ElevatorGroup {
             this.shouldBeSynced = true;
             Vec3d soundPos = this.getCageAnchorPos(this.targetY).addVector(this.cageSizeX / 2d, this.cageSizeY / 2d, this.cageSizeZ / 2d);
             if(this.soundsEnabled){
-                this.level.playSound(null, soundPos.x, soundPos.y, soundPos.z, MovingElevators.arrive_sound, SoundCategory.BLOCKS, 0.4f, 0.5f);
+                this.playAt(soundPos, ElevatorSoundScheme.Moment.ARRIVED);
                 // Two notes rather than one: the second is scheduled, so arrival reads as a ding-dong
-                // rather than a single blip lost under the arrival chime.
-                this.playSoundAtCabin(MovingElevators.arrive_ding_sound, DING_VOLUME, DING_PITCH * 0.8f);
+                // rather than a single blip lost under the arrival sound.
+                this.playAtCabin(ElevatorSoundScheme.Moment.ARRIVAL_CHIME);
                 this.pendingDing = DING_GAP_TICKS;
             }
             this.syncCounter = 0;
