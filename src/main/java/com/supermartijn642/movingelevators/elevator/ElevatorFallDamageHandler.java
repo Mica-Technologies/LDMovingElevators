@@ -25,13 +25,25 @@ public class ElevatorFallDamageHandler {
             e.setCanceled(true);
     }
 
+    /**
+     * How long after leaving an elevator fall damage stays cancelled.
+     */
+    private static final long GRACE_TICKS = 20 * 5;
+
     public static boolean shouldCancelFallDamage(EntityLivingBase entity){
         NBTTagCompound compound = entity.getEntityData();
         if(compound.hasKey("elevatorTime")){
-            if(entity.ticksExisted - compound.getLong("elevatorTime") < 20 * 5)
+            // 'elevatorTime' is a snapshot of ticksExisted, and it lives in the entity's Forge data,
+            // which Forge persists to NBT as 'ForgeData'. ticksExisted, however, restarts at 0 when
+            // the entity is reconstructed -- on relog, or when a mob's chunk reloads. The delta is
+            // then large and negative, which upstream's bare '< GRACE_TICKS' test treats as "still
+            // in the grace period", and because that branch returns early the tag is never cleared.
+            // The result was fall damage staying cancelled for roughly as long as the entity had
+            // existed when it last used an elevator. Treat a negative delta as expired instead.
+            long delta = entity.ticksExisted - compound.getLong("elevatorTime");
+            if(delta >= 0 && delta < GRACE_TICKS)
                 return true;
-            else
-                compound.removeTag("elevatorTime");
+            compound.removeTag("elevatorTime");
         }
         return false;
     }
