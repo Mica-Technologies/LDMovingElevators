@@ -120,7 +120,11 @@ public class ElevatorGroupCapability {
 
     @SubscribeEvent
     public static void onLoadChunk(ChunkEvent.Load e){
-        get(e.getWorld()).validateGroupsInChunk(e.getChunk());
+        // Every other call site null-checks this; the capability is normally always attached, but
+        // there is no reason for this one to be the exception.
+        ElevatorGroupCapability capability = get(e.getWorld());
+        if(capability != null)
+            capability.validateGroupsInChunk(e.getChunk());
     }
 
     private final World level;
@@ -146,6 +150,10 @@ public class ElevatorGroupCapability {
     public void remove(ControllerBlockEntity controller){
         ElevatorGroupPosition pos = new ElevatorGroupPosition(controller.getPos(), controller.getFacing());
         ElevatorGroup group = this.groups.get(pos);
+        // Controllers register on their first tick, so one placed and broken within the same tick
+        // never joined a group. add() treats this as nullable via computeIfAbsent; so should this.
+        if(group == null)
+            return;
         group.remove(controller);
         if(group.getFloorCount() == 0)
             this.removeGroup(pos);
@@ -209,6 +217,12 @@ public class ElevatorGroupCapability {
 
     public void read(NBTTagCompound compound){
         this.groups.clear();
+        // groupsPerChunk is an index over groups, and readGroup() repopulates both -- so it has to
+        // be cleared alongside. Leaving it would strand the old ElevatorGroup objects in the index
+        // (they are deduped by identity, so the new instances do not displace them). A stranded
+        // group shares its live counterpart's (x, z, facing), so if validateGroupsInChunk ever
+        // emptied one it would call removeGroup for a position that still holds a live group.
+        this.groupsPerChunk.clear();
         for(String key : compound.getKeySet())
             this.readGroup(compound.getCompoundTag(key));
     }

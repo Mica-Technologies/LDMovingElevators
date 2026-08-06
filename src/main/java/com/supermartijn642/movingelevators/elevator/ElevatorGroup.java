@@ -234,6 +234,11 @@ public class ElevatorGroup {
     }
 
     private void removeFloor(int floor){
+        // remove() passes getFloorNumber(), which is indexOf() and so returns -1 when the y is not
+        // in the list -- for instance when validateControllersExist already dropped this floor
+        // while the controller block was still standing. ArrayList.remove(-1) would throw.
+        if(floor < 0 || floor >= this.floors.size())
+            return;
         this.floors.remove(floor);
         this.floorData.remove(floor);
         if(this.floors.isEmpty()){
