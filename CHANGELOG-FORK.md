@@ -84,6 +84,11 @@ Based on upstream **Moving Elevators 1.4.12**.
 - Defensive guards around the group lifecycle: a controller broken before it ever registered no
   longer throws, nor does removing a floor that is already gone, and the chunk-load handler now
   null-checks the capability like every other call site does.
+- Dev runs (`runClient`, `runServer`, `runData`) started without the mod loaded. Their classpath
+  resolved the project's own output to the reobfuscated production jar instead of the compiled
+  classes, and that jar declares a `TweakClass`, which makes FML drop it from mod discovery
+  entirely. Nothing errored — the mod was simply absent, which is why `runData` reported finding no
+  generators. The run tasks now get the dev-mapped classes and not the production jar.
 - Build failed on Linux and macOS. `processSources`, `prepareDataResources` and the data run's
   `--existing` property used `layout.buildDirectory.dir("/sources")` and `.dir("/data_resources")`;
   the leading slash makes Gradle resolve those absolutely, so the build tried to create `/sources`

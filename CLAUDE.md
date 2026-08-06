@@ -146,6 +146,35 @@ We have no projects on either site. Releases go to **GitHub Releases** via `.git
 Only re-add publishing alongside real project IDs of our own — `build.gradle` carries a note at the
 removal site.
 
+### Dev runs need the classes dir forced onto the classpath
+
+`runClient` / `runServer` / `runData` take their classpath from `sourceSets.main.runtimeClasspath`,
+which on this project resolves the project's own output to `build/libs/<jar>` rather than
+`build/classes/java/main`. Two things then break, either of which alone stops the mod loading:
+
+- `reobfJar` rewrites that jar in place, so its classes carry SRG names while dev is deobfuscated.
+- Its manifest declares a `TweakClass`. `CoreModManager.discoverCoreMods` adds **any** jar declaring
+  one to `ignoredModFiles` and `continue`s before the branch that would treat an
+  `FMLCorePluginContainsFMLMod` jar as a mod candidate, so the `@Mod` inside is never found.
+  `ForceLoadAsMod` is not an escape hatch — FML 1.12.2 does not read it.
+
+The symptom is subtle: the run starts fine and the mod is simply *absent*. For `runData` that shows
+up as `Found 0 generators for modid 'movingelevators'` and a non-zero exit.
+
+`build.gradle` fixes this by prepending `sourceSets.main.output` to the run tasks' classpath, and
+dropping `build/libs` from it, in a `doFirst`. It has to be a `doFirst` on the tasks: assigning
+`sourceSets.main.runtimeClasspath` — in the script body, in `afterEvaluate`, or in
+`gradle.projectsEvaluated` — is silently overwritten by ForgeGradle's own later wiring.
+
+### `runData` exits 1 even when it succeeds
+
+Core Lib's `CoreLib.onLoadComplete` calls `System.exit(1)` once the generators have run, so Gradle
+reports the task as failed on a completely successful generation. Check the log for
+`All generators for modid 'movingelevators' took ...` — if that line is there, the run worked.
+
+**A failed `runData` deletes `src/generated` before it bails.** If a run genuinely fails, restore
+with `git checkout -- src/generated` rather than assuming the files were meant to go.
+
 ### `clean build` in one invocation fails
 
 Run them separately. ForgeGradle resolves the Minecraft dependency during configuration, and

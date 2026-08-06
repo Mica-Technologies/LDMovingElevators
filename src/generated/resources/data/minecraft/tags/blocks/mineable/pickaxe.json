@@ -2,15 +2,15 @@
   "replace": false,
   "values": [
     {
+      "id": "movingelevators:elevator_block",
+      "required": true
+    },
+    {
       "id": "movingelevators:display_block",
       "required": true
     },
     {
       "id": "movingelevators:button_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:elevator_block",
       "required": true
     },
     {

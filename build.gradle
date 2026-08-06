@@ -325,6 +325,43 @@ jar.finalizedBy('reobfJar')
 // published to GitHub Releases by .github/workflows/. Re-add it only alongside real project IDs.
 
 // ---------------------------------------------------------------------------
+// Dev run classpath (Mica Technologies fork)
+//
+// ForgeGradle's run tasks take their classpath from sourceSets.main.runtimeClasspath. On this
+// project that resolves the project's own output to build/libs/<jar> instead of
+// build/classes/java/main, and two things then go wrong -- either of which alone stops the mod
+// loading in a dev run:
+//
+//   * reobfJar rewrites that jar in place, so its classes carry SRG names (func_175664_x) while the
+//     dev environment is deobfuscated.
+//   * Its manifest declares a TweakClass. FML's CoreModManager.discoverCoreMods adds ANY jar
+//     declaring one to ignoredModFiles and `continue`s, before reaching the branch that would treat
+//     an FMLCorePluginContainsFMLMod jar as a mod candidate -- so the @Mod inside is never found.
+//     (ForceLoadAsMod is not an escape hatch; FML 1.12.2 does not read it.)
+//
+// The symptom is runClient/runServer/runData starting with the mod silently absent. For runData
+// that surfaces as "Found 0 generators for modid 'movingelevators'" followed by a non-zero exit,
+// which is why datagen could not be run.
+//
+// So put the dev-mapped classes on the run classpath and take the production jar off it. This
+// deliberately touches only the runtime classpath: `jar` builds from sourceSets.main.output and is
+// unaffected.
+// ---------------------------------------------------------------------------
+// Applied from gradle.projectsEvaluated, not afterEvaluate: ForgeGradle rewires the runtime
+// classpath after every project's afterEvaluate has run, so assigning any earlier is silently
+// overwritten. Callbacks fire in registration order and the plugins register theirs while being
+// applied, i.e. before this one.
+gradle.projectsEvaluated {
+    tasks.matching { it.name in ["runClient", "runServer", "runData"] }.configureEach {
+        doFirst {
+            def productionJarDir = layout.buildDirectory.dir("libs").get().asFile
+            classpath = files(sourceSets.main.output) +
+                classpath.filter { file -> file.parentFile == null || file.parentFile != productionJarDir }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tools for GitHub Actions (Mica Technologies fork)
 //
 // The release workflows shell out to these to name the jar and fill in the release body.
