@@ -18,7 +18,15 @@ import net.minecraft.util.math.Vec3d;
 public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRenderer<RemoteCallPanelBlockEntity> {
 
     /** Font rendering is expensive, so skip it past this distance. */
-    private static final double TEXT_RENDER_DISTANCE = 15 * 15;
+    /**
+     * Squared, so this is 30 blocks. Landing fixtures are read from across a lobby or down a
+     * corridor, unlike the panel inside the cabin, which is read from arm's length.
+     * <p>
+     * Text is expensive to draw, which is why there is a cutoff at all. Past 64 blocks raising this
+     * alone would do nothing anyway: block entities stop being rendered at that range unless they
+     * ask for more.
+     */
+    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
     /** The plate is narrow, so the readout has to be small. */
     private static final float MAX_SCALE = 1 / 46f, MAX_WIDTH = 0.28f, PADDING = 0.02f;
     /** Centres of the three zones, matching RemoteCallPanelBlock's hit regions. */

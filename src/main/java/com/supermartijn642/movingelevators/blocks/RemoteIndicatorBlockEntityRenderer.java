@@ -17,7 +17,15 @@ import net.minecraft.util.math.Vec3d;
 public class RemoteIndicatorBlockEntityRenderer implements CustomBlockEntityRenderer<RemoteIndicatorBlockEntity> {
 
     /** Font rendering is expensive, so skip it past this distance. */
-    private static final double TEXT_RENDER_DISTANCE = 15 * 15;
+    /**
+     * Squared, so this is 30 blocks. Landing fixtures are read from across a lobby or down a
+     * corridor, unlike the panel inside the cabin, which is read from arm's length.
+     * <p>
+     * Text is expensive to draw, which is why there is a cutoff at all. Past 64 blocks raising this
+     * alone would do nothing anyway: block entities stop being rendered at that range unless they
+     * ask for more.
+     */
+    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
     /**
      * The plate is only 5 pixels tall, so the label has to be far smaller than the full-cube
      * display's -- these keep the screen inside the metal rather than overhanging it.

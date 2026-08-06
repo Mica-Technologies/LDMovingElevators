@@ -20,7 +20,15 @@ public class RemoteDisplayBlockEntityRenderer implements CustomBlockEntityRender
      * Font rendering is expensive, so skip it past this distance. Matches
      * {@link DisplayBlockEntityRenderer}.
      */
-    private static final double TEXT_RENDER_DISTANCE = 15 * 15;
+    /**
+     * Squared, so this is 30 blocks. Landing fixtures are read from across a lobby or down a
+     * corridor, unlike the panel inside the cabin, which is read from arm's length.
+     * <p>
+     * Text is expensive to draw, which is why there is a cutoff at all. Past 64 blocks raising this
+     * alone would do nothing anyway: block entities stop being rendered at that range unless they
+     * ask for more.
+     */
+    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
     /** Full-block face, so the label can be large. */
     private static final float MAX_SCALE = 1 / 12f, MAX_WIDTH = 0.7f, PADDING = 0.06f;
 
