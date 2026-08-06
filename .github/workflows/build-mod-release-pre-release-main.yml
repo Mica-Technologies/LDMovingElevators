@@ -101,6 +101,37 @@ jobs:
             echo "::warning file=gradle.properties::mod_version ($modVersionProperty) does not match the newest changelog.md heading ($upstreamVersion). One of them is stale after an upstream merge."
           fi
 
+          # Full releases quote upstream's notes for that version inline; pre-releases don't,
+          # because they're cut on every push and would repeat the same bullets until the
+          # upstream base changes. Take everything between the newest '### ' heading and the
+          # next one. Leading blank lines are stripped by sed; trailing ones are stripped by
+          # command substitution, which eats trailing newlines.
+          section=$(awk '/^### /{ if (seen) exit; seen=1; next } seen { print }' changelog.md | sed '/./,$!d')
+
+          # Multi-line values need heredoc syntax in GITHUB_ENV. A delimiter appearing in the
+          # content would let the changelog inject arbitrary environment variables, so refuse
+          # rather than emit a malformed (or hostile) block.
+          delimiter='UPSTREAM_NOTES_EOF_a7f3c1'
+          if printf '%s\n' "$section" | grep -qxF "$delimiter"; then
+            echo "::error file=changelog.md::changelog.md contains the reserved heredoc delimiter $delimiter."
+            exit 1
+          fi
+
+          if [ -n "$section" ]; then
+            {
+              echo "UPSTREAM_RELEASE_NOTES<<$delimiter"
+              echo "Upstream release notes for Moving Elevators $upstreamVersion:"
+              echo
+              printf '%s\n' "$section"
+              echo "$delimiter"
+            } >> "$GITHUB_ENV"
+            echo "Captured $(printf '%s\n' "$section" | wc -l | xargs) line(s) of upstream notes."
+          else
+            # Not fatal: the lineage line above still identifies the upstream release.
+            echo "::warning file=changelog.md::No notes found under the newest changelog.md heading; publishing without inline upstream notes."
+            echo "UPSTREAM_RELEASE_NOTES=" >> "$GITHUB_ENV"
+          fi
+
       # The tag must exist before the build runs: build.gradle resolves the mod version from
       # the release-shaped tag pointing at HEAD.
       - name: Create Release Tag
@@ -165,8 +196,11 @@ jobs:
             Release of ${{ env.MOD_NAME }}
             Mod Version: ${{ env.MOD_VERSION }}
             Game Version: ${{ env.MINECRAFT_VERSION }}
+
             Based on upstream Moving Elevators ${{ env.UPSTREAM_BASE_VERSION }} by SuperMartijn642
             (https://github.com/SuperMartijn642/MovingElevators)
+
+            ${{ env.UPSTREAM_RELEASE_NOTES }}
 
             SHA-1: `${{ env.SHA1_HASH }}`
             SHA-256: `${{ env.SHA256_HASH }}`
@@ -195,6 +229,7 @@ jobs:
             Pre-Release of ${{ env.MOD_NAME }}
             Mod Version: ${{ env.MOD_VERSION }}
             Game Version: ${{ env.MINECRAFT_VERSION }}
+
             Based on upstream Moving Elevators ${{ env.UPSTREAM_BASE_VERSION }} by SuperMartijn642
             (https://github.com/SuperMartijn642/MovingElevators)
 

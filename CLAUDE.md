@@ -129,10 +129,20 @@ until those IDs are repointed at our own projects, or the task is removed.
 - It is named `CHANGELOG-FORK.md` and not `CHANGELOG.md` because macOS checkouts are
   case-insensitive: `CHANGELOG.md` and `changelog.md` collapse into one file locally while staying
   two files on the Linux runners. Don't "fix" the name.
-- The newest `### Moving Elevators X.Y.Z` heading in `changelog.md` is the upstream release this
-  fork sits on. It should match `mod_version` in `gradle.properties`, and the release workflow
-  parses it (`Extract Upstream Lineage`) to print the fork's lineage in every release body — the
-  step fails the build if that heading shape stops parsing. Keep it intact.
+- **`changelog.md`'s structure is load-bearing for CI.** The release workflow's `Extract Upstream
+  Lineage` step parses it twice:
+  - The newest `### Moving Elevators X.Y.Z` heading is the upstream release this fork sits on. It
+    should match `mod_version` in `gradle.properties`; the step prints it as a lineage line in
+    *every* release body, and **fails the release** if that heading shape stops parsing. A
+    `mod_version` mismatch only warns — that's a stale-merge signal, not a reason to block a
+    release.
+  - Everything between that heading and the next `### ` becomes the inline upstream notes, quoted
+    in **full releases only**. Pre-releases are cut on every push and would otherwise repeat the
+    same bullets until the upstream base changes.
+
+  So: keep the `### ` heading shape, and keep sections separated by `### ` headings. The step
+  refuses to run if the changelog contains its heredoc delimiter, since that would let file content
+  inject arbitrary environment variables into the job.
 
 ### Fork hygiene
 

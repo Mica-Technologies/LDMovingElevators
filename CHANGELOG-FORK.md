@@ -40,6 +40,9 @@ Based on upstream **Moving Elevators 1.4.12**.
   newest heading in `changelog.md`. Date-versioned releases otherwise lose that lineage entirely.
   The same step warns if `mod_version` and `changelog.md` disagree, which is the usual symptom of a
   half-finished upstream merge.
+- **Full releases** additionally quote upstream's release notes for that version inline.
+  Pre-releases deliberately don't: they are cut on every push, and would repeat the same bullets
+  until the upstream base version changes.
 
 ### Fixed
 
