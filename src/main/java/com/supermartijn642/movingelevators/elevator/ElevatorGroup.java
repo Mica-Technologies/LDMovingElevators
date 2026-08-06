@@ -975,8 +975,17 @@ public class ElevatorGroup {
         // dispatch to a y-level that is no longer a floor.
         this.callQueue.remove(this.floors.get(floor));
         this.callDirections.remove(this.floors.get(floor));
+        int removedY = this.floors.get(floor);
         this.floors.remove(floor);
         this.floorData.remove(floor);
+        // The cabin was on its way here. stopElevator looks the floor up by y and indexes floorData
+        // with the result, so leaving targetY pointing at a floor that no longer exists crashes the
+        // world tick the moment it arrives. Sending it to the nearest surviving floor instead means
+        // a controller broken mid-trip merely changes where the cabin ends up.
+        if(this.isMoving && this.targetY == removedY && !this.floors.isEmpty()){
+            this.targetY = this.nearestFloorTo(this.currentY);
+            this.shouldBeSynced = true;
+        }
         if(this.floors.isEmpty()){
             if(this.isMoving){
                 Vec3d spawnPos = this.getCageAnchorPos(this.targetY).addVector(this.cageSizeX / 2d, this.cageSizeY / 2d, this.cageSizeZ / 2d);
@@ -1479,6 +1488,14 @@ public void read(NBTTagCompound compound){
                 this.floorData.add(FloorData.read((NBTTagCompound)tag));
         }
     }
+    // The two lists are indexed by the same floor number everywhere else in this class, and every
+    // one of those lookups is a plain get(). A save written before floorData existed, or one whose
+    // list is short for any other reason, would therefore throw on the first display draw rather
+    // than degrade. Padding costs nothing and turns a crash into an unnamed floor.
+    while(this.floorData.size() < this.floors.size())
+        this.floorData.add(new FloorData(null, EnumDyeColor.GRAY));
+    while(this.floorData.size() > this.floors.size())
+        this.floorData.remove(this.floorData.size() - 1);
 }
 
 private BlockPos getPos(int y){
