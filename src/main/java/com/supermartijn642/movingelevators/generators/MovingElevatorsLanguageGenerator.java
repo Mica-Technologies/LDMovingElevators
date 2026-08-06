@@ -105,7 +105,7 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.elevator_screen.current_floor", "Floor");
         this.translation("movingelevators.elevator_screen.elevator", "Elevator");
         this.translation("movingelevators.elevator_screen.floor_name", "Floor name");
-        this.translation("movingelevators.elevator_screen.show_buttons", "Show buttons");
+        this.translation("movingelevators.elevator_screen.controls", "Controls");
         this.translation("movingelevators.elevator_screen.cabin_size", "Cabin size");
         this.translation("movingelevators.elevator_screen.elevator_speed", "Speed");
         this.translation("movingelevators.elevator_screen.current_speed", "%s blocks/tick");

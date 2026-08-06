@@ -66,7 +66,7 @@
   "movingelevators.elevator_screen.current_floor": "Floor",
   "movingelevators.elevator_screen.elevator": "Elevator",
   "movingelevators.elevator_screen.floor_name": "Floor name",
-  "movingelevators.elevator_screen.show_buttons": "Show buttons",
+  "movingelevators.elevator_screen.controls": "Controls",
   "movingelevators.elevator_screen.cabin_size": "Cabin size",
   "movingelevators.elevator_screen.elevator_speed": "Speed",
   "movingelevators.elevator_screen.current_speed": "%s blocks/tick",

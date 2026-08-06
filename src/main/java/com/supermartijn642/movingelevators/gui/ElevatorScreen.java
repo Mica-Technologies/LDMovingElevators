@@ -117,7 +117,7 @@ public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity>
         ScreenUtils.drawCenteredString(TextComponents.translation("movingelevators.elevator_screen.current_floor").get(), 47, 3, ScreenUtils.ACTIVE_TEXT_COLOR);
         ScreenUtils.drawCenteredString(TextComponents.translation("movingelevators.elevator_screen.elevator").get(), 232, 3, ScreenUtils.ACTIVE_TEXT_COLOR);
         ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.floor_name").get(), 6, 18);
-        ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.show_buttons").get(), 6, 47);
+        ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.controls").get(), 6, 47);
         ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.cabin_size").get(), 190, 18);
         ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.elevator_speed").get(), 190, 79);
 
