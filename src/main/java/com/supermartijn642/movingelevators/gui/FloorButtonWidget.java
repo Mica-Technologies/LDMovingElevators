@@ -15,9 +15,17 @@ import java.util.function.Supplier;
  */
 public class FloorButtonWidget extends AbstractButtonWidget {
 
-    /** Matches the amber used for the lit call arrows on the physical panels. */
-    private static final int SELECTED_COLOR = 0xFFFFC85A;
-    private static final int CURRENT_COLOR = 0xFF7FFF8C;
+    /**
+     * Text colours for the button face, which is a light grey.
+     * <p>
+     * These echo the amber and green the physical panels light up with, but much darker: those
+     * on-screen colours are meant for a near-black inset, and against a pale button they scored 1.11
+     * and 1.35 contrast -- effectively invisible. White fared little better at 1.71. Dark keeps the
+     * same meaning and actually reads.
+     */
+    private static final int SELECTED_COLOR = 0xFF663F00;
+    private static final int CURRENT_COLOR = 0xFF0F5218;
+    private static final int DEFAULT_COLOR = 0xFF404040;
 
     private final Supplier<String> label;
     private final Supplier<Boolean> isSelected;
@@ -45,7 +53,7 @@ public class FloorButtonWidget extends AbstractButtonWidget {
     @Override
     public void render(int mouseX, int mouseY){
         ScreenUtils.drawButtonBackground(this.x, this.y, this.width, this.height, this.isFocused() ? 1 : 0);
-        int color = this.isCurrentFloor.get() ? CURRENT_COLOR : this.isSelected.get() ? SELECTED_COLOR : ScreenUtils.ACTIVE_TEXT_COLOR;
+        int color = this.isCurrentFloor.get() ? CURRENT_COLOR : this.isSelected.get() ? SELECTED_COLOR : DEFAULT_COLOR;
         ScreenUtils.drawCenteredString(com.supermartijn642.core.TextComponents.string(this.label.get()).get(),
             this.x + this.width / 2f, this.y + (this.height - 8) / 2f, color);
     }
