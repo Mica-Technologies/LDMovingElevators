@@ -81,59 +81,11 @@ jobs:
           echo "PRE_TAG=$preReleaseVersion" >> $GITHUB_ENV
 
       # Our releases are date-versioned, which on its own says nothing about which upstream
-      # release the build corresponds to. changelog.md is an unmodified mirror of upstream's
-      # release notes, so its newest heading is exactly that -- surface it in the release body.
+      # release the build corresponds to. The logic lives in a script rather than inline here so
+      # that .github/scripts/test-release-tooling.sh can exercise it, including its failure paths.
       - name: Extract Upstream Lineage
-        run: |
-          upstreamVersion=$(grep -m1 -oE '^### Moving Elevators .+$' changelog.md \
-            | sed -E 's/^### Moving Elevators //')
-          if [ -z "$upstreamVersion" ]; then
-            echo "::error file=changelog.md::Could not parse an upstream version from changelog.md. Expected a newest heading of the form '### Moving Elevators <version>'."
-            exit 1
-          fi
-          echo "UPSTREAM_BASE_VERSION=$upstreamVersion" >> $GITHUB_ENV
-          echo "Upstream base version: $upstreamVersion"
+        run: .github/scripts/extract-upstream-lineage.sh
 
-          # mod_version records the same thing for the build. A mismatch means an upstream merge
-          # updated one and not the other -- warn, but don't fail the release over it.
-          modVersionProperty=$(grep -E '^mod_version *=' gradle.properties | head -n1 | cut -d= -f2- | xargs)
-          if [ "$modVersionProperty" != "$upstreamVersion" ]; then
-            echo "::warning file=gradle.properties::mod_version ($modVersionProperty) does not match the newest changelog.md heading ($upstreamVersion). One of them is stale after an upstream merge."
-          fi
-
-          # Full releases quote upstream's notes for that version inline; pre-releases don't,
-          # because they're cut on every push and would repeat the same bullets until the
-          # upstream base changes. Take everything between the newest '### ' heading and the
-          # next one. Leading blank lines are stripped by sed; trailing ones are stripped by
-          # command substitution, which eats trailing newlines.
-          section=$(awk '/^### /{ if (seen) exit; seen=1; next } seen { print }' changelog.md | sed '/./,$!d')
-
-          # Multi-line values need heredoc syntax in GITHUB_ENV. A delimiter appearing in the
-          # content would let the changelog inject arbitrary environment variables, so refuse
-          # rather than emit a malformed (or hostile) block.
-          delimiter='UPSTREAM_NOTES_EOF_a7f3c1'
-          if printf '%s\n' "$section" | grep -qxF "$delimiter"; then
-            echo "::error file=changelog.md::changelog.md contains the reserved heredoc delimiter $delimiter."
-            exit 1
-          fi
-
-          if [ -n "$section" ]; then
-            {
-              echo "UPSTREAM_RELEASE_NOTES<<$delimiter"
-              echo "Upstream release notes for Moving Elevators $upstreamVersion:"
-              echo
-              printf '%s\n' "$section"
-              echo "$delimiter"
-            } >> "$GITHUB_ENV"
-            echo "Captured $(printf '%s\n' "$section" | wc -l | xargs) line(s) of upstream notes."
-          else
-            # Not fatal: the lineage line above still identifies the upstream release.
-            echo "::warning file=changelog.md::No notes found under the newest changelog.md heading; publishing without inline upstream notes."
-            echo "UPSTREAM_RELEASE_NOTES=" >> "$GITHUB_ENV"
-          fi
-
-      # The tag must exist before the build runs: build.gradle resolves the mod version from
-      # the release-shaped tag pointing at HEAD.
       - name: Create Release Tag
         if: ${{ github.event.inputs.release == 'true' && github.event.inputs.release }}
         run: |

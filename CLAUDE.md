@@ -144,6 +144,10 @@ until those IDs are repointed at our own projects, or the task is removed.
   refuses to run if the changelog contains its heredoc delimiter, since that would let file content
   inject arbitrary environment variables into the job.
 
+  The logic lives in `.github/scripts/extract-upstream-lineage.sh`, not inline in the workflow, so
+  it can be tested. **Run `.github/scripts/test-release-tooling.sh` after touching it** — CI runs
+  the same script as a separate `Test Release Tooling` job on every PR.
+
 ### Fork hygiene
 
 - Keep the diff against upstream small and legible. Where a fork-specific change is needed in a file
@@ -160,7 +164,9 @@ until those IDs are repointed at our own projects, or the task is removed.
 Three workflows, matching the sibling Mica mods (see the header comment in each for the fork-specific
 deltas):
 
-- `test-mod-build-pr.yml` — builds every pull request.
+- `test-mod-build-pr.yml` — builds every pull request, plus a separate `Test Release Tooling` job
+  running `.github/scripts/test-release-tooling.sh`. That job needs no JDK and finishes in seconds,
+  so it reports independently rather than queueing behind a full Minecraft decompile.
 - `build-mod-release-pre-release-main.yml` — on push to `forge-1.12`, tags the commit and publishes a
   pre-release with checksums. `workflow_dispatch` with `release=true` cuts a full release. The tag is
   created *before* the build, because the version resolution above reads it.

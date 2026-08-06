@@ -43,6 +43,10 @@ Based on upstream **Moving Elevators 1.4.12**.
 - **Full releases** additionally quote upstream's release notes for that version inline.
   Pre-releases deliberately don't: they are cut on every push, and would repeat the same bullets
   until the upstream base version changes.
+- `.github/scripts/extract-upstream-lineage.sh`, holding the lineage logic so it is testable rather
+  than buried in workflow YAML, and `.github/scripts/test-release-tooling.sh`, which exercises it
+  (including the failure paths) and asserts the release/pre-release split in the workflow. Runs in
+  CI as a `Test Release Tooling` job on every pull request.
 
 ### Fixed
 
