@@ -45,6 +45,33 @@ There are no unit tests (`:test` is `NO-SOURCE`). Verification means building an
 On this machine, JDK 17 is at
 `/Users/ahawk/Library/Java/JavaVirtualMachines/azul-17.0.19/Contents/Home`.
 
+## IntelliJ run configurations
+
+`.idea/runConfigurations/` holds six **versioned** run configurations, numbered the way the
+GregTechCEu buildscript numbers its generated ones in the sibling mods:
+
+| | Task |
+|---|---|
+| 1. Run Client | `runClient` |
+| 2. Run Server | `runServer` |
+| 3. Run Data Generators | `runData` |
+| 4. Build Jars | `build` |
+| 5. Clean | `clean` |
+| 6. Generate IntelliJ Runs | `genIntellijRuns` |
+
+The sibling mods get these generated at import time by the `idea-ext` plugin. This project doesn't
+use that buildscript, so they are simply committed. They are plain `GradleRunConfiguration` files
+referencing nothing but `$PROJECT_DIR$` and a task name, which is what makes them portable enough to
+version. **If a task is renamed, update the matching XML** — nothing verifies these automatically.
+
+**Do not commit anything else from `.idea/`.** ForgeGradle's `genIntellijRuns` writes its own
+`Application` configs into the same directory (`runClient.xml`, `runServer.xml`, `runData.xml`,
+displayed as "Forge Client"/"Forge Server"/"Forge Data"). Those are the better configs for
+day-to-day debugging, but they embed absolute paths into `~/.gradle` and the checkout — committing
+them would break other machines and leak the local username. `.gitignore` versions only files
+matching `[0-9]__*.xml`, so generated and personal configs are excluded by default rather than by
+being named individually.
+
 ## Architecture
 
 Package root is `com.supermartijn642.movingelevators` — **upstream's namespace, deliberately kept.**

@@ -11,7 +11,20 @@ bin/
 .metadata
 
 # idea
-.idea/
+# Mica fork: `.idea/*` rather than `.idea/`, because git cannot descend into an excluded
+# directory and the negations below would never be reached.
+#
+# Only the shared, numbered run configurations are versioned -- they are portable Gradle
+# configs that reference nothing but $PROJECT_DIR$ and a task name. Everything else in
+# .idea/runConfigurations/ stays local, which specifically covers the Application configs
+# ForgeGradle's `genIntellijRuns` writes there (runClient.xml, runServer.xml, runData.xml):
+# those embed absolute paths into ~/.gradle and the checkout, so committing them would both
+# break other machines and leak the local username. Matching on the numeric prefix rather
+# than naming those three files means any future generated config is excluded by default.
+.idea/*
+!.idea/runConfigurations/
+.idea/runConfigurations/*
+!.idea/runConfigurations/[0-9]__*.xml
 *.ipr
 *.iws
 *.iml
