@@ -202,7 +202,7 @@ public class ElevatorGroupCapability {
             NBTTagCompound groupTag = new NBTTagCompound();
             groupTag.setTag("group", entry.getValue().write());
             groupTag.setTag("pos", entry.getKey().write());
-            compound.setTag(entry.getKey().x + ";" + entry.getKey().z, groupTag);
+            compound.setTag(entry.getKey().nbtKey(), groupTag);
         }
         return compound;
     }
@@ -247,6 +247,22 @@ public class ElevatorGroupCapability {
 
         public ChunkPos chunkPos(){
             return new ChunkPos(this.x >> 4, this.z >> 4);
+        }
+
+        /**
+         * Key for this group's entry in the capability's NBT.
+         * <p>
+         * Must include the facing. Groups are keyed by {@code (x, z, facing)}, so two controllers in
+         * the same column facing different ways -- a shaft serving two sides -- are two distinct
+         * groups. Upstream keyed the NBT on {@code x + ";" + z} alone, so the second silently
+         * overwrote the first on save.
+         * <p>
+         * No migration is needed for old saves: {@link #read} iterates whatever keys are present and
+         * {@link #readGroup} takes the real position from the nested {@code "pos"} tag, so this key
+         * is only ever written, never parsed.
+         */
+        public String nbtKey(){
+            return this.x + ";" + this.z + ";" + this.facing.getHorizontalIndex();
         }
 
         @Override
