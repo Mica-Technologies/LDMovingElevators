@@ -94,6 +94,16 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
         return top ? pos.down() : pos;
     }
 
+    /**
+     * @return whether any block of this doorway is receiving redstone power
+     */
+    public boolean isDoorwayPowered(World level, BlockPos pos, IBlockState state){
+        for(BlockPos cell : this.cellsFromOrigin(this.originOf(level, pos, state), state))
+            if(level.isBlockPowered(cell))
+                return true;
+        return false;
+    }
+
     @Override
     public void onBlockPlacedBy(World level, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack){
         super.onBlockPlacedBy(level, pos, state, placer, stack);

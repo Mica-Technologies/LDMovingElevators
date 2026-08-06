@@ -20,10 +20,15 @@ import net.minecraft.nbt.NBTTagCompound;
 public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements TickableBlockEntity {
 
     /**
-     * How far below a door block its landing's controller may sit. A doorway is two blocks tall and
-     * stands on the landing, so the controller is level with the bottom block or one below it.
+     * How far a landing's controller may sit from a door block, in either direction.
+     * <p>
+     * Searching only downwards was wrong: the cabin floor sits one block <em>below</em> its
+     * controller by default (see cageHeightOffset), so a doorway you actually walk through stands at
+     * controller y minus one, and looking down from there never reaches the controller above it.
+     * That is why the doors never opened by themselves -- every one of them failed to identify its
+     * own landing, so the cabin was never "here".
      */
-    private static final int FLOOR_SEARCH_DEPTH = 2;
+    private static final int FLOOR_SEARCH_RANGE = 2;
 
     /** World time of the last open/close request this door acted on, so it reacts once per press. */
     private long lastOpenRequest, lastCloseRequest;
@@ -65,11 +70,17 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
     public int getFloorLevel(){
         ElevatorGroup group = this.getGroup();
         if(group != null){
-            for(int depth = 0; depth <= FLOOR_SEARCH_DEPTH; depth++){
-                int y = this.pos.getY() - depth;
-                if(group.hasControllerAt(y))
-                    return y;
+            int best = Integer.MAX_VALUE, bestDistance = Integer.MAX_VALUE;
+            for(int floor = 0; floor < group.getFloorCount(); floor++){
+                int y = group.getFloorYLevel(floor);
+                int distance = Math.abs(y - this.pos.getY());
+                if(distance <= FLOOR_SEARCH_RANGE && distance < bestDistance){
+                    bestDistance = distance;
+                    best = y;
+                }
             }
+            if(best != Integer.MAX_VALUE)
+                return best;
         }
         return super.getFloorLevel();
     }
@@ -105,7 +116,18 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         else if(this.openTicks > 0)
             this.openTicks--;
 
-        this.setOpen(this.world.isBlockPowered(this.pos) || this.openTicks > 0);
+        this.setOpen(this.isDoorwayPowered() || this.openTicks > 0);
+    }
+
+    /**
+     * Redstone applies to the doorway, not to the block that happens to touch the wire. Asking only
+     * about this block's own position meant a lever opened whichever leaf it was next to and left the
+     * rest shut.
+     */
+    private boolean isDoorwayPowered(){
+        IBlockState state = this.world.getBlockState(this.pos);
+        return state.getBlock() instanceof ElevatorDoorBlockBase
+            && ((ElevatorDoorBlockBase)state.getBlock()).isDoorwayPowered(this.world, this.pos, state);
     }
 
     private void setOpen(boolean open){
