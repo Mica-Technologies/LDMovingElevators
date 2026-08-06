@@ -19,6 +19,7 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
         this.cubeAll("block/elevator_block", new ResourceLocation("movingelevators", "blocks/elevator"));
         this.cubeAll("block/display_block", new ResourceLocation("movingelevators", "blocks/display"));
         this.cubeAll("block/button_block", new ResourceLocation("movingelevators", "blocks/display"));
+        this.cubeAll("block/remote_display_block", new ResourceLocation("movingelevators", "blocks/display"));
         this.model("item/elevator_block")
             .parent("block/elevator_block")
             .texture("overlay", "blocks/buttons")
@@ -36,5 +37,10 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("overlay", "blocks/buttons")
             .element(element -> element.shape(0, 0, 0, 16, 16, 16).allFaces(face -> face.texture("all")))
             .element(element -> element.shape(0, 0, 0, 16, 16, 16).face(EnumFacing.NORTH, face -> face.texture("overlay").uv(0, 0, 11.5f, 11.5f)));
+        this.model("item/remote_display_block")
+            .parent("block/remote_display_block")
+            .texture("overlay", "blocks/display_overlay")
+            .element(element -> element.shape(0, 0, 0, 16, 16, 16).allFaces(face -> face.texture("all")))
+            .element(element -> element.shape(0, 0, 0, 16, 16, 16).face(EnumFacing.NORTH, face -> face.texture("overlay")));
     }
 }

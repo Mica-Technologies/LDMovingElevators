@@ -892,6 +892,27 @@ public int getFloorYLevel(int floor){
     return this.floors.get(floor);
 }
 
+/**
+ * The floor the cabin is at, for display purposes -- while moving, the floor it is nearest to.
+ *
+ * @return a floor index, or -1 if it cannot be determined
+ */
+public int getCabinFloorNumber(){
+    if(this.floors.isEmpty())
+        return -1;
+    if(this.isMoving)
+        return this.getClosestFloorNumber((int)Math.round(this.currentY));
+    int floor = this.getFloorNumber(this.targetY);
+    if(floor != -1)
+        return floor;
+    // The group has not moved yet, so targetY is not a floor. Fall back to whichever floor holds a
+    // cabin. This reads the cached availability flags rather than forcing a block scan.
+    for(int i = 0; i < this.floors.size(); i++)
+        if(this.isCageAvailableAt(i))
+            return i;
+    return -1;
+}
+
 public ControllerBlockEntity getEntityForFloor(int floor){
     if(floor < 0 || floor >= this.floors.size())
         return null;

@@ -25,6 +25,11 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Remote Elevator Display.** A new block that shows which floor an elevator is currently at,
+  bindable to any controller the same way the Remote Elevator Panel is: right-click a controller
+  with it, then place it anywhere. It only reports — it has no buttons and takes no redstone input —
+  and it can be camouflaged like the other blocks. While the cabin is moving it shows the floor it
+  is nearest to.
 - **Call queue.** Button and display presses made while the elevator is already moving are now
   remembered instead of ignored, and served once it arrives. Calls are dispatched in sweep order —
   the cabin finishes the floors ahead of it in its current direction before reversing — rather than

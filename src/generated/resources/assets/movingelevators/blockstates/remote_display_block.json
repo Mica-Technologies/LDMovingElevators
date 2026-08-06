@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "normal": {
+      "model": "movingelevators:remote_display_block"
+    }
+  }
+}

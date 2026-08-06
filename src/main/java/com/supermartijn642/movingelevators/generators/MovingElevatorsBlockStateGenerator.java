@@ -18,5 +18,6 @@ public class MovingElevatorsBlockStateGenerator extends BlockStateGenerator {
         this.blockState(MovingElevators.elevator_block).variantsForAll((state, builder) -> builder.model("block/elevator_block"));
         this.blockState(MovingElevators.display_block).emptyVariant(builder -> builder.model("block/display_block"));
         this.blockState(MovingElevators.button_block).emptyVariant(builder -> builder.model("block/button_block"));
+        this.blockState(MovingElevators.remote_display_block).emptyVariant(builder -> builder.model("block/remote_display_block"));
     }
 }

@@ -12,6 +12,10 @@
     {
       "id": "movingelevators:elevator_block",
       "required": true
+    },
+    {
+      "id": "movingelevators:remote_display_block",
+      "required": true
     }
   ]
 }

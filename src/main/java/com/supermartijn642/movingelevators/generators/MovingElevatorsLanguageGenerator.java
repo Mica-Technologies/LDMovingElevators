@@ -36,6 +36,10 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.remote_controller.controller_location", "Bound to elevator controller at (%1$d, %2$d, %3$d)");
         this.translation("movingelevators.remote_controller.clear", "Cleared stored elevator location!");
 
+        // Remote elevator display
+        this.block(MovingElevators.remote_display_block, "Remote Elevator Display");
+        this.translation("movingelevators.remote_display.tooltip", "Shows the floor an elevator is currently at. Bind it to an elevator controller by right-clicking on it");
+
         // Floor name
         this.translation("movingelevators.floor_name", "Floor %d");
 

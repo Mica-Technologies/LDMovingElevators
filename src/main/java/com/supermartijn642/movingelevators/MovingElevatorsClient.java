@@ -8,6 +8,7 @@ import com.supermartijn642.core.render.TextureAtlases;
 import com.supermartijn642.movingelevators.blocks.CamoBlockEntity;
 import com.supermartijn642.movingelevators.blocks.DisplayBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.ElevatorInputBlockEntityRenderer;
+import com.supermartijn642.movingelevators.blocks.RemoteDisplayBlockEntityRenderer;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
 import com.supermartijn642.movingelevators.gui.ElevatorScreen;
 import com.supermartijn642.movingelevators.model.CamoBakedModel;
@@ -37,16 +38,19 @@ public class MovingElevatorsClient {
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_tile, ElevatorInputBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.display_tile, DisplayBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.button_tile, ElevatorInputBlockEntityRenderer::new);
+        handler.registerCustomBlockEntityRenderer(() -> MovingElevators.remote_display_tile, RemoteDisplayBlockEntityRenderer::new);
         // Register texture
         handler.registerAtlasSprite(TextureAtlases.getBlocks(), OVERLAY_TEXTURE_LOCATION.getResourcePath());
         // Baked models
         handler.registerBlockModelOverwrite(() -> MovingElevators.elevator_block, CamoBakedModel::new);
         handler.registerBlockModelOverwrite(() -> MovingElevators.display_block, CamoBakedModel::new);
         handler.registerBlockModelOverwrite(() -> MovingElevators.button_block, CamoBakedModel::new);
+        handler.registerBlockModelOverwrite(() -> MovingElevators.remote_display_block, CamoBakedModel::new);
         // Block render types
         handler.registerBlockModelTranslucentRenderType(() -> MovingElevators.elevator_block);
         handler.registerBlockModelTranslucentRenderType(() -> MovingElevators.display_block);
         handler.registerBlockModelTranslucentRenderType(() -> MovingElevators.button_block);
+        handler.registerBlockModelTranslucentRenderType(() -> MovingElevators.remote_display_block);
     }
 
     @SubscribeEvent
@@ -58,7 +62,7 @@ public class MovingElevatorsClient {
                 TileEntity entity = blockAndTintGetter.getTileEntity(pos);
                 return entity instanceof CamoBlockEntity && ((CamoBlockEntity)entity).hasCamoState() ? ClientUtils.getMinecraft().getBlockColors().colorMultiplier(((CamoBlockEntity)entity).getCamoState(), blockAndTintGetter, pos, p_92570_) : 0;
             },
-            MovingElevators.elevator_block, MovingElevators.display_block, MovingElevators.button_block
+            MovingElevators.elevator_block, MovingElevators.display_block, MovingElevators.button_block, MovingElevators.remote_display_block
         );
     }
 
