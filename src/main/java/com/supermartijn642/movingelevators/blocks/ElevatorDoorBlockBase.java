@@ -55,8 +55,11 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
     /** Depth of the leaves within the block, so they sit in the middle of the frame. */
     protected static final double MIN_Z = 7 / 16d, MAX_Z = 9 / 16d;
 
-    private static final AxisAlignedBB CLOSED_NORTH_SOUTH = new AxisAlignedBB(0, 0, MIN_Z, 1, 1, MAX_Z);
-    private static final AxisAlignedBB CLOSED_EAST_WEST = new AxisAlignedBB(MIN_Z, 0, 0, MAX_Z, 1, 1);
+    /** How much of a leaf is still showing once it has retracted into the frame, in sixteenths. */
+    protected static final double LEAF_REMAINDER = 3 / 16d;
+
+    /** Authored facing north, then rotated to match the block state's model rotation. */
+    private static final AxisAlignedBB CLOSED = new AxisAlignedBB(0, 0, MIN_Z, 1, 1, MAX_Z);
 
     /**
      * Guards the cascade when one part of a doorway is broken and takes the rest with it -- each of
@@ -229,9 +232,28 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
 
     // --- Shape and state -------------------------------------------------------------------------
 
+    /**
+     * The shape a leaf takes once open, authored facing north. Which side it retracts to depends on
+     * the door, so subclasses decide.
+     */
+    protected abstract AxisAlignedBB openShapeFacingNorth(IBlockState state);
+
+    /**
+     * Rotates a box authored facing north to the state's facing, matching the {@code y} rotation the
+     * block state applies to the model. Ninety degrees clockwise from above maps (x, z) to (1 - z, x).
+     */
+    private static AxisAlignedBB rotate(AxisAlignedBB box, EnumFacing facing){
+        int quarters = facing == EnumFacing.EAST ? 1 : facing == EnumFacing.SOUTH ? 2 : facing == EnumFacing.WEST ? 3 : 0;
+        for(int i = 0; i < quarters; i++)
+            box = new AxisAlignedBB(1 - box.maxZ, box.minY, box.minX, 1 - box.minZ, box.maxY, box.maxX);
+        return box;
+    }
+
     @Override
     public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess level, BlockPos pos){
-        return state.getValue(FACING).getAxis() == EnumFacing.Axis.Z ? CLOSED_NORTH_SOUTH : CLOSED_EAST_WEST;
+        // The outline has to follow the leaf. Returning the closed shape while open drew a box around
+        // the empty doorway you had just walked through.
+        return rotate(state.getValue(OPEN) ? this.openShapeFacingNorth(state) : CLOSED, state.getValue(FACING));
     }
 
     @Override

@@ -6,6 +6,7 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -32,6 +33,11 @@ public class ElevatorSingleDoorBlock extends ElevatorDoorBlockBase {
     @Override
     protected IBlockState stateForCell(IBlockState placedState, BlockPos origin, BlockPos cell){
         return placedState;
+    }
+
+    @Override
+    protected AxisAlignedBB openShapeFacingNorth(IBlockState state){
+        return new AxisAlignedBB(0, 0, MIN_Z, LEAF_REMAINDER, 1, MAX_Z);
     }
 
     @Override

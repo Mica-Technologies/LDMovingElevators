@@ -7,6 +7,7 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -42,6 +43,14 @@ public class ElevatorDoorBlock extends ElevatorDoorBlockBase {
     protected BlockPos originOf(net.minecraft.world.IBlockAccess level, BlockPos pos, IBlockState state){
         BlockPos origin = super.originOf(level, pos, state);
         return state.getValue(RIGHT) ? origin.offset(sideOf(state).getOpposite()) : origin;
+    }
+
+    @Override
+    protected AxisAlignedBB openShapeFacingNorth(IBlockState state){
+        // The two leaves retract to opposite sides, so their outlines part the same way the models do.
+        return state.getValue(RIGHT)
+            ? new AxisAlignedBB(1 - LEAF_REMAINDER, 0, MIN_Z, 1, 1, MAX_Z)
+            : new AxisAlignedBB(0, 0, MIN_Z, LEAF_REMAINDER, 1, MAX_Z);
     }
 
     @Override
