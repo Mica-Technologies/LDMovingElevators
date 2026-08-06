@@ -41,6 +41,11 @@ public class ElevatorGroup {
     private static final double ACCELERATION = 0.05;
     private static final int CAGE_CHECK_INTERVAL = 20;
     private static final int MAX_CAGE_CHECKS_PER_TICK = 1;
+    /**
+     * How long the cabin waits at a floor before serving the next queued call, so passengers get a
+     * chance to step in or out.
+     */
+    private static final int DWELL_TICKS = 20;
 
     public final World level;
     public final int x, z;
@@ -67,6 +72,18 @@ public class ElevatorGroup {
     private int syncCounter = 0;
     private int tickCounter = 0;
     private int cageChecks = 0;
+
+    /**
+     * y-levels of floors with an outstanding call, in the order they were requested. Insertion
+     * ordered and duplicate-free, so pressing a button twice does not queue the floor twice.
+     */
+    private final LinkedHashSet<Integer> callQueue = new LinkedHashSet<>();
+    /**
+     * Direction of the last trip (+1 up, -1 down, 0 none yet). Calls continuing in this direction
+     * are served first, so the cabin sweeps rather than ping-ponging.
+     */
+    private int lastDirection = 0;
+    private int dwellCounter = 0;
 
     public ElevatorGroup(World level, int x, int z, EnumFacing facing){
         this.level = level;
@@ -109,7 +126,101 @@ public class ElevatorGroup {
                 this.syncCounter = 0;
             }
             this.syncCounter++;
+        }else if(!this.level.isRemote)
+            this.updateCallQueue();
+    }
+
+    /**
+     * Dispatches the cabin to the next outstanding call. Server-side only: the queue is authoritative
+     * on the server and reaches clients through {@link #write()}.
+     */
+    private void updateCallQueue(){
+        if(this.callQueue.isEmpty())
+            return;
+        if(this.dwellCounter > 0){
+            this.dwellCounter--;
+            return;
         }
+
+        Integer target = this.pickNextCall();
+        if(target == null)
+            return;
+        // Taken regardless of what happens below. If the cabin cannot reach the floor right now --
+        // obstructed, or the controller is gone -- the call is dropped rather than retried forever;
+        // pressing the button again re-queues it.
+        this.callQueue.remove(target);
+
+        int targetFloor = this.getFloorNumber(target);
+        if(targetFloor == -1)
+            return;
+        // Cabin is already sitting there, so the call is already satisfied.
+        if(this.isCageAvailableAt(targetFloor, true, null))
+            return;
+
+        // Reuse the existing "bring the cabin here" path so queued calls behave exactly like a
+        // button press: it picks the nearest floor holding a cabin and checks the destination is
+        // clear. A null requester means no chat feedback, which is right for an automatic dispatch.
+        this.onButtonPress(false, false, target, null);
+    }
+
+    /**
+     * Picks the call to serve next: the nearest one continuing the current direction of travel, or
+     * failing that the nearest in any direction.
+     */
+    private Integer pickNextCall(){
+        Integer best = null;
+        int bestDistance = Integer.MAX_VALUE;
+
+        if(this.lastDirection != 0){
+            for(int y : this.callQueue){
+                int delta = y - this.targetY;
+                if(Integer.signum(delta) != this.lastDirection)
+                    continue;
+                int distance = Math.abs(delta);
+                if(distance < bestDistance){
+                    bestDistance = distance;
+                    best = y;
+                }
+            }
+            if(best != null)
+                return best;
+        }
+
+        for(int y : this.callQueue){
+            int distance = Math.abs(y - this.targetY);
+            if(distance < bestDistance){
+                bestDistance = distance;
+                best = y;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Records a call for the floor at the given y-level, to be served once the cabin is free.
+     */
+    private void queueCall(int yLevel){
+        if(!this.floors.contains(yLevel))
+            return;
+        // Already on its way there.
+        if(this.isMoving && yLevel == this.targetY)
+            return;
+        if(this.callQueue.add(yLevel))
+            this.shouldBeSynced = true;
+    }
+
+    /**
+     * @return y-levels of floors with an outstanding call
+     */
+    public Set<Integer> getCallQueue(){
+        return Collections.unmodifiableSet(this.callQueue);
+    }
+
+    /**
+     * @return whether the floor at the given y-level has an outstanding call
+     */
+    public boolean hasCallFor(int yLevel){
+        return this.callQueue.contains(yLevel);
     }
 
     private void moveElevator(double oldY, double newY){
@@ -118,6 +229,10 @@ public class ElevatorGroup {
 
     private void stopElevator(){
         this.isMoving = false;
+
+        // Arriving satisfies any call for this floor, and starts the dwell before the next one.
+        this.callQueue.remove(this.targetY);
+        this.dwellCounter = DWELL_TICKS;
 
         this.cage.place(this.level, this.getCageAnchorBlockPos(this.targetY));
         this.floorData.get(this.getFloorNumber(this.targetY)).isCageAvailable = true;
@@ -151,6 +266,9 @@ public class ElevatorGroup {
         this.currentY = currentY;
         this.lastY = this.currentY;
         this.speed = 0;
+        this.lastDirection = Integer.signum(targetY - currentY);
+        // Whoever asked for this floor is being served now.
+        this.callQueue.remove(targetY);
 
         if(!this.level.isRemote){
             this.level.updateComparatorOutputLevel(this.getPos(currentY), MovingElevators.elevator_block);
@@ -162,8 +280,16 @@ public class ElevatorGroup {
     }
 
     public void onButtonPress(boolean isUp, boolean isDown, int yLevel, EntityPlayer requester){
-        if(this.isMoving || !this.floors.contains(yLevel))
+        if(!this.floors.contains(yLevel))
             return;
+        if(this.isMoving){
+            // Queue "bring the cabin here" rather than dropping the press. The up/down arrows are
+            // deliberately not queued: they mean "take the cabin from this floor to the next one",
+            // which only has a meaning while the cabin is actually standing here.
+            if(!isUp && !isDown)
+                this.queueCall(yLevel);
+            return;
+        }
 
         ControllerBlockEntity entity = this.getEntity(yLevel);
         if(entity == null)
@@ -209,10 +335,20 @@ public class ElevatorGroup {
     }
 
     public void onDisplayPress(int yLevel, int floorOffset, EntityPlayer requester){
-        if(this.isMoving || !this.floors.contains(yLevel))
+        if(!this.floors.contains(yLevel))
             return;
 
         int floor = this.floors.indexOf(yLevel);
+        if(this.isMoving){
+            // Offset 0 is "call the cabin to this floor"; anything else selects a destination
+            // relative to it. Either way the request becomes a call for a concrete floor.
+            int toFloor = floor + floorOffset;
+            if(floorOffset == 0)
+                this.queueCall(yLevel);
+            else if(toFloor >= 0 && toFloor < this.floors.size())
+                this.queueCall(this.floors.get(toFloor));
+            return;
+        }
         if(floorOffset == 0){
             this.onButtonPress(false, false, yLevel, requester);
             return;
@@ -239,6 +375,9 @@ public class ElevatorGroup {
         // while the controller block was still standing. ArrayList.remove(-1) would throw.
         if(floor < 0 || floor >= this.floors.size())
             return;
+        // Drop any outstanding call for the floor before it stops existing, so the queue can never
+        // dispatch to a y-level that is no longer a floor.
+        this.callQueue.remove(this.floors.get(floor));
         this.floors.remove(floor);
         this.floorData.remove(floor);
         if(this.floors.isEmpty()){
@@ -616,8 +755,11 @@ public boolean removeComparatorListener(BlockPos blockPos){
 public NBTTagCompound write(){
     NBTTagCompound compound = new NBTTagCompound();
     compound.setBoolean("isMoving", this.isMoving);
+    // Written unconditionally: while stopped this is where the cabin came to rest, which is the
+    // reference point pickNextCall() sweeps from. Upstream only stored it mid-move, so a reloaded
+    // idle group would have dispatched queued calls relative to y=0.
+    compound.setInteger("targetY", this.targetY);
     if(this.isMoving){
-        compound.setInteger("targetY", this.targetY);
         compound.setDouble("lastY", this.lastY);
         compound.setDouble("currentY", this.currentY);
         compound.setTag("cage", this.cage.write());
@@ -634,6 +776,13 @@ public NBTTagCompound write(){
     for(int i = 0; i < this.floors.size(); i++)
         arr[i] = this.floors.get(i);
     compound.setIntArray("floors", arr);
+    int[] queue = new int[this.callQueue.size()];
+    int queueIndex = 0;
+    for(int y : this.callQueue)
+        queue[queueIndex++] = y;
+    compound.setIntArray("callQueue", queue);
+    compound.setInteger("lastDirection", this.lastDirection);
+    compound.setInteger("dwellCounter", this.dwellCounter);
     NBTTagList floorDataTag = new NBTTagList();
     for(FloorData floorDatum : this.floorData)
         floorDataTag.appendTag(floorDatum.write());
@@ -672,8 +821,10 @@ public void read(NBTTagCompound compound){
         this.cageSizeY = 1;
     }else{
         this.isMoving = compound.getBoolean("isMoving");
+        // Absent from pre-queue saves that were stopped, where getInteger yields 0 -- the same
+        // value the field would otherwise have held.
+        this.targetY = compound.getInteger("targetY");
         if(this.isMoving){
-            this.targetY = compound.getInteger("targetY");
             this.lastY = compound.getDouble("lastY");
             this.currentY = compound.getDouble("currentY");
             this.cage = ElevatorCage.read(compound.getCompoundTag("cage"), this.level.isRemote);
@@ -690,6 +841,13 @@ public void read(NBTTagCompound compound){
     this.floors.clear();
     for(int y : compound.getIntArray("floors"))
         this.floors.add(y);
+    // Absent in saves written before the call queue existed, in which case getIntArray returns an
+    // empty array and the elevator simply starts with nothing queued.
+    this.callQueue.clear();
+    for(int y : compound.getIntArray("callQueue"))
+        this.callQueue.add(y);
+    this.lastDirection = compound.getInteger("lastDirection");
+    this.dwellCounter = compound.getInteger("dwellCounter");
     this.floorData.clear();
     if(compound.hasKey("floorData", Constants.NBT.TAG_LIST)){
         NBTBase base = compound.getTag("floorData");

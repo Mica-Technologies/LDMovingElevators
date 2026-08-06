@@ -25,6 +25,14 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Call queue.** Button and display presses made while the elevator is already moving are now
+  remembered instead of ignored, and served once it arrives. Calls are dispatched in sweep order —
+  the cabin finishes the floors ahead of it in its current direction before reversing — rather than
+  in press order, so it behaves like a real elevator instead of a one-shot platform. The cabin
+  waits one second at each floor before moving on. The up/down arrows are deliberately *not*
+  queued: they mean "take the cabin from this floor to the next one", which only has a meaning
+  while it is standing there. Queued calls survive a save, and are dropped if their floor is
+  removed.
 - Mica standard GitHub Actions workflows: PR build check, release/pre-release publishing from the
   `forge-1.12` branch with checksums, and automatic pruning of pre-releases past 90 days.
 - Mod version is now derived from the release tag CI creates (`YYYY.MM.DD`, or
@@ -55,6 +63,22 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- Fall damage stayed cancelled long after leaving an elevator. The grace period compares
+  `ticksExisted` against a snapshot stored in the entity's Forge data, which persists to NBT while
+  `ticksExisted` restarts at 0 when the entity is reconstructed — so after a relog, or a mob's chunk
+  reloading, the delta went negative and read as "still within the grace period" forever. In
+  practice: fall immunity for roughly as long as you had been logged in when you last used an
+  elevator.
+- Stale-controller validation skipped every other floor. It removed entries while counting upwards
+  through the same list, so each removal caused the next floor to go unchecked, leaving floors with
+  no controller behind them — visible on displays and selectable as destinations.
+- Two elevator groups in the same column facing different ways overwrote each other on save. Their
+  NBT entries were keyed on position but not facing. Floors and names recovered on load, but cabin
+  size, offsets and speed reset to defaults, and a group caught mid-move lost the cabin's blocks
+  entirely.
+- Defensive guards around the group lifecycle: a controller broken before it ever registered no
+  longer throws, nor does removing a floor that is already gone, and the chunk-load handler now
+  null-checks the capability like every other call site does.
 - Build failed on Linux and macOS. `processSources`, `prepareDataResources` and the data run's
   `--existing` property used `layout.buildDirectory.dir("/sources")` and `.dir("/data_resources")`;
   the leading slash makes Gradle resolve those absolutely, so the build tried to create `/sources`
