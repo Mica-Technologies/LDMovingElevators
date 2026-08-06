@@ -34,10 +34,12 @@ public enum ElevatorSoundScheme {
             entries.put(Moment.PASSING_FLOOR, new Entry(() -> MovingElevators.passing_floor_sound, 0.45f, 0.8f));
             // The car settling, not a chime: a short hydraulic thump under the two notes.
             entries.put(Moment.ARRIVED, new Entry(() -> MovingElevators.arrive_sound, 0.35f, 0.55f));
-            // Ding-dong. The two notes are a falling fourth (1.5 -> 1.12), which is the interval the
-            // real two-tone gongs use; the same note twice reads as a stutter rather than a chime.
-            entries.put(Moment.ARRIVAL_CHIME, new Entry(() -> MovingElevators.arrive_ding_sound, 1f, 1.5f));
-            entries.put(Moment.ARRIVAL_CHIME_SECOND, new Entry(() -> MovingElevators.arrive_ding_sound, 1f, 1.12f));
+            // Ding-dong, and the interval has to be wide to survive the sample. The bell rings for
+            // well over a second, so a second strike close to the first in pitch lands inside its
+            // tail and the pair reads as one note -- which a falling fourth did. Nearly an octave
+            // apart, and the low note is audibly slower, so the two stay distinct.
+            entries.put(Moment.ARRIVAL_CHIME, new Entry(() -> MovingElevators.arrive_ding_sound, 1f, 1.6f));
+            entries.put(Moment.ARRIVAL_CHIME_SECOND, new Entry(() -> MovingElevators.arrive_ding_sound, 1f, 0.9f));
             // Pitched down from the piston default, since a big sliding door should sound heavier and
             // slower than a block being shoved.
             entries.put(Moment.DOORS_OPENING, new Entry(() -> MovingElevators.door_open_sound, 0.45f, 0.8f));
@@ -103,6 +105,15 @@ public enum ElevatorSoundScheme {
             return false;
         level.playSound(null, pos.x, pos.y, pos.z, sound, SoundCategory.BLOCKS, entry.volume, entry.pitch);
         return true;
+    }
+
+    /**
+     * Ticks between the two notes of the arrival chime. A scheme's business, not the elevator's:
+     * how far apart the notes have to be to read as two depends entirely on how long its chime
+     * sample rings for.
+     */
+    public int chimeGapTicks(){
+        return 11;
     }
 
     /**

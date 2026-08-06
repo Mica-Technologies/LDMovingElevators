@@ -108,8 +108,6 @@ public class ElevatorGroup {
      * Kept as named constants rather than scattered literals so that adding schemes later is a matter
      * of choosing a different set, not hunting down every playSound call.
      */
-    /** Gap between the two notes of the arrival chime, in ticks. */
-    private static final int DING_GAP_TICKS = 6;
 
     private boolean soundsEnabled = true;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
@@ -455,7 +453,7 @@ public class ElevatorGroup {
                 // Two notes rather than one: the second is scheduled, so arrival reads as a ding-dong
                 // rather than a single blip lost under the arrival sound.
                 this.playAtCabin(ElevatorSoundScheme.Moment.ARRIVAL_CHIME);
-                this.pendingDing = DING_GAP_TICKS;
+                this.pendingDing = ElevatorSoundScheme.current().chimeGapTicks();
             }
             this.syncCounter = 0;
         }
