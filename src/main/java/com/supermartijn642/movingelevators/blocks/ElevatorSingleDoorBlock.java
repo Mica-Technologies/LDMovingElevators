@@ -22,7 +22,7 @@ public class ElevatorSingleDoorBlock extends ElevatorDoorBlockBase {
     public ElevatorSingleDoorBlock(BlockProperties properties){
         super(properties);
         this.setDefaultState(this.blockState.getBaseState()
-            .withProperty(FACING, EnumFacing.NORTH).withProperty(OPEN, false));
+            .withProperty(FACING, EnumFacing.NORTH));
     }
 
     @Override
@@ -48,24 +48,22 @@ public class ElevatorSingleDoorBlock extends ElevatorDoorBlockBase {
     @Override
     public IBlockState getStateForPlacement(World level, BlockPos pos, EnumFacing hitSide, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand){
         return this.getDefaultState()
-            .withProperty(FACING, placer.getHorizontalFacing().getOpposite())
-            .withProperty(OPEN, false);
+            .withProperty(FACING, placer.getHorizontalFacing().getOpposite());
     }
 
     @Override
     protected BlockStateContainer createBlockState(){
-        return new BlockStateContainer(this, FACING, OPEN);
+        return new BlockStateContainer(this, FACING);
     }
 
     @Override
     public IBlockState getStateFromMeta(int meta){
         return this.getDefaultState()
-            .withProperty(FACING, EnumFacing.getHorizontal(meta & 3))
-            .withProperty(OPEN, (meta & 4) != 0);
+            .withProperty(FACING, EnumFacing.getHorizontal(meta & 3));
     }
 
     @Override
     public int getMetaFromState(IBlockState state){
-        return state.getValue(FACING).getHorizontalIndex() | (state.getValue(OPEN) ? 4 : 0);
+        return state.getValue(FACING).getHorizontalIndex();
     }
 }

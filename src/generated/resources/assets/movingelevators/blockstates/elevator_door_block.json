@@ -1,51 +1,27 @@
 {
   "variants": {
-    "facing=north,open=true,right=true": {
+    "facing=north,right=true": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=north,open=true,right=false": {
+    "facing=north,right=false": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=north,open=false,right=true": {
+    "facing=south,right=true": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=north,open=false,right=false": {
+    "facing=south,right=false": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=south,open=true,right=true": {
+    "facing=west,right=true": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=south,open=true,right=false": {
+    "facing=west,right=false": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=south,open=false,right=true": {
+    "facing=east,right=true": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=south,open=false,right=false": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=west,open=true,right=true": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=west,open=true,right=false": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=west,open=false,right=true": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=west,open=false,right=false": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=east,open=true,right=true": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=east,open=true,right=false": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=east,open=false,right=true": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=east,open=false,right=false": {
+    "facing=east,right=false": {
       "model": "movingelevators:elevator_door_block_hidden"
     }
   }

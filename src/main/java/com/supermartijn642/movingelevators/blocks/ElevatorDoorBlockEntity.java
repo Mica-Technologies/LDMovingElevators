@@ -5,8 +5,8 @@ import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.movingelevators.MovingElevatorsConfig;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
-import net.minecraft.block.state.IBlockState;
 import com.supermartijn642.core.TextComponents;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
@@ -103,6 +103,20 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
 
     /** Client-side only: how far this leaf has slid, and where it was last tick to interpolate from. */
     private float animation, previousAnimation;
+    /**
+     * Whether the leaf should be open. Kept here rather than in the block state deliberately.
+     * <p>
+     * Toggling a block state every time the doors move meant a block update, and with it the risk of
+     * the block entity being rebuilt underneath the animation -- which is what made closing snap
+     * while opening animated: a fresh entity starts at zero, so 0 to 1 looks like opening and 1 to 0
+     * becomes 0 to 0. A rebuilt entity also loses the request stamps it uses to tell a new press from
+     * one it has already acted on, which leaves a door that will not respond again.
+     */
+    private boolean open;
+
+    public boolean isOpen(){
+        return this.open;
+    }
 
     public float getAnimation(float partialTicks){
         return this.previousAnimation + (this.animation - this.previousAnimation) * partialTicks;
@@ -115,8 +129,7 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         if(this.world.isRemote){
             // The leaf slides towards whatever the block state says, so a door that is already open
             // when it comes into view is drawn open rather than sliding on first sight.
-            IBlockState state = this.world.getBlockState(this.pos);
-            float target = state.getBlock() instanceof ElevatorDoorBlockBase && state.getValue(ElevatorDoorBlockBase.OPEN) ? 1 : 0;
+            float target = this.open ? 1 : 0;
             this.previousAnimation = this.animation;
             this.animation += Math.max(-ANIMATION_SPEED, Math.min(ANIMATION_SPEED, target - this.animation));
             return;
@@ -243,12 +256,19 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.half",
             TextComponents.string(Boolean.toString(this.top)).get(),
             TextComponents.number(this.openTicks).get()).color(TextFormatting.GRAY).get());
+        player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.requests",
+            TextComponents.string(Boolean.toString(this.open)).get(),
+            TextComponents.number(group.getDoorOpenRequest(floorLevel) - this.lastOpenRequest).get(),
+            TextComponents.number(group.getDoorCloseRequest(floorLevel) - this.lastCloseRequest).get())
+            .color(TextFormatting.GRAY).get());
     }
 
     private void setOpen(boolean open){
-        IBlockState state = this.world.getBlockState(this.pos);
-        if(state.getBlock() instanceof ElevatorDoorBlockBase && state.getValue(ElevatorDoorBlockBase.OPEN) != open)
-            this.world.setBlockState(this.pos, state.withProperty(ElevatorDoorBlockBase.OPEN, open), 3);
+        if(this.open == open)
+            return;
+        this.open = open;
+        // Syncs to clients so their leaves start sliding, and marks the chunk so collision follows.
+        this.dataChanged();
     }
 
     @Override
@@ -256,6 +276,7 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         NBTTagCompound compound = super.writeData();
         compound.setInteger("openTicks", this.openTicks);
         compound.setBoolean("top", this.top);
+        compound.setBoolean("open", this.open);
         return compound;
     }
 
@@ -264,5 +285,6 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         super.readData(compound);
         this.openTicks = compound.getInteger("openTicks");
         this.top = compound.getBoolean("top");
+        this.open = compound.getBoolean("open");
     }
 }

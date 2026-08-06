@@ -1,27 +1,15 @@
 {
   "variants": {
-    "facing=north,open=true": {
+    "facing=north": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=north,open=false": {
+    "facing=south": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=south,open=true": {
+    "facing=west": {
       "model": "movingelevators:elevator_door_block_hidden"
     },
-    "facing=south,open=false": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=west,open=true": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=west,open=false": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=east,open=true": {
-      "model": "movingelevators:elevator_door_block_hidden"
-    },
-    "facing=east,open=false": {
+    "facing=east": {
       "model": "movingelevators:elevator_door_block_hidden"
     }
   }

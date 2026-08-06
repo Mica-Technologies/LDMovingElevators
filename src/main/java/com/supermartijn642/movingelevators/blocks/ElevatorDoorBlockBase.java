@@ -6,7 +6,6 @@ import com.supermartijn642.core.block.BlockProperties;
 import com.supermartijn642.core.block.EntityHoldingBlock;
 import net.minecraft.block.BlockHorizontal;
 import net.minecraft.block.material.EnumPushReaction;
-import net.minecraft.block.properties.PropertyBool;
 import net.minecraft.block.properties.PropertyDirection;
 import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.block.state.IBlockState;
@@ -50,7 +49,6 @@ import java.util.function.Consumer;
 public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityHoldingBlock {
 
     public static final PropertyDirection FACING = BlockHorizontal.FACING;
-    public static final PropertyBool OPEN = PropertyBool.create("open");
 
     /** Depth of the leaves within the block, so they sit in the middle of the frame. */
     protected static final double MIN_Z = 7 / 16d, MAX_Z = 9 / 16d;
@@ -267,17 +265,25 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
         return rotate(box, state.getValue(FACING));
     }
 
+    /**
+     * @return whether the door at this position is open, according to its block entity
+     */
+    public static boolean isOpen(IBlockAccess level, BlockPos pos){
+        TileEntity entity = level.getTileEntity(pos);
+        return entity instanceof ElevatorDoorBlockEntity && ((ElevatorDoorBlockEntity)entity).isOpen();
+    }
+
     @Override
     public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess level, BlockPos pos){
         // The outline has to follow the leaf. Returning the closed shape while open drew a box around
         // the empty doorway you had just walked through.
-        return this.shapeForProgress(state, state.getValue(OPEN) ? 1 : 0);
+        return this.shapeForProgress(state, isOpen(level, pos) ? 1 : 0);
     }
 
     @Override
     public AxisAlignedBB getCollisionBoundingBox(IBlockState state, IBlockAccess level, BlockPos pos){
         // Open doors are a doorway, not a wall.
-        return state.getValue(OPEN) ? NULL_AABB : this.getBoundingBox(state, level, pos);
+        return isOpen(level, pos) ? NULL_AABB : this.getBoundingBox(state, level, pos);
     }
 
     @Override

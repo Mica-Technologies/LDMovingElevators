@@ -33,6 +33,7 @@
   "movingelevators.elevator_door.status.landing": "  Door at y=%1$s serves landing y=%2$s",
   "movingelevators.elevator_door.status.cabin": "  Cabin at this landing: %1$s (cabin is on floor index %2$s)",
   "movingelevators.elevator_door.status.half": "  Upper half: %1$s, open ticks left: %2$s",
+  "movingelevators.elevator_door.status.requests": "  Open now: %1$s (unseen open request: %2$s, close: %3$s)",
   "movingelevators.elevator_door.not_bound": "These doors are not bound to an elevator controller!",
   "movingelevators.elevator_door.no_room": "Not enough room for the doorway.",
   "movingelevators.floor_select.door_open": "Open doors",
