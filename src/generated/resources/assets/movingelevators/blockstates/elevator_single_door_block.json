@@ -1,34 +1,28 @@
 {
   "variants": {
     "facing=north,open=true": {
-      "model": "movingelevators:elevator_single_door_block_open"
+      "model": "movingelevators:elevator_door_block_hidden"
     },
     "facing=north,open=false": {
-      "model": "movingelevators:elevator_door_block_closed"
+      "model": "movingelevators:elevator_door_block_hidden"
     },
     "facing=south,open=true": {
-      "model": "movingelevators:elevator_single_door_block_open",
-      "y": 180
+      "model": "movingelevators:elevator_door_block_hidden"
     },
     "facing=south,open=false": {
-      "model": "movingelevators:elevator_door_block_closed",
-      "y": 180
+      "model": "movingelevators:elevator_door_block_hidden"
     },
     "facing=west,open=true": {
-      "model": "movingelevators:elevator_single_door_block_open",
-      "y": 270
+      "model": "movingelevators:elevator_door_block_hidden"
     },
     "facing=west,open=false": {
-      "model": "movingelevators:elevator_door_block_closed",
-      "y": 270
+      "model": "movingelevators:elevator_door_block_hidden"
     },
     "facing=east,open=true": {
-      "model": "movingelevators:elevator_single_door_block_open",
-      "y": 90
+      "model": "movingelevators:elevator_door_block_hidden"
     },
     "facing=east,open=false": {
-      "model": "movingelevators:elevator_door_block_closed",
-      "y": 90
+      "model": "movingelevators:elevator_door_block_hidden"
     }
   }
 }

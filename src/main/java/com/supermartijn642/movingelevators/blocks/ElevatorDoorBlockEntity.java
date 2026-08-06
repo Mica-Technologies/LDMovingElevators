@@ -98,10 +98,29 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         return super.getFloorLevel();
     }
 
+    /** Ticks a leaf takes to travel its full width. */
+    private static final float ANIMATION_SPEED = 1 / 8f;
+
+    /** Client-side only: how far this leaf has slid, and where it was last tick to interpolate from. */
+    private float animation, previousAnimation;
+
+    public float getAnimation(float partialTicks){
+        return this.previousAnimation + (this.animation - this.previousAnimation) * partialTicks;
+    }
+
     @Override
     public void update(){
-        if(this.world == null || this.world.isRemote)
+        if(this.world == null)
             return;
+        if(this.world.isRemote){
+            // The leaf slides towards whatever the block state says, so a door that is already open
+            // when it comes into view is drawn open rather than sliding on first sight.
+            IBlockState state = this.world.getBlockState(this.pos);
+            float target = state.getBlock() instanceof ElevatorDoorBlockBase && state.getValue(ElevatorDoorBlockBase.OPEN) ? 1 : 0;
+            this.previousAnimation = this.animation;
+            this.animation += Math.max(-ANIMATION_SPEED, Math.min(ANIMATION_SPEED, target - this.animation));
+            return;
+        }
 
         if(!this.isBound() && --this.adoptCounter <= 0){
             this.adoptCounter = ADOPT_INTERVAL;

@@ -10,6 +10,7 @@ import com.supermartijn642.movingelevators.blocks.DisplayBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.ElevatorInputBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.RemoteDisplayBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.ElevatorCarPanelBlockEntityRenderer;
+import com.supermartijn642.movingelevators.blocks.ElevatorDoorBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.RemoteCallPanelBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.RemoteIndicatorBlockEntityRenderer;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
@@ -38,6 +39,9 @@ public class MovingElevatorsClient {
 
     public static final ResourceLocation OVERLAY_TEXTURE_LOCATION = new ResourceLocation("movingelevators", "blocks/block_overlays");
     public static TextureAtlasSprite OVERLAY_SPRITE;
+    /** The doors are drawn by a renderer rather than baked, so their texture is needed directly. */
+    public static final ResourceLocation METAL_TEXTURE_LOCATION = new ResourceLocation("movingelevators", "blocks/metal_silver");
+    public static TextureAtlasSprite METAL_SPRITE;
 
     public static void register(){
         ClientRegistrationHandler handler = ClientRegistrationHandler.get("movingelevators");
@@ -49,8 +53,10 @@ public class MovingElevatorsClient {
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.remote_indicator_tile, RemoteIndicatorBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.remote_call_panel_tile, RemoteCallPanelBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_car_panel_tile, ElevatorCarPanelBlockEntityRenderer::new);
+        handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_door_tile, ElevatorDoorBlockEntityRenderer::new);
         // Register texture
         handler.registerAtlasSprite(TextureAtlases.getBlocks(), OVERLAY_TEXTURE_LOCATION.getResourcePath());
+        handler.registerAtlasSprite(TextureAtlases.getBlocks(), METAL_TEXTURE_LOCATION.getResourcePath());
         // Baked models
         handler.registerBlockModelOverwrite(() -> MovingElevators.elevator_block, CamoBakedModel::new);
         handler.registerBlockModelOverwrite(() -> MovingElevators.display_block, CamoBakedModel::new);
@@ -78,8 +84,10 @@ public class MovingElevatorsClient {
 
     @SubscribeEvent
     public static void onTextureStitchPre(TextureStitchEvent.Post e){
-        if(e.getMap() == ClientUtils.getTextureManager().getTexture(TextureAtlases.getBlocks()))
+        if(e.getMap() == ClientUtils.getTextureManager().getTexture(TextureAtlases.getBlocks())){
             OVERLAY_SPRITE = e.getMap().getAtlasSprite(OVERLAY_TEXTURE_LOCATION.toString());
+            METAL_SPRITE = e.getMap().getAtlasSprite(METAL_TEXTURE_LOCATION.toString());
+        }
     }
 
     public static void openElevatorScreen(BlockPos pos){

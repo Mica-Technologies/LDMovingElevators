@@ -27,7 +27,9 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 - **Elevator Doors**, in two sizes: a 2x2 double doorway whose leaves meet in the middle and retract
   into either side, and a 1x2 narrow one with a single leaf. Each is placed as one item and removed
-  as one unit. They open when the cabin arrives, and when a landing button is
+  as one unit, and finds its own elevator from where it stands — there is nothing to bind. The
+  leaves slide open and shut rather than snapping, and their outline follows the leaf so an open
+  doorway is not still boxed off. They open when the cabin arrives, and when a landing button is
   pressed while it is already there; they close on their own after a configurable dwell
   (`doorAutoCloseTicks`, 12 seconds by default), and immediately if the cabin leaves — a landing
   door never stands open on an empty shaft. Redstone power forces them open as an emergency

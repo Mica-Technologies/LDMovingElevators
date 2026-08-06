@@ -249,11 +249,29 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
         return box;
     }
 
+    /**
+     * The leaf's shape part-way through opening, in world orientation.
+     * <p>
+     * The outline, the collision and the drawn leaf all come through here, so an animated door cannot
+     * end up looking like one thing and behaving like another. Only the inner edge moves: the outer
+     * one stays put against the frame, which is what makes it read as sliding into a pocket rather
+     * than shrinking.
+     *
+     * @param progress 0 fully closed, 1 fully open
+     */
+    public AxisAlignedBB shapeForProgress(IBlockState state, float progress){
+        AxisAlignedBB open = this.openShapeFacingNorth(state);
+        AxisAlignedBB box = progress <= 0 ? CLOSED : progress >= 1 ? open : new AxisAlignedBB(
+            CLOSED.minX + (open.minX - CLOSED.minX) * progress, CLOSED.minY, CLOSED.minZ,
+            CLOSED.maxX + (open.maxX - CLOSED.maxX) * progress, CLOSED.maxY, CLOSED.maxZ);
+        return rotate(box, state.getValue(FACING));
+    }
+
     @Override
     public AxisAlignedBB getBoundingBox(IBlockState state, IBlockAccess level, BlockPos pos){
         // The outline has to follow the leaf. Returning the closed shape while open drew a box around
         // the empty doorway you had just walked through.
-        return rotate(state.getValue(OPEN) ? this.openShapeFacingNorth(state) : CLOSED, state.getValue(FACING));
+        return this.shapeForProgress(state, state.getValue(OPEN) ? 1 : 0);
     }
 
     @Override
