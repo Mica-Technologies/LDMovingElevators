@@ -1,16 +1,16 @@
 package com.supermartijn642.movingelevators.packets;
 
-import com.supermartijn642.core.network.BlockEntityBasePacket;
 import com.supermartijn642.core.network.PacketContext;
 import com.supermartijn642.movingelevators.blocks.ControllerBlockEntity;
 import com.supermartijn642.movingelevators.gui.ElevatorScreen;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;
 
 /**
  * Created 4/21/2020 by SuperMartijn642
  */
-public class PacketSetFloorName extends BlockEntityBasePacket<ControllerBlockEntity> {
+public class PacketSetFloorName extends ControllerPacket {
 
     public String name;
 
@@ -42,7 +42,7 @@ public class PacketSetFloorName extends BlockEntityBasePacket<ControllerBlockEnt
     }
 
     @Override
-    protected void handle(ControllerBlockEntity blockEntity, PacketContext context){
+    protected void handle(ControllerBlockEntity blockEntity, EntityPlayer player){
         blockEntity.setFloorName(this.name == null || this.name.trim().isEmpty() ? null : this.name);
     }
 }
