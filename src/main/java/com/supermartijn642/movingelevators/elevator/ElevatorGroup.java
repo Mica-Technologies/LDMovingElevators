@@ -47,7 +47,16 @@ public class ElevatorGroup {
      * How long the cabin waits at a floor before serving the next queued call, so passengers get a
      * chance to step in or out.
      */
-    private static final int DWELL_TICKS = 20;
+    /**
+     * Boarding time at an ordinary stop, from config.
+     * <p>
+     * It was one second, which is not long enough to walk into a lift -- the cabin answered a call,
+     * opened its doors and left again before anybody could reach it. Ten seconds by default, and
+     * "close doors" cuts it short for anyone who is already aboard.
+     */
+    private static int dwellTicks(){
+        return MovingElevatorsConfig.elevatorDwellTicks.get();
+    }
     /**
      * How long the cabin holds a landing it was dispatched to by a bank lobby panel: 15 seconds.
      * <p>
@@ -424,7 +433,16 @@ public class ElevatorGroup {
         if(!this.floors.contains(yLevel))
             return;
 
-        this.callDirections.merge(yLevel, up ? CALL_UP : CALL_DOWN, (a, b) -> a | b);
+        Integer previous = this.callDirections.get(yLevel);
+        int merged = (previous == null ? 0 : previous) | (up ? CALL_UP : CALL_DOWN);
+        if(previous == null || previous != merged){
+            this.callDirections.put(yLevel, merged);
+            // The lamps are drawn from this map on the client, so a change nobody is told about is a
+            // button that visibly does nothing. Pressing the second arrow while the cabin is already
+            // on its way changes nothing else -- queueCall returns early because the floor is already
+            // the target -- so this was the only path by which that press could ever be seen.
+            this.shouldBeSynced = true;
+        }
 
         if(this.isMoving){
             this.queueCall(yLevel);
@@ -544,7 +562,10 @@ public class ElevatorGroup {
         // aboard has said they are ready, and not having to wait out the full fifteen seconds is
         // the entire reason the button exists.
         this.doorHoldTicks.remove(yLevel);
-        if(this.dwellCounter > DWELL_TICKS && this.isCabinAt(yLevel))
+        // Any dwell, not just a long one. The comparison used to be against the ordinary dwell, so
+        // once that became a real boarding wait rather than a single second, the button that exists
+        // to skip it would have stopped skipping it.
+        if(this.dwellCounter > 0 && this.isCabinAt(yLevel))
             this.dwellCounter = 0;
     }
 
@@ -900,7 +921,7 @@ public class ElevatorGroup {
         // sharing the trip.
         if(!this.collectBankedDestinations(this.targetY)){
             this.doorHoldTicks.remove(this.targetY);
-            this.dwellCounter = DWELL_TICKS;
+            this.dwellCounter = dwellTicks();
         }
         // Levelled after an emergency stop: sit here with the doors open. Open rather than shut
         // because whoever is in the shaft may well want to get out through the cabin, and whoever is
@@ -976,7 +997,11 @@ public class ElevatorGroup {
     }
 
     private void startElevator(int currentY, int targetY){
-        if(this.level == null || this.isMoving)
+        // Out of service means out of service. The call queue was already skipped during an
+        // emergency, but a floor pressed on the car panel reaches this directly and drove the cabin
+        // off mid-emergency -- with somebody still in the shaft, which is the one thing the whole
+        // feature exists to prevent.
+        if(this.level == null || this.isMoving || this.emergencyState != EmergencyState.NONE)
             return;
         // Anchored to where this trip begins, so the first sweep covers the ground already travelled
         // rather than only the window around wherever the cabin happens to be when the timer fires.

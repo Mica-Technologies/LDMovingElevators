@@ -61,9 +61,14 @@ public class PacketBankDestination extends BlockEntityBasePacket<BankLobbyPanelB
             return;
         }
 
-        // The pickup floor as a plain y level: floor names are resolved for display on the client, and
-        // this runs on the server, where that formatting is not available.
+        // Named, not numbered. A world y level is meaningless to a passenger -- "on its way to 74"
+        // tells them nothing about the building they are standing in.
+        int floor = assignment.group.getFloorNumber(assignment.pickupY);
+        String name = floor == -1 ? null : assignment.group.getFloorDisplayName(floor);
         player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby.dispatched",
-            TextComponents.number(assignment.pickupY).get()).get(), true);
+            name != null && !name.isEmpty()
+                ? TextComponents.string(name).get()
+                : TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor + 1).get()).get()
+        ).get(), true);
     }
 }

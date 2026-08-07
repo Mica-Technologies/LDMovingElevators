@@ -168,6 +168,17 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- Pressing the second arrow at a landing did nothing visible. Both directions were recorded, but a
+  press that only added a direction never told the client, so the second lamp stayed dark and the
+  button looked broken.
+- A floor pressed on the car panel drove the cabin away mid-emergency, with somebody still in the
+  shaft — the one thing the feature exists to prevent. The call queue was already held during an
+  emergency; a direct press was not.
+- The bank lobby panel said which world height a car was coming to rather than which floor.
+- A bank lobby panel item kept its links after being placed and went on accumulating more, so the
+  second panel you built was never the bank you thought you were building. Links move onto the panel
+  when you place it; copying a placed panel is the way to repeat one.
+
 - The cabin wrote its blocks into the world without regard for anyone standing there, so arriving
   entombed them. The emergency stop made this sharp rather than theoretical: it levels to the
   nearest floor precisely because somebody is in the shaft, so the safety feature could bury the
@@ -289,6 +300,11 @@ Based on upstream **Moving Elevators 1.4.12**.
   now declared as inputs.
 
 ### Changed
+
+- **Elevators now wait ten seconds at a floor rather than one**, which is boarding time — one second
+  was not long enough to walk in, so a lift could answer a call, open its doors and leave before
+  anyone reached it. "Close doors" inside the cabin cuts it short. Configurable as
+  `elevatorDwellTicks`.
 
 - **"E" and "ST" on the emergency readouts are translatable.** They were the only user-visible words
   in the mod that were not, being an English abbreviation of "emergency stop".

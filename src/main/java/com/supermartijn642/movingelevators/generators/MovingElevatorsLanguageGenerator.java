@@ -56,11 +56,11 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
 
         // Bank lobby panel
         this.block(MovingElevators.bank_lobby_panel_block, "Elevator Bank Lobby Panel");
-        this.translation("movingelevators.bank_lobby_panel.tooltip", "Bind it to several elevator controllers by right-clicking each one with it. Right-click a placed, configured panel with another panel item to copy its whole set of bindings");
+        this.translation("movingelevators.bank_lobby_panel.tooltip", "Link it to ONE elevator controller in each shaft it should serve \u2014 right-click that controller with it. The panel finds the rest of the shaft's floors and its own landing by itself, so there is no need to link every floor. Right-click a controller again to unlink it. Links move onto the panel when you place it and the item starts empty again; to build a matching second panel, right-click the placed one with another panel item to copy its whole bank");
         this.translation("movingelevators.bank_lobby.title", "Enter your destination floor");
         this.translation("movingelevators.bank_lobby.unbound", "This panel isn't linked to any elevators yet");
         this.translation("movingelevators.bank_lobby.no_car", "No linked elevator can reach that floor");
-        this.translation("movingelevators.bank_lobby.dispatched", "A car is on its way to %s");
+        this.translation("movingelevators.bank_lobby.dispatched", "Elevator is on its way to %s");
         this.translation("movingelevators.bank_lobby_panel.bound", "Bound to %s elevator controllers!");
         this.translation("movingelevators.bank_lobby_panel.unbound_one", "Unbound from an elevator controller, %s remaining!");
         this.translation("movingelevators.bank_lobby_panel.copied", "Copied bindings for %s elevator controllers!");

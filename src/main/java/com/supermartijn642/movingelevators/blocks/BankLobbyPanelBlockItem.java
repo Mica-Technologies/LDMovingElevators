@@ -86,6 +86,11 @@ public class BankLobbyPanelBlockItem extends BaseBlockItem {
             TextComponents.number(bindings.size()).get()).get(), true);
     }
 
+    /** Empties the item's bank, so the next panel placed starts from nothing. */
+    public static void clearBindings(ItemStack stack){
+        setBindings(stack, java.util.Collections.emptyList());
+    }
+
     public static List<BankLobbyPanelBlockEntity.Binding> readBindings(ItemStack stack){
         NBTTagCompound tag = stack.getTagCompound();
         if(tag == null || !tag.hasKey(BINDINGS_KEY, Constants.NBT.TAG_LIST))

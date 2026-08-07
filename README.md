@@ -199,7 +199,7 @@ not strand a whole building.
 ## Configuration
 
 Config lives in `config/movingelevators-common.toml`, written by SuperMartijn642's Config Lib. There
-are five options, all under `[General]`:
+are six options, all under `[General]`:
 
 | Option | Default | Range | What it does |
 |---|---|---|---|
@@ -207,6 +207,7 @@ are five options, all under `[General]`:
 | `maxCabinVerticalSize` | `11` | 1–15 | Maximum height of an elevator cabin. Higher numbers may cause lag |
 | `allowUnbreakableBlocks` | `false` | — | Whether the elevator may move unbreakable blocks. Turning this on can let players move bedrock and portals |
 | `doorAutoCloseTicks` | `240` | 20–1200 | How long Elevator Doors stay open before closing on their own, in ticks. 20 ticks is one second, so the default is 12 seconds |
+| `elevatorDwellTicks` | `200` | 0–1200 | How long an elevator waits at a floor before moving on to its next call, in ticks — boarding time. The default is 10 seconds. "Close doors" inside the cabin cuts it short; a floor a bank lobby panel sent the car to is held longer, since whoever called it is walking over |
 | `movingCabinLight` | `6` | 0–15 | Minimum light level inside a cabin while it is moving. A cabin is lifted out of the world as it travels, so nothing inside it lights anything and it would otherwise go dark. This lights the cabin, not the shaft. Set to `0` for the old behaviour |
 
 ---

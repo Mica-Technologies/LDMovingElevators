@@ -79,8 +79,15 @@ public class BankLobbyPanelBlock extends WallPanelBlock {
     public void onBlockPlacedBy(World level, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack){
         super.onBlockPlacedBy(level, pos, state, placer, stack);
         TileEntity entity = level.getTileEntity(pos);
-        if(entity instanceof BankLobbyPanelBlockEntity)
+        if(entity instanceof BankLobbyPanelBlockEntity){
             ((BankLobbyPanelBlockEntity)entity).setBindings(BankLobbyPanelBlockItem.readBindings(stack));
+            // The bank belongs to the panel now, not to what is left in your hand. Carrying it over
+            // meant the next panel silently inherited the last one's elevators and then accumulated
+            // more on top, so a bank built second was never the bank you thought you were building.
+            // Copying a placed panel is the deliberate way to repeat one.
+            if(!level.isRemote)
+                BankLobbyPanelBlockItem.clearBindings(stack);
+        }
     }
 
     @Override
