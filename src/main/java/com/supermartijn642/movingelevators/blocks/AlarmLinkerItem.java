@@ -57,6 +57,12 @@ public class AlarmLinkerItem extends BaseItem {
 
         // Anything else is taken to be the panel. It is remembered rather than acted on, so the second
         // click has something to attach.
+        //
+        // This only runs while sneaking, and not because we ask it to: a fire alarm panel answers a
+        // right-click by opening its own screen, and a block that answers is never followed by the
+        // item in hand. Sneaking is what skips the block and lets an item act instead. Hence the
+        // instructions -- sneak for the panel, plain click for the controller, which has the opposite
+        // arrangement because that branch lives in the controller block itself.
         NBTTagCompound tag = stack.hasTagCompound() ? stack.getTagCompound() : new NBTTagCompound();
         tag.setLong(PANEL_KEY, hitPos.toLong());
         stack.setTagCompound(tag);
