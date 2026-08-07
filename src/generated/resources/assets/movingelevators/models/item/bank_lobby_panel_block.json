@@ -21,10 +21,10 @@
         "south": {
           "texture": "#screen"
         },
-        "down": {
+        "east": {
           "texture": "#metal"
         },
-        "east": {
+        "west": {
           "texture": "#metal"
         },
         "north": {
@@ -33,7 +33,7 @@
         "up": {
           "texture": "#metal"
         },
-        "west": {
+        "down": {
           "texture": "#metal"
         }
       }

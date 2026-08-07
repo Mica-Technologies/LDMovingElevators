@@ -27,7 +27,7 @@
             16.0
           ]
         },
-        "down": {
+        "east": {
           "texture": "#metal",
           "uv": [
             0.0,
@@ -36,7 +36,7 @@
             16.0
           ]
         },
-        "east": {
+        "west": {
           "texture": "#metal",
           "uv": [
             0.0,
@@ -63,7 +63,7 @@
             16.0
           ]
         },
-        "west": {
+        "down": {
           "texture": "#metal",
           "uv": [
             0.0,

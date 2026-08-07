@@ -162,8 +162,15 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.independent_service.short", "IS");
         this.translation("movingelevators.out_of_service.marquee", "OUT OF SERVICE");
         this.translation("movingelevators.fire_recall.marquee", "FIRE RECALL");
+        this.item(MovingElevators.alarm_linker, "Elevator Alarm Linker");
+        this.translation("movingelevators.alarm_linker.tooltip", "Right-click a fire alarm panel, then right-click an elevator controller. The elevator will return to that controller's floor whenever the alarm sounds. Sneak and right-click the air to forget the panel");
+        this.translation("movingelevators.alarm_linker.tooltip.holding", "Holding fire alarm panel at %s \u2014 right-click an elevator controller");
+        this.translation("movingelevators.alarm_linker.selected", "Fire alarm panel selected at %s \u2014 now right-click an elevator controller");
+        this.translation("movingelevators.alarm_linker.no_panel", "Right-click a fire alarm panel first");
+        this.translation("movingelevators.alarm_linker.no_elevator", "That controller is not part of an elevator yet");
+        this.translation("movingelevators.alarm_linker.paired", "Elevator paired to the fire alarm panel at %s");
+        this.translation("movingelevators.alarm_linker.cleared", "Forgot the fire alarm panel");
         this.translation("movingelevators.service_mode.fire_recall", "Fire recall");
-        this.translation("movingelevators.elevator.alarm_noted", "Fire alarm panel noted at %s, %s, %s \u2014 now place this controller on the floor the elevator should recall to");
 
         // Two halves of the flashing emergency readout, abbreviating "emergency stop". Separate keys
         // rather than one string because a translation may not split at the same point English does.

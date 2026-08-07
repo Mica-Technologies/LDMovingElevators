@@ -19,12 +19,6 @@ public class ControllerBlockEntity extends ElevatorInputBlockEntity {
     private String name;
     private EnumDyeColor color = EnumDyeColor.GRAY;
     private boolean showButtons = true;
-    /**
-     * A fire alarm panel carried over from the item this controller was placed from, held until the
-     * elevator exists to be told about it. Controllers join their group on their first tick, so there
-     * is nothing to pair to at the moment of placement.
-     */
-    private BlockPos pendingAlarmPanel;
 
     public ControllerBlockEntity(){
         super(MovingElevators.elevator_tile);
@@ -36,13 +30,6 @@ public class ControllerBlockEntity extends ElevatorInputBlockEntity {
         if(!this.initialized){
             ElevatorGroupCapability.get(this.world).add(this);
             this.getGroup().updateFloorData(this, this.name, this.color);
-            if(this.pendingAlarmPanel != null){
-                // This controller's own floor is the recall floor: it is the one the builder was
-                // standing at when they placed it.
-                this.getGroup().setAlarmPanel(this.pendingAlarmPanel, this.getFloorLevel());
-                this.pendingAlarmPanel = null;
-                this.dataChanged();
-            }
             this.initialized = true;
         }
     }
@@ -62,9 +49,6 @@ public class ControllerBlockEntity extends ElevatorInputBlockEntity {
             compound.setString("name", this.name);
         compound.setInteger("color", this.color.getMetadata());
         compound.setBoolean("showButtons", this.showButtons);
-        compound.setBoolean("hasPendingAlarmPanel", this.pendingAlarmPanel != null);
-        if(this.pendingAlarmPanel != null)
-            compound.setLong("pendingAlarmPanel", this.pendingAlarmPanel.toLong());
         if(this.facing != null)
             compound.setInteger("facing", this.facing.getHorizontalIndex());
         return compound;
@@ -81,13 +65,7 @@ public class ControllerBlockEntity extends ElevatorInputBlockEntity {
             this.name = null;
         this.color = EnumDyeColor.byMetadata(compound.getInteger("color"));
         this.showButtons = !compound.hasKey("showButtons", Constants.NBT.TAG_BYTE) || compound.getBoolean("showButtons");
-        this.pendingAlarmPanel = compound.getBoolean("hasPendingAlarmPanel") ? BlockPos.fromLong(compound.getLong("pendingAlarmPanel")) : null;
         this.facing = compound.hasKey("facing", Constants.NBT.TAG_INT) ? EnumFacing.getHorizontal(compound.getInteger("facing")) : null;
-    }
-
-    public void setPendingAlarmPanel(BlockPos panelPos){
-        this.pendingAlarmPanel = panelPos;
-        this.dataChanged();
     }
 
     public void onRemove(){

@@ -19,10 +19,10 @@
         "south": {
           "texture": "#all"
         },
-        "down": {
+        "east": {
           "texture": "#all"
         },
-        "east": {
+        "west": {
           "texture": "#all"
         },
         "north": {
@@ -31,7 +31,7 @@
         "up": {
           "texture": "#all"
         },
-        "west": {
+        "down": {
           "texture": "#all"
         }
       }

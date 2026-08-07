@@ -20,6 +20,12 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
         this.cubeAll("block/display_block", new ResourceLocation("movingelevators", "blocks/display"));
         this.cubeAll("block/button_block", new ResourceLocation("movingelevators", "blocks/display"));
         this.cubeAll("block/remote_display_block", new ResourceLocation("movingelevators", "blocks/display"));
+        // Borrowing vanilla's lead texture rather than drawing one: the item ties two things
+        // together, which is exactly what a lead is for, and an invented icon would be worse than a
+        // familiar one.
+        this.model("item/alarm_linker")
+            .parent("minecraft", "item/generated")
+            .texture("layer0", "minecraft", "items/lead");
         this.model("item/elevator_block")
             .parent("block/elevator_block")
             .texture("overlay", "blocks/buttons")

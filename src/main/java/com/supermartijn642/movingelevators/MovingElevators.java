@@ -89,6 +89,8 @@ public class MovingElevators {
     public static SoundEvent modern_chime_sound;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "modern_passing_floor_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
     public static SoundEvent modern_passing_floor_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "alarm_linker", registry = RegistryEntryAcceptor.Registry.ITEMS)
+    public static AlarmLinkerItem alarm_linker;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "alarm_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
     public static SoundEvent alarm_sound;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "overload_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
@@ -166,7 +168,7 @@ public class MovingElevators {
         handler.registerBlockEntityType("banklobbypaneltile", () -> BaseBlockEntityType.create(BankLobbyPanelBlockEntity::new, bank_lobby_panel_block));
         handler.registerBlockEntityType("elevatordoortile", () -> BaseBlockEntityType.create(ElevatorDoorBlockEntity::new, elevator_door_block, elevator_single_door_block));
         // Items
-        handler.registerItem("elevator_block", () -> new ControllerBlockItem(elevator_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("elevator_block", () -> new BaseBlockItem(elevator_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("display_block", () -> new BaseBlockItem(display_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("button_block", () -> new RemoteControllerBlockItem(button_block, ItemProperties.create().group(GROUP)));
         // Reuses RemoteControllerBlockItem so ControllerBlock's bind-on-right-click path, which keys
@@ -181,6 +183,7 @@ public class MovingElevators {
         handler.registerItem("bank_lobby_panel_block", () -> new MultiControllerBlockItem(bank_lobby_panel_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_door_block", () -> new BaseBlockItem(elevator_door_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_single_door_block", () -> new BaseBlockItem(elevator_single_door_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("alarm_linker", () -> new AlarmLinkerItem(ItemProperties.create().group(GROUP)));
         // Sounds
         handler.registerSoundEvent("arrive_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "arrive_sound")));
         handler.registerSoundEvent("passing_floor_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "passing_floor_sound")));
