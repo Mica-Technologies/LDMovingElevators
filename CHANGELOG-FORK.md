@@ -162,6 +162,24 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- The cabin wrote its blocks into the world without regard for anyone standing there, so arriving
+  entombed them. The emergency stop made this sharp rather than theoretical: it levels to the
+  nearest floor precisely because somebody is in the shaft, so the safety feature could bury the
+  person it fired for. Anyone in the way is now shoved clear of the cabin in the direction it was
+  travelling, the way a piston pushes; passengers riding the hollow middle are left alone.
+- The destination was checked once before departure and never again, so anything built there in the
+  meantime was destroyed on arrival — and a block the cabin was not allowed to break made it drop
+  its own floor block as an item instead. It is rechecked in flight now, and the cabin diverts to
+  the nearest clear floor.
+- The shaft sweep looked a fixed distance either side of the cabin, which is only safe if the cabin
+  cannot outrun it. At the top speed it covers a hundred blocks between sweeps, so most of the shaft
+  went unexamined. It now sweeps the volume actually travelled, which cannot leave a gap.
+- The landing panels, car panel and bank lobby panel did not check that whoever pressed them was
+  nearby. The elevator screen already did.
+- The bank lobby panel stayed silent during an emergency. It now flashes when — and only when —
+  every car in the bank is out of service.
+- The door's "no landing found within 12 blocks" message said twelve whatever the real range was.
+
 - A bank call to a car already standing at your floor took the request and then never moved. A banked
   destination was only ever collected on arrival, and calling a car to the floor it is already on
   does not produce an arrival — the hall call just opens the doors and returns. So the commonest
@@ -268,6 +286,15 @@ Based on upstream **Moving Elevators 1.4.12**.
   now declared as inputs.
 
 ### Changed
+
+- **"E" and "ST" on the emergency readouts are translatable.** They were the only user-visible words
+  in the mod that were not, being an English abbreviation of "emergency stop".
+- **An elevator returning to service after an emergency stop now resets its calls** rather than
+  resuming them. Half a minute out of service is long enough that the people who pressed those
+  buttons have had every chance to walk off, and a lift setting out on errands nobody is waiting for
+  is worse than one that asks to be told again.
+- **The full-cube Elevator Display now reads from 30 blocks**, matching the other landing fixtures.
+  The car panel keeps its shorter 15, since it is read at arm's length inside the cabin.
 
 - **Calls are now collected mid-trip.** A cabin travelling from the first floor to the tenth used to
   sail past somebody calling from the fifth and collect them on the way back, because the queue was
