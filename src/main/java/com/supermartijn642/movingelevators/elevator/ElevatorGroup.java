@@ -173,6 +173,28 @@ public class ElevatorGroup {
     /** How often the held doors are told again to stay open, comfortably inside their own timer. */
     private static final int OVERLOAD_DOOR_REFRESH = 20;
     private boolean overloaded;
+
+    /**
+     * Whether this elevator is answering the building, only its own passengers, or nobody.
+     * <p>
+     * Independent service is the useful middle: the car still goes where the people inside it ask,
+     * but stops being offered to the building. It is how you keep a lift to yourself to shift
+     * furniture without taking it off the network altogether, which out of service does.
+     */
+    public enum ServiceMode {
+        NORMAL, INDEPENDENT, OUT_OF_SERVICE;
+
+        public ServiceMode next(){
+            ServiceMode[] modes = values();
+            return modes[(this.ordinal() + 1) % modes.length];
+        }
+
+        public String getNameTranslationKey(){
+            return "movingelevators.service_mode." + this.name().toLowerCase(java.util.Locale.ROOT);
+        }
+    }
+
+    private ServiceMode serviceMode = ServiceMode.NORMAL;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
     private int pendingDing;
     /** Which note the scheduled half of the arrival chime is. Decided on arrival, not when it plays,
@@ -313,7 +335,7 @@ public class ElevatorGroup {
             // An overloaded cabin takes no calls either. Letting the queue run would have it try to
             // depart, fail, and drop the call as undeliverable -- so the calls would quietly vanish
             // while it sat there buzzing.
-            if(this.emergencyState == EmergencyState.NONE && !this.overloaded)
+            if(this.emergencyState == EmergencyState.NONE && !this.overloaded && !this.isOutOfService())
                 this.updateCallQueue();
         }
     }
@@ -467,7 +489,7 @@ public class ElevatorGroup {
      * on the way the caller wanted once it arrives.
      */
     public void onHallCall(int yLevel, boolean up, EntityPlayer requester){
-        if(!this.floors.contains(yLevel))
+        if(!this.floors.contains(yLevel) || !this.acceptsHallCalls())
             return;
 
         Integer previous = this.callDirections.get(yLevel);
@@ -505,7 +527,7 @@ public class ElevatorGroup {
      * already aboard and has said where they are going.
      */
     public void onCarCall(int yLevel, EntityPlayer requester){
-        if(!this.floors.contains(yLevel))
+        if(!this.floors.contains(yLevel) || this.isOutOfService())
             return;
         if(this.isMoving){
             this.queueCall(yLevel);
@@ -544,7 +566,7 @@ public class ElevatorGroup {
      * two people going the same way into the same cabin.
      */
     public void onBankedCall(int pickupY, int destinationY, EntityPlayer requester){
-        if(pickupY == destinationY)
+        if(pickupY == destinationY || !this.acceptsHallCalls())
             return;
         this.bankedDestinations.computeIfAbsent(pickupY, y -> new LinkedHashSet<>()).add(destinationY);
         this.onHallCall(pickupY, destinationY > pickupY, requester);
@@ -924,6 +946,24 @@ public class ElevatorGroup {
      * Floor area rather than volume, because it is standing room that runs out -- a taller cabin does
      * not hold more people, and a wider one plainly does.
      */
+    public ServiceMode getServiceMode(){
+        return this.serviceMode;
+    }
+
+    public void setServiceMode(ServiceMode mode){
+        this.serviceMode = mode == null ? ServiceMode.NORMAL : mode;
+        this.shouldBeSynced = true;
+    }
+
+    public boolean isOutOfService(){
+        return this.serviceMode == ServiceMode.OUT_OF_SERVICE;
+    }
+
+    /** Whether the building may call this elevator, as opposed to the people already inside it. */
+    public boolean acceptsHallCalls(){
+        return this.serviceMode == ServiceMode.NORMAL;
+    }
+
     public int getCabinCapacity(){
         return this.cageSizeX * this.cageSizeZ;
     }
@@ -1171,7 +1211,8 @@ public class ElevatorGroup {
         // emergency, but a floor pressed on the car panel reaches this directly and drove the cabin
         // off mid-emergency -- with somebody still in the shaft, which is the one thing the whole
         // feature exists to prevent.
-        if(this.level == null || this.isMoving || this.emergencyState != EmergencyState.NONE || this.overloaded)
+        if(this.level == null || this.isMoving || this.emergencyState != EmergencyState.NONE
+            || this.overloaded || this.isOutOfService())
             return;
         // Whatever it was announcing, it is leaving.
         this.announcingFloor = Integer.MIN_VALUE;
@@ -1746,6 +1787,7 @@ public class ElevatorGroup {
     compound.setIntArray("bankedDestinations", banked);
     compound.setInteger("announcingFloor", this.announcingFloor);
     compound.setBoolean("overloaded", this.overloaded);
+    compound.setString("serviceMode", this.serviceMode.name());
     compound.setBoolean("hasElevatorName", this.name != null);
     if(this.name != null)
         compound.setString("elevatorName", this.name);
@@ -1830,6 +1872,10 @@ public class ElevatorGroup {
         this.bankedDestinations.computeIfAbsent(banked[i], y -> new LinkedHashSet<>()).add(banked[i + 1]);
     this.announcingFloor = compound.hasKey("announcingFloor") ? compound.getInteger("announcingFloor") : Integer.MIN_VALUE;
     this.overloaded = compound.getBoolean("overloaded");
+    this.serviceMode = ServiceMode.NORMAL;
+    for(ServiceMode mode : ServiceMode.values())
+        if(mode.name().equals(compound.getString("serviceMode")))
+            this.serviceMode = mode;
     this.name = compound.getBoolean("hasElevatorName") ? compound.getString("elevatorName") : null;
         this.emergencyState = EmergencyState.NONE;
         for(EmergencyState state : EmergencyState.values())

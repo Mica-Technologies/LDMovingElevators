@@ -115,12 +115,13 @@ public class MovingElevators {
         CHANNEL.registerMessage(PacketRemoveElevatorGroup.class, PacketRemoveElevatorGroup::new, true);
         CHANNEL.registerMessage(PacketRequestFloor.class, PacketRequestFloor::new, true);
         CHANNEL.registerMessage(PacketDoorControl.class, PacketDoorControl::new, true);
-        CHANNEL.registerMessage(PacketToggleElevatorSounds.class, PacketToggleElevatorSounds::new, true);
         CHANNEL.registerMessage(PacketCycleElevatorSoundScheme.class, PacketCycleElevatorSoundScheme::new, true);
         CHANNEL.registerMessage(PacketRingAlarm.class, PacketRingAlarm::new, true);
         CHANNEL.registerMessage(PacketBankDestination.class, PacketBankDestination::new, true);
         CHANNEL.registerMessage(PacketSetElevatorName.class, PacketSetElevatorName::new, true);
         CHANNEL.registerMessage(PacketEmergencyStop.class, PacketEmergencyStop::new, true);
+        CHANNEL.registerMessage(PacketToggleOutOfService.class, PacketToggleOutOfService::new, true);
+        CHANNEL.registerMessage(PacketToggleIndependentService.class, PacketToggleIndependentService::new, true);
         CHANNEL.registerMessage(PacketSetFloorName.class, PacketSetFloorName::new, true);
         CHANNEL.registerMessage(PacketSyncElevatorMovement.class, PacketSyncElevatorMovement::new, true);
         CHANNEL.registerMessage(PacketToggleShowControllerButtons.class, PacketToggleShowControllerButtons::new, true);

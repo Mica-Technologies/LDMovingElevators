@@ -13,6 +13,7 @@ import com.supermartijn642.movingelevators.packets.PacketDoorControl;
 import com.supermartijn642.movingelevators.packets.PacketEmergencyStop;
 import com.supermartijn642.movingelevators.packets.PacketRingAlarm;
 import com.supermartijn642.movingelevators.packets.PacketRequestFloor;
+import com.supermartijn642.movingelevators.packets.PacketToggleIndependentService;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
 
@@ -40,6 +41,11 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     private static final int DOOR_ROW_HEIGHT = 20, DOOR_ROW_GAP = 5, DOOR_LABEL_PADDING = 6;
     /** Rows before the grid grows sideways instead, so a tall shaft cannot run off the screen. */
     private static final int MAX_ROWS = 8;
+    /**
+     * Top of the key switch, chosen so it sits centred against the header's two lines of text -- they
+     * run from y 6 to y 23, and the switch is {@link KeySwitchWidget#SIZE} tall.
+     */
+    private static final int KEY_SWITCH_Y = 9;
 
     public FloorSelectScreen(BlockPos entityPos){
         super(0, 0, 0, 0, ClientUtils.getWorld(), entityPos);
@@ -67,6 +73,49 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         return Math.max(1, (floorCount + columns - 1) / columns);
     }
 
+    /**
+     * The key switch's tooltip: the elevator's current service mode, since the switch itself has no
+     * room for a word of label and a lit bezel alone does not say what it is lit about.
+     * <p>
+     * Shared with {@link CarControlsScreen}, unlike the layout constants that screen deliberately
+     * duplicates -- what a control means is not a knob to nudge, and the two panels describing the
+     * same switch differently would be a bug rather than drift.
+     */
+    static ITextComponent independentTooltip(ElevatorCarPanelBlockEntity blockEntity){
+        ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
+        ElevatorGroup.ServiceMode mode = group == null ? ElevatorGroup.ServiceMode.NORMAL : group.getServiceMode();
+        return TextComponents.translation("movingelevators.floor_select.independent",
+            TextComponents.translation(mode.getNameTranslationKey()).get()).get();
+    }
+
+    /**
+     * Whether the key switch should read as thrown. Shared for the same reason as the tooltip above.
+     */
+    static boolean isOnIndependentService(ElevatorCarPanelBlockEntity blockEntity){
+        ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
+        return group != null && group.getServiceMode() == ElevatorGroup.ServiceMode.INDEPENDENT;
+    }
+
+    /**
+     * Adds the independent service key switch to the top-right of the header, where both screens put
+     * it.
+     * <p>
+     * Beside the title rather than in a row of its own: it is a staff control, not something a
+     * passenger reaches for, and the rows below are the passenger's. The header is also the one place
+     * on either screen with spare space, so tucking it there costs no height and leaves the car
+     * panel's grid and the control rows identical on both screens.
+     * <p>
+     * No permission check here. The server decides who may throw it and tells the player when they
+     * may not; checking here as well would duplicate a rule the server has to enforce anyway, and
+     * would be wrong the moment the two disagreed.
+     */
+    private void addKeySwitch(ElevatorCarPanelBlockEntity blockEntity){
+        this.addWidget(new KeySwitchWidget(this.width(blockEntity) - PADDING - KeySwitchWidget.SIZE, KEY_SWITCH_Y,
+            () -> isOnIndependentService(blockEntity),
+            () -> independentTooltip(blockEntity),
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketToggleIndependentService(this.blockEntityPos))));
+    }
+
     @Override
     protected int width(ElevatorCarPanelBlockEntity blockEntity){
         int columns = columnsFor(floorCount(blockEntity));
@@ -82,7 +131,12 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      */
     private static int headerWidth(ElevatorCarPanelBlockEntity blockEntity){
         FontRenderer fontRenderer = ClientUtils.getFontRenderer();
-        int widest = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.title").format());
+        // The header's two lines are centred, and the key switch sits at the right-hand end of them,
+        // so the room it takes has to be reserved on both sides or a centred line would slide under
+        // it. Reserving symmetrically is what keeps the lines centred on the panel rather than on
+        // what is left of it.
+        int centredTextReserve = (KeySwitchWidget.SIZE + GAP) * 2;
+        int widest = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.title").format()) + centredTextReserve;
         // The door row is two buttons side by side, so the panel has to be wide enough for both
         // labels plus a little padding inside each button, or the text spills over the edges.
         int doorOpen = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.door_open").format());
@@ -98,7 +152,8 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
             for(int floor = 0; floor < group.getFloorCount(); floor++){
                 String name = MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(floor), floor);
                 widest = Math.max(widest, fontRenderer.getStringWidth(
-                    TextComponents.translation("movingelevators.floor_select.current", TextComponents.string(name).get()).format()));
+                    TextComponents.translation("movingelevators.floor_select.current", TextComponents.string(name).get()).format())
+                    + centredTextReserve);
             }
         }
         return widest;
@@ -123,6 +178,11 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
 
     @Override
     protected void addWidgets(@Nonnull ElevatorCarPanelBlockEntity blockEntity){
+        // Before the early return below, since the switch needs no floors to make sense and widgets
+        // are only ever built once -- a panel that came up momentarily unsynced would otherwise be
+        // missing its switch for as long as it stayed open.
+        this.addKeySwitch(blockEntity);
+
         ElevatorGroup group = blockEntity.getGroup();
         if(group == null)
             return;

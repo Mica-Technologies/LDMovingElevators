@@ -2,6 +2,7 @@ package com.supermartijn642.movingelevators.packets;
 
 import com.supermartijn642.movingelevators.blocks.ControllerBlockEntity;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
+import com.supermartijn642.movingelevators.elevator.ElevatorSoundScheme;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.BlockPos;
 
@@ -25,6 +26,18 @@ public class PacketCycleElevatorSoundScheme extends ElevatorGroupPacket {
 
     @Override
     protected void handle(ElevatorGroup group, ControllerBlockEntity blockEntity, EntityPlayer player){
-        group.setSoundScheme(group.getSoundScheme().next());
+        // Off is the first value of one setting rather than a switch beside it: "what does this
+        // elevator sound like" has three answers, and two controls for one question cost a row the
+        // screen did not have.
+        if(!group.areSoundsEnabled()){
+            group.setSoundsEnabled(true);
+            group.setSoundScheme(ElevatorSoundScheme.STANDARD);
+            return;
+        }
+        ElevatorSoundScheme next = group.getSoundScheme().next();
+        if(next == ElevatorSoundScheme.STANDARD)
+            group.setSoundsEnabled(false);
+        else
+            group.setSoundScheme(next);
     }
 }

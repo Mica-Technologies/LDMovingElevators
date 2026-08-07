@@ -131,7 +131,6 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.elevator_screen.elevator_speed", "Speed");
         this.translation("movingelevators.elevator_screen.current_speed", "%s blocks/tick");
         this.translation("movingelevators.elevator_screen.sounds", "Sounds: %s");
-        this.translation("movingelevators.elevator_screen.sounds.on", "On");
         this.translation("movingelevators.elevator_screen.sounds.off", "Off");
         this.translation("movingelevators.elevator_screen.hide_controls", "Hide controls: %s");
         this.translation("movingelevators.elevator_screen.hide_controls.on", "True");
@@ -147,6 +146,16 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.elevator_screen.sound_scheme", "Sound scheme");
         this.translation("movingelevators.sound_scheme.standard", "Standard");
         this.translation("movingelevators.sound_scheme.modern", "Modern");
+
+        this.translation("movingelevators.elevator_screen.out_of_service", "Out of service: %s");
+        this.translation("movingelevators.elevator_screen.out_of_service.yes", "True");
+        this.translation("movingelevators.elevator_screen.out_of_service.no", "False");
+        this.translation("movingelevators.service_mode.normal", "Normal service");
+        this.translation("movingelevators.service_mode.independent", "Independent service");
+        this.translation("movingelevators.service_mode.out_of_service", "Out of service");
+        this.translation("movingelevators.service_mode.not_allowed", "Looks like this requires a key I don't have...");
+        this.translation("movingelevators.floor_select.independent", "Independent service: %s");
+        this.translation("movingelevators.out_of_service.marquee", "OUT OF SERVICE");
 
         // Two halves of the flashing emergency readout, abbreviating "emergency stop". Separate keys
         // rather than one string because a translation may not split at the same point English does.

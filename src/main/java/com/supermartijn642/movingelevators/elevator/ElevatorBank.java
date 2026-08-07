@@ -50,7 +50,10 @@ public class ElevatorBank {
         for(ElevatorGroup group : groups){
             // A halted car is not a slow car, it is one that is not coming. Sending somebody to wait
             // for it would be worse than telling them no elevator is available.
-            if(group == null || group.isEmergencyStopped() || group.getFloorNumber(destinationY) == -1)
+            // A car on independent service or out of service is not available to the building, which
+            // is the whole point of saying so.
+            if(group == null || group.isEmergencyStopped() || !group.acceptsHallCalls()
+                || group.getFloorNumber(destinationY) == -1)
                 continue;
             int pickupY = nearestFloorY(group, panelY);
             // A car that does not stop at this landing cannot collect from it, and one whose only

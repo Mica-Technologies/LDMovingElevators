@@ -88,18 +88,20 @@ public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity>
             checked -> MovingElevators.CHANNEL.sendToServer(new PacketToggleShowControllerButtons(this.blockEntityPos))
         ));
 
-        // Sounds. On the group rather than this controller: an elevator that beeps at some floors
-        // and not others would be odd.
+        // Out of service. On the group, like everything else here that is about the elevator rather
+        // than this one controller.
         this.addWidget(new CheckBoxWidget(42, 76,
-            checked -> TextComponents.translation("movingelevators.elevator_screen.sounds", checked ? TextComponents.translation("movingelevators.elevator_screen.sounds.on").color(TextFormatting.GREEN).get() : TextComponents.translation("movingelevators.elevator_screen.sounds.off").color(TextFormatting.RED).get()).get(),
-            () -> this.object.hasGroup() && this.object.getGroup().areSoundsEnabled(),
-            checked -> MovingElevators.CHANNEL.sendToServer(new PacketToggleElevatorSounds(this.blockEntityPos))
+            checked -> TextComponents.translation("movingelevators.elevator_screen.out_of_service", checked ? TextComponents.translation("movingelevators.elevator_screen.out_of_service.yes").color(TextFormatting.RED).get() : TextComponents.translation("movingelevators.elevator_screen.out_of_service.no").color(TextFormatting.GREEN).get()).get(),
+            () -> this.object.hasGroup() && this.object.getGroup().isOutOfService(),
+            checked -> MovingElevators.CHANNEL.sendToServer(new PacketToggleOutOfService(this.blockEntityPos))
         ));
-        // Which set of sounds, on the group for the same reason as the toggle above it. A cycling
-        // button rather than a list: two schemes do not earn a dropdown, and the screen has no room
-        // for one.
-        this.addWidget(new SoundSchemeButtonWidget(6, 91, 84, 14,
-            () -> TextComponents.translation(this.object.hasGroup() ? this.object.getGroup().getSoundScheme().getNameTranslationKey() : "movingelevators.sound_scheme.standard").get(),
+        // One control for "what does this elevator sound like", off being its first answer. Two
+        // controls for one question cost a row the screen has not got.
+        this.addWidget(new CycleButtonWidget(6, 91, 84, 14,
+            () -> TextComponents.translation("movingelevators.elevator_screen.sounds",
+                TextComponents.translation(!this.object.hasGroup() || !this.object.getGroup().areSoundsEnabled()
+                    ? "movingelevators.elevator_screen.sounds.off"
+                    : this.object.getGroup().getSoundScheme().getNameTranslationKey()).get()).get(),
             TextComponents.translation("movingelevators.elevator_screen.sound_scheme").get(),
             () -> MovingElevators.CHANNEL.sendToServer(new PacketCycleElevatorSoundScheme(this.blockEntityPos))));
         // Width

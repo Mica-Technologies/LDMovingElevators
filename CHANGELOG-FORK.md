@@ -25,6 +25,14 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Service modes.** *Out of service* is a switch on the elevator controller: the elevator answers
+  nobody, is skipped by bank dispatch, and scrolls OUT OF SERVICE on its readouts so nobody stands
+  waiting for a lift that is not coming. *Independent service* is a key switch inside the cabin: the
+  car still goes where its passengers ask but stops being offered to the building, which is how you
+  keep a lift to yourself without taking it off the network. The key switch is shown to everybody and
+  always looks locked; turning it needs the `movingelevators.independent_service` permission, which
+  operators have by default and a permissions mod can grant to anyone.
+
 - **Cabins have a capacity, and refuse to move when it is exceeded.** One passenger per block of cabin
   floor — it is standing room that runs out, so floor area rather than volume. An overloaded cabin
   holds its doors open at the floor it is standing at, since the way out of an overload is for
@@ -350,6 +358,10 @@ Based on upstream **Moving Elevators 1.4.12**.
   now declared as inputs.
 
 ### Changed
+
+- **The elevator controller's two sound controls are now one.** Off is the first answer to "what does
+  this elevator sound like", so a separate on/off checkbox beside the scheme button was two controls
+  for one question — and the screen had no row to spare for the out-of-service switch.
 
 - **A lobby panel now shows which floors already have a car coming.** Those buttons highlight and
   alternate between the floor and the name of the car on its way to it. The request leaves the panel

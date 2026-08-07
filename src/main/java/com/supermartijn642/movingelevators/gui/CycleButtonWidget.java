@@ -10,17 +10,18 @@ import java.util.function.Supplier;
 /**
  * A button whose face is its own current value -- press it and it steps to the next one.
  * <p>
- * A cycling button rather than a list: there are two schemes, and a dropdown for two entries costs
- * more room than the elevator screen has and more clicks than reading the answer takes.
+ * A cycling button rather than a list: these settings have two or three values each, and a dropdown
+ * for three entries costs more room than the elevator screen has and more clicks than reading the
+ * answer takes.
  * <p>
  * Created for the Mica Technologies fork.
  */
-public class SoundSchemeButtonWidget extends AbstractButtonWidget {
+public class CycleButtonWidget extends AbstractButtonWidget {
 
     private final Supplier<ITextComponent> label;
     private final ITextComponent tooltip;
 
-    public SoundSchemeButtonWidget(int x, int y, int width, int height, Supplier<ITextComponent> label, ITextComponent tooltip, Runnable onPress){
+    public CycleButtonWidget(int x, int y, int width, int height, Supplier<ITextComponent> label, ITextComponent tooltip, Runnable onPress){
         super(x, y, width, height, onPress);
         this.label = label;
         this.tooltip = tooltip;

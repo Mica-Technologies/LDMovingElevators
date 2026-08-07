@@ -11,6 +11,7 @@ import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.packets.PacketDoorControl;
 import com.supermartijn642.movingelevators.packets.PacketEmergencyStop;
 import com.supermartijn642.movingelevators.packets.PacketRingAlarm;
+import com.supermartijn642.movingelevators.packets.PacketToggleIndependentService;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
@@ -45,6 +46,11 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      * one should find the same controls in the same places.
      */
     private static final int DOOR_ROW_HEIGHT = 20, DOOR_ROW_GAP = 5, DOOR_LABEL_PADDING = 6;
+    /**
+     * Top of the key switch, matching the car panel's: the header is the same two lines of text at
+     * the same heights on both screens, so the switch has to land in the same place on both.
+     */
+    private static final int KEY_SWITCH_Y = 9;
 
     public CarControlsScreen(BlockPos entityPos){
         super(0, 0, 0, 0, ClientUtils.getWorld(), entityPos);
@@ -69,7 +75,11 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      */
     private static int headerWidth(ElevatorCarPanelBlockEntity blockEntity){
         FontRenderer fontRenderer = ClientUtils.getFontRenderer();
-        int widest = fontRenderer.getStringWidth(title(blockEntity).format());
+        // The header's two lines are centred and the key switch sits at the right-hand end of them,
+        // so the room it takes is reserved on both sides -- symmetrically, or the lines would end up
+        // centred on what is left of the panel rather than on the panel. Same as the car panel's.
+        int centredTextReserve = (KeySwitchWidget.SIZE + GAP) * 2;
+        int widest = fontRenderer.getStringWidth(title(blockEntity).format()) + centredTextReserve;
         // The door row is two buttons side by side, so the panel has to be wide enough for both
         // labels plus a little padding inside each button, or the text spills over the edges.
         int doorOpen = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.door_open").format());
@@ -85,7 +95,8 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
             for(int floor = 0; floor < group.getFloorCount(); floor++){
                 String name = MovingElevatorsClient.formatFloorDisplayName(group.getFloorDisplayName(floor), floor);
                 widest = Math.max(widest, fontRenderer.getStringWidth(
-                    TextComponents.translation("movingelevators.floor_select.current", TextComponents.string(name).get()).format()));
+                    TextComponents.translation("movingelevators.floor_select.current", TextComponents.string(name).get()).format())
+                    + centredTextReserve);
             }
         }
         return widest;
@@ -120,7 +131,25 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         // out, and both packets already refuse to do anything when there is no group behind them. A
         // panel that came up momentarily unsynced would otherwise be a blank plate for good, since
         // widgets are only built once.
+        this.addKeySwitch(blockEntity);
         this.addDoorControls(blockEntity);
+    }
+
+    /**
+     * The independent service key switch, top-right of the header. Placement and reasoning are the
+     * car panel's -- see FloorSelectScreen#addKeySwitch -- and the two are kept identical on purpose:
+     * a passenger stepping between a banked car and an ordinary one should find it in the same corner.
+     * <p>
+     * Duplicated here rather than shared because it is placement, like the constants above; what the
+     * switch means and when it reads as thrown comes from the car panel so the two cannot drift.
+     */
+    private void addKeySwitch(ElevatorCarPanelBlockEntity blockEntity){
+        this.addWidget(new KeySwitchWidget(this.width(blockEntity) - PADDING - KeySwitchWidget.SIZE, KEY_SWITCH_Y,
+            () -> FloorSelectScreen.isOnIndependentService(blockEntity),
+            () -> FloorSelectScreen.independentTooltip(blockEntity),
+            // Sent unconditionally: the server is the one that decides who may throw this, and a
+            // check here would only be a second copy of that rule, free to disagree with it.
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketToggleIndependentService(this.blockEntityPos))));
     }
 
     /**
