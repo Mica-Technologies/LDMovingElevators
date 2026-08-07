@@ -45,6 +45,10 @@ public class PacketBankDestination extends BlockEntityBasePacket<BankLobbyPanelB
 
     @Override
     protected void handle(BankLobbyPanelBlockEntity blockEntity, PacketContext context){
+        // The panel is a block in the world, so a message about it should come from somebody
+        // standing near it.
+        if(!PacketReach.isInReach(context.getSendingPlayer(), blockEntity.getPos()))
+            return;
         EntityPlayer player = context.getSendingPlayer();
         ElevatorBank.Assignment assignment = blockEntity.dispatch(this.destinationY, player);
         if(player == null)

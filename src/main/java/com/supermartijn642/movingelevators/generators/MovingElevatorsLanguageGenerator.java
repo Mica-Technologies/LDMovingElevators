@@ -71,7 +71,7 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.block(MovingElevators.elevator_single_door_block, "Elevator Door (Narrow)");
         this.translation("movingelevators.elevator_single_door.tooltip", "A 1x2 sliding doorway. Place it at an elevator landing and it finds that elevator by itself: it opens when the cabin arrives and closes again on its own. Redstone power forces it open");
         this.translation("movingelevators.elevator_door.status.header", "Elevator door status:");
-        this.translation("movingelevators.elevator_door.status.searching", "  No elevator landing found within 12 blocks at this height.");
+        this.translation("movingelevators.elevator_door.status.searching", "  No elevator landing found within %s blocks at this height.");
         this.translation("movingelevators.elevator_door.status.bound", "  Bound to controller at (%1$s, %2$s, %3$s)");
         this.translation("movingelevators.elevator_door.status.no_group", "  That controller is gone, or belongs to a different elevator.");
         this.translation("movingelevators.elevator_door.status.landing", "  Door at y=%1$s serves landing y=%2$s");
@@ -126,6 +126,11 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.elevator_screen.sound_scheme", "Sound scheme");
         this.translation("movingelevators.sound_scheme.standard", "Standard");
         this.translation("movingelevators.sound_scheme.modern", "Modern");
+
+        // Two halves of the flashing emergency readout, abbreviating "emergency stop". Separate keys
+        // rather than one string because a translation may not split at the same point English does.
+        this.translation("movingelevators.emergency.flash_first", "E");
+        this.translation("movingelevators.emergency.flash_second", "ST");
 
         this.translation("movingelevators.elevator.alarm_sound", "Elevator alarm rings");
         this.translation("movingelevators.floor_select.alarm", "Alarm");

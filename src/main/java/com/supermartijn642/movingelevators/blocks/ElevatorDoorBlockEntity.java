@@ -252,7 +252,10 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.header").color(TextFormatting.AQUA).get());
 
         if(!this.isBound()){
-            player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.searching").color(TextFormatting.YELLOW).get());
+            // The range is passed in rather than written into the message, which said "12 blocks"
+            // regardless of what ADOPT_RANGE actually was.
+            player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.searching",
+                TextComponents.number(ADOPT_RANGE).get()).color(TextFormatting.YELLOW).get());
             return;
         }
         BlockPos controller = this.getControllerPos();

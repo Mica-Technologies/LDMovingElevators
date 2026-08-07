@@ -21,6 +21,11 @@ import net.minecraft.util.math.Vec3d;
  */
 public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRenderer<ElevatorCarPanelBlockEntity> {
 
+    /**
+     * Squared, so this is 15 blocks -- half the landing panels' 30. This panel is read from arm's
+     * length inside the cabin, never across a room like the landing fixtures, so the shorter reach
+     * is deliberate rather than a value nobody got around to raising.
+     */
     private static final double TEXT_RENDER_DISTANCE = 15 * 15;
 
     // Face layout, in sixteenths, stated as the player sees it. Each of these is checked against

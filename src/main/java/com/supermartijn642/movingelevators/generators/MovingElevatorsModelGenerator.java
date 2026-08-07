@@ -60,16 +60,6 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
             .element(element -> element.shape(0, 0, 7, 16, 16, 9).allFaces(face -> face.texture("metal")));
-        this.model("block/elevator_door_block_open_left")
-            .parent("minecraft", "block/block")
-            .texture("particle", "blocks/metal_silver")
-            .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(0, 0, 7, 3, 16, 9).allFaces(face -> face.texture("metal")));
-        this.model("block/elevator_door_block_open_right")
-            .parent("minecraft", "block/block")
-            .texture("particle", "blocks/metal_silver")
-            .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(13, 0, 7, 16, 16, 9).allFaces(face -> face.texture("metal")));
         // The doors are drawn by their block entity renderer so they can slide, so the baked model
         // is empty -- otherwise the chunk would draw a snapped leaf behind the animated one. The
         // particle texture is still needed for breaking particles.
@@ -78,12 +68,6 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("particle", "blocks/metal_silver");
         this.model("item/elevator_door_block")
             .parent("block/elevator_door_block_closed");
-        // The single door reuses the closed leaf; open, it retracts to one side only.
-        this.model("block/elevator_single_door_block_open")
-            .parent("minecraft", "block/block")
-            .texture("particle", "blocks/metal_silver")
-            .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(0, 0, 7, 3, 16, 9).allFaces(face -> face.texture("metal")));
         this.model("item/elevator_single_door_block")
             .parent("block/elevator_door_block_closed");
         this.model("block/elevator_car_panel_block")

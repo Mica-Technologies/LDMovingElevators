@@ -146,6 +146,30 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
         return null;
     }
 
+    /**
+     * Whether every elevator in this bank is out of service, so no car can answer at all.
+     * <p>
+     * All of them rather than any of them, deliberately. Dispatch already skips a halted car
+     * silently, and a lobby flashing an emergency because one of four shafts has somebody in it
+     * would tell a waiting passenger to give up when three cars are still running. The signal is
+     * only worth showing when it is the whole answer.
+     */
+    public boolean isBankOutOfService(){
+        List<ElevatorGroup> groups = this.getGroups();
+        if(groups.isEmpty())
+            return false;
+        for(ElevatorGroup group : groups)
+            if(!group.isEmergencyStopped())
+                return false;
+        return true;
+    }
+
+    /** Any bound elevator, purely so the readout can share the bank's flash beat. */
+    public ElevatorGroup getAnyGroup(){
+        List<ElevatorGroup> groups = this.getGroups();
+        return groups.isEmpty() ? null : groups.get(0);
+    }
+
     /** The landing this panel stands on. */
     public int getPanelY(){
         return this.pos.getY();

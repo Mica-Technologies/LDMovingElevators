@@ -22,13 +22,6 @@ import net.minecraft.util.math.BlockPos;
  */
 public abstract class ControllerPacket extends BlockEntityBasePacket<ControllerBlockEntity> {
 
-    /**
-     * The same range vanilla containers use to decide an open screen is still usable, and for the
-     * same reason -- the screen stays open while you walk, so this has to allow a step back from the
-     * block without allowing action from across the map.
-     */
-    private static final double MAX_REACH_SQUARED = 64;
-
     protected ControllerPacket(BlockPos pos){
         super(pos);
     }
@@ -41,8 +34,7 @@ public abstract class ControllerPacket extends BlockEntityBasePacket<ControllerB
         EntityPlayer player = context.getSendingPlayer();
         if(player == null)
             return;
-        BlockPos pos = blockEntity.getPos();
-        if(player.getDistanceSq(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > MAX_REACH_SQUARED)
+        if(!PacketReach.isInReach(player, blockEntity.getPos()))
             return;
         this.handle(blockEntity, player);
     }

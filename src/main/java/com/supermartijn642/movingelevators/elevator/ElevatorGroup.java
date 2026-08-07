@@ -800,14 +800,17 @@ public class ElevatorGroup {
     }
 
     /**
-     * Text the readouts should show in place of a floor, or null in normal service. Flashes between
-     * "E" and "ST" off world time, so every readout in the building is on the same beat without
+     * Which half of the emergency flash the readouts should currently be showing.
+     * <p>
+     * A phase rather than the text itself. "E" and "ST" are an English abbreviation of "emergency
+     * stop", and were the only user-visible words in the mod that could not be translated -- deciding
+     * what they say is the client's business, and all this has to settle is when they change.
+     * <p>
+     * Driven off world time, so every readout in the building flashes on the same beat without
      * anything having to synchronise them.
      */
-    public String getEmergencyDisplay(){
-        if(this.emergencyState == EmergencyState.NONE || this.level == null)
-            return null;
-        return (this.level.getTotalWorldTime() / EMERGENCY_FLASH_TICKS) % 2 == 0 ? "E" : "ST";
+    public boolean isEmergencyFlashOn(){
+        return this.level != null && (this.level.getTotalWorldTime() / EMERGENCY_FLASH_TICKS) % 2 == 0;
     }
 
     public boolean isEmergencyStopped(){
@@ -1459,278 +1462,278 @@ public class ElevatorGroup {
         return true;
 }
 
-public void addComparatorListener(int floorYLevel, BlockPos blockPos){
-    this.comparatorListeners.putIfAbsent(floorYLevel, new HashSet<>());
-    this.comparatorListeners.get(floorYLevel).add(blockPos);
-}
-
-public boolean removeComparatorListener(BlockPos blockPos){
-    boolean removed = false;
-    Iterator<Set<BlockPos>> iterator = this.comparatorListeners.values().iterator();
-    while(iterator.hasNext()){
-        Set<BlockPos> positions = iterator.next();
-        if(positions.remove(blockPos))
-            removed = true;
+    public void addComparatorListener(int floorYLevel, BlockPos blockPos){
+        this.comparatorListeners.putIfAbsent(floorYLevel, new HashSet<>());
+        this.comparatorListeners.get(floorYLevel).add(blockPos);
     }
-    return removed;
-}
 
-public NBTTagCompound write(){
-    NBTTagCompound compound = new NBTTagCompound();
-    compound.setBoolean("isMoving", this.isMoving);
-    // Written unconditionally: while stopped this is where the cabin came to rest, which is the
-    // reference point pickNextCall() sweeps from. Upstream only stored it mid-move, so a reloaded
-    // idle group would have dispatched queued calls relative to y=0.
-    compound.setInteger("targetY", this.targetY);
-    if(this.isMoving){
-        compound.setDouble("lastY", this.lastY);
-        compound.setDouble("currentY", this.currentY);
-        compound.setTag("cage", this.cage.write());
-    }
-    compound.setDouble("targetSpeed", this.targetSpeed);
-    compound.setDouble("speed", this.speed);
-    compound.setInteger("cageSideOffset", this.cageSideOffset);
-    compound.setInteger("cageDepthOffset", this.cageDepthOffset);
-    compound.setInteger("cageHeightOffset", this.cageHeightOffset);
-    compound.setInteger("cageSizeX", this.cageSizeX);
-    compound.setInteger("cageSizeY", this.cageSizeY);
-    compound.setInteger("cageSizeZ", this.cageSizeZ);
-    int[] arr = new int[this.floors.size()];
-    for(int i = 0; i < this.floors.size(); i++)
-        arr[i] = this.floors.get(i);
-    compound.setIntArray("floors", arr);
-    int[] queue = new int[this.callQueue.size()];
-    int queueIndex = 0;
-    for(int y : this.callQueue)
-        queue[queueIndex++] = y;
-    compound.setIntArray("callQueue", queue);
-    // Flattened y/mask pairs, so a landing's lit arrows survive a reload alongside its queued call.
-    int[] directions = new int[this.callDirections.size() * 2];
-    int directionIndex = 0;
-    for(Map.Entry<Integer,Integer> entry : this.callDirections.entrySet()){
-        directions[directionIndex++] = entry.getKey();
-        directions[directionIndex++] = entry.getValue();
-    }
-    compound.setIntArray("callDirections", directions);
-    compound.setBoolean("soundsEnabled", this.soundsEnabled);
-    compound.setString("soundScheme", this.soundScheme.name());
-    compound.setString("emergencyState", this.emergencyState.name());
-    compound.setInteger("emergencyHold", this.emergencyHold);
-    compound.setInteger("lastDirection", this.lastDirection);
-    compound.setInteger("dwellCounter", this.dwellCounter);
-    NBTTagList floorDataTag = new NBTTagList();
-    for(FloorData floorDatum : this.floorData)
-        floorDataTag.appendTag(floorDatum.write());
-    compound.setTag("floorData", floorDataTag);
-    return compound;
-}
-
-public void read(NBTTagCompound compound){
-    if(compound.hasKey("moving")){ // old version stuff
-        this.isMoving = compound.getBoolean("moving");
-        int size = compound.getInteger("size");
-        if(this.isMoving){
-            this.targetY = compound.getInteger("targetY");
-            this.lastY = compound.getDouble("lastY");
-            this.currentY = compound.getDouble("currentY");
-            IBlockState[][][] blockStates = new IBlockState[size][1][size];
-            BlockShape shape = BlockShape.empty();
-            for(int x = 0; x < size; x++){
-                for(int z = 0; z < size; z++){
-                    IBlockState state = Block.getStateById(compound.getInteger("platform" + x + "," + z));
-                    if(state.getBlock() != Blocks.AIR){
-                        blockStates[x][0][z] = state;
-                        shape = BlockShape.or(shape, BlockShape.create(state.getCollisionBoundingBox(this.level, this.getPos((int)this.currentY))));
-                    }
-                }
-            }
-            // TODO reduce the number of collision boxes
-//                shape.optimize();
-            this.cage = this.level.isRemote ?
-                new ClientElevatorCage(size, 1, size, blockStates, new NBTTagCompound[size][1][size], new NBTTagCompound[size][1][size], shape.toBoxes()) :
-                new ElevatorCage(size, 1, size, blockStates, new NBTTagCompound[size][1][size], new NBTTagCompound[size][1][size], shape.toBoxes());
+    public boolean removeComparatorListener(BlockPos blockPos){
+        boolean removed = false;
+        Iterator<Set<BlockPos>> iterator = this.comparatorListeners.values().iterator();
+        while(iterator.hasNext()){
+            Set<BlockPos> positions = iterator.next();
+            if(positions.remove(blockPos))
+                removed = true;
         }
-        this.targetSpeed = compound.getDouble("speed");
-        this.speed = this.targetSpeed;
-        this.cageSizeX = this.cageSizeZ = size;
-        this.cageSizeY = 1;
-    }else{
-        this.isMoving = compound.getBoolean("isMoving");
-        // Absent from pre-queue saves that were stopped, where getInteger yields 0 -- the same
-        // value the field would otherwise have held.
-        this.targetY = compound.getInteger("targetY");
-        if(this.isMoving){
-            this.lastY = compound.getDouble("lastY");
-            this.currentY = compound.getDouble("currentY");
-            this.cage = ElevatorCage.read(compound.getCompoundTag("cage"), this.level.isRemote);
-        }
-        this.targetSpeed = compound.getDouble("targetSpeed");
-        this.speed = compound.getDouble("speed");
-        this.cageSideOffset = compound.getInteger("cageSideOffset");
-        this.cageDepthOffset = compound.getInteger("cageDepthOffset");
-        this.cageHeightOffset = compound.getInteger("cageHeightOffset");
-        this.cageSizeX = compound.getInteger("cageSizeX");
-        this.cageSizeY = compound.getInteger("cageSizeY");
-        this.cageSizeZ = compound.getInteger("cageSizeZ");
-    }
-    this.floors.clear();
-    for(int y : compound.getIntArray("floors"))
-        this.floors.add(y);
-    // Absent in saves written before the call queue existed, in which case getIntArray returns an
-    // empty array and the elevator simply starts with nothing queued.
-    this.callQueue.clear();
-    for(int y : compound.getIntArray("callQueue"))
-        this.callQueue.add(y);
-    this.callDirections.clear();
-    int[] directions = compound.getIntArray("callDirections");
-    // Guard the length: a truncated or hand-edited array must not throw here.
-    for(int i = 0; i + 1 < directions.length; i += 2)
-        this.callDirections.put(directions[i], directions[i + 1]);
-    // Absent in saves from before sounds existed, where the elevator should start out audible.
-    this.soundsEnabled = !compound.hasKey("soundsEnabled") || compound.getBoolean("soundsEnabled");
-    this.soundScheme = ElevatorSoundScheme.byName(compound.getString("soundScheme"));
-    this.emergencyState = EmergencyState.NONE;
-    for(EmergencyState state : EmergencyState.values())
-        if(state.name().equals(compound.getString("emergencyState")))
-            this.emergencyState = state;
-    this.emergencyHold = compound.getInteger("emergencyHold");
-    this.lastDirection = compound.getInteger("lastDirection");
-    this.dwellCounter = compound.getInteger("dwellCounter");
-    this.floorData.clear();
-    if(compound.hasKey("floorData", Constants.NBT.TAG_LIST)){
-        NBTBase base = compound.getTag("floorData");
-        if(base instanceof NBTTagList){
-            NBTTagList floorDataTag = (NBTTagList)base;
-            for(NBTBase tag : floorDataTag)
-                this.floorData.add(FloorData.read((NBTTagCompound)tag));
-        }
-    }
-    // The two lists are indexed by the same floor number everywhere else in this class, and every
-    // one of those lookups is a plain get(). A save written before floorData existed, or one whose
-    // list is short for any other reason, would therefore throw on the first display draw rather
-    // than degrade. Padding costs nothing and turns a crash into an unnamed floor.
-    while(this.floorData.size() < this.floors.size())
-        this.floorData.add(new FloorData(null, EnumDyeColor.GRAY));
-    while(this.floorData.size() > this.floors.size())
-        this.floorData.remove(this.floorData.size() - 1);
-}
-
-private BlockPos getPos(int y){
-    return new BlockPos(this.x, y, this.z);
-}
-
-private ControllerBlockEntity getEntity(int y){
-    if(this.level == null)
-        return null;
-    TileEntity entity = this.level.getTileEntity(this.getPos(y));
-    return entity instanceof ControllerBlockEntity ? (ControllerBlockEntity)entity : null;
-}
-
-public int getFloorCount(){
-    return this.floors.size();
-}
-
-public int getFloorNumber(int y){
-    return this.floors.indexOf(y);
-}
-
-public int getClosestFloorNumber(int y){
-    if(y < this.floors.get(0))
-        return 0;
-    for(int floor = 1; floor < this.floors.size(); floor++){
-        if(y < (this.floors.get(floor - 1) + this.floors.get(floor)) / 2)
-            return floor - 1;
-    }
-    return this.floors.size() - 1; // this should never be reached
-}
-
-public int getFloorYLevel(int floor){
-    return this.floors.get(floor);
-}
-
-/**
- * The floor the cabin is at, for display purposes -- while moving, the floor it is nearest to.
- *
- * @return a floor index, or -1 if it cannot be determined
- */
-public int getCabinFloorNumber(){
-    if(this.floors.isEmpty())
-        return -1;
-    if(this.isMoving)
-        return this.getClosestFloorNumber((int)Math.round(this.currentY));
-    int floor = this.getFloorNumber(this.targetY);
-    if(floor != -1)
-        return floor;
-    // The group has not moved yet, so targetY is not a floor. Fall back to whichever floor holds a
-    // cabin. This reads the cached availability flags rather than forcing a block scan.
-    for(int i = 0; i < this.floors.size(); i++)
-        if(this.isCageAvailableAt(i))
-            return i;
-    return -1;
-}
-
-public ControllerBlockEntity getEntityForFloor(int floor){
-    if(floor < 0 || floor >= this.floors.size())
-        return null;
-    return this.getEntity(this.floors.get(floor));
-}
-
-public boolean hasControllerAt(int yLevel){
-    return this.floors.contains(yLevel);
-}
-
-private void updateGroup(){
-    ElevatorGroupCapability.get(this.level).updateGroup(this);
-}
-
-private void syncMovement(){
-    if(!this.level.isRemote)
-        MovingElevators.CHANNEL.sendToDimension(this.level, new PacketSyncElevatorMovement(this.x, this.z, this.facing, this.currentY, this.speed));
-}
-
-public void validateControllersExist(Chunk chunk){
-    BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.x, 0, this.z);
-    // Iterate downwards: removeFloor() shifts every later element down by one, so counting up
-    // skipped the floor after each removal and left controller-less floors in the group.
-    for(int floor = this.floors.size() - 1; floor >= 0; floor--){
-        pos.setY(this.floors.get(floor));
-        if(!(chunk.getTileEntity(pos, Chunk.EnumCreateEntityType.CHECK) instanceof ControllerBlockEntity))
-            this.removeFloor(floor);
-    }
-}
-
-private static class FloorData {
-
-    public String name;
-    public EnumDyeColor color;
-    public boolean isCageAvailable;
-    public int lastCageCheck = -1;
-
-    public FloorData(String name, EnumDyeColor color, boolean isCageAvailable){
-        this.name = name;
-        this.color = color;
-        this.isCageAvailable = isCageAvailable;
-    }
-
-    public FloorData(String name, EnumDyeColor color){
-        this(name, color, false);
+        return removed;
     }
 
     public NBTTagCompound write(){
-        NBTTagCompound tag = new NBTTagCompound();
-        if(this.name != null)
-            tag.setString("name", this.name);
-        tag.setInteger("color", this.color.getDyeDamage());
-        tag.setBoolean("isCageAvailable", this.isCageAvailable);
-        return tag;
+        NBTTagCompound compound = new NBTTagCompound();
+        compound.setBoolean("isMoving", this.isMoving);
+        // Written unconditionally: while stopped this is where the cabin came to rest, which is the
+        // reference point pickNextCall() sweeps from. Upstream only stored it mid-move, so a reloaded
+        // idle group would have dispatched queued calls relative to y=0.
+        compound.setInteger("targetY", this.targetY);
+        if(this.isMoving){
+            compound.setDouble("lastY", this.lastY);
+            compound.setDouble("currentY", this.currentY);
+            compound.setTag("cage", this.cage.write());
+        }
+        compound.setDouble("targetSpeed", this.targetSpeed);
+        compound.setDouble("speed", this.speed);
+        compound.setInteger("cageSideOffset", this.cageSideOffset);
+        compound.setInteger("cageDepthOffset", this.cageDepthOffset);
+        compound.setInteger("cageHeightOffset", this.cageHeightOffset);
+        compound.setInteger("cageSizeX", this.cageSizeX);
+        compound.setInteger("cageSizeY", this.cageSizeY);
+        compound.setInteger("cageSizeZ", this.cageSizeZ);
+        int[] arr = new int[this.floors.size()];
+        for(int i = 0; i < this.floors.size(); i++)
+            arr[i] = this.floors.get(i);
+        compound.setIntArray("floors", arr);
+        int[] queue = new int[this.callQueue.size()];
+        int queueIndex = 0;
+        for(int y : this.callQueue)
+            queue[queueIndex++] = y;
+        compound.setIntArray("callQueue", queue);
+        // Flattened y/mask pairs, so a landing's lit arrows survive a reload alongside its queued call.
+        int[] directions = new int[this.callDirections.size() * 2];
+        int directionIndex = 0;
+        for(Map.Entry<Integer,Integer> entry : this.callDirections.entrySet()){
+            directions[directionIndex++] = entry.getKey();
+            directions[directionIndex++] = entry.getValue();
+        }
+        compound.setIntArray("callDirections", directions);
+        compound.setBoolean("soundsEnabled", this.soundsEnabled);
+        compound.setString("soundScheme", this.soundScheme.name());
+        compound.setString("emergencyState", this.emergencyState.name());
+        compound.setInteger("emergencyHold", this.emergencyHold);
+        compound.setInteger("lastDirection", this.lastDirection);
+        compound.setInteger("dwellCounter", this.dwellCounter);
+        NBTTagList floorDataTag = new NBTTagList();
+        for(FloorData floorDatum : this.floorData)
+            floorDataTag.appendTag(floorDatum.write());
+        compound.setTag("floorData", floorDataTag);
+        return compound;
     }
 
-    public static FloorData read(NBTTagCompound tag){
-        return new FloorData(
-            tag.hasKey("name") ? tag.getString("name") : null,
-            EnumDyeColor.byDyeDamage(tag.getInteger("color")),
-            tag.hasKey("isCageAvailable") && tag.getBoolean("isCageAvailable")
-        );
+    public void read(NBTTagCompound compound){
+        if(compound.hasKey("moving")){ // old version stuff
+            this.isMoving = compound.getBoolean("moving");
+            int size = compound.getInteger("size");
+            if(this.isMoving){
+                this.targetY = compound.getInteger("targetY");
+                this.lastY = compound.getDouble("lastY");
+                this.currentY = compound.getDouble("currentY");
+                IBlockState[][][] blockStates = new IBlockState[size][1][size];
+                BlockShape shape = BlockShape.empty();
+                for(int x = 0; x < size; x++){
+                    for(int z = 0; z < size; z++){
+                        IBlockState state = Block.getStateById(compound.getInteger("platform" + x + "," + z));
+                        if(state.getBlock() != Blocks.AIR){
+                            blockStates[x][0][z] = state;
+                            shape = BlockShape.or(shape, BlockShape.create(state.getCollisionBoundingBox(this.level, this.getPos((int)this.currentY))));
+                        }
+                    }
+                }
+                // TODO reduce the number of collision boxes
+    //                shape.optimize();
+                this.cage = this.level.isRemote ?
+                    new ClientElevatorCage(size, 1, size, blockStates, new NBTTagCompound[size][1][size], new NBTTagCompound[size][1][size], shape.toBoxes()) :
+                    new ElevatorCage(size, 1, size, blockStates, new NBTTagCompound[size][1][size], new NBTTagCompound[size][1][size], shape.toBoxes());
+            }
+            this.targetSpeed = compound.getDouble("speed");
+            this.speed = this.targetSpeed;
+            this.cageSizeX = this.cageSizeZ = size;
+            this.cageSizeY = 1;
+        }else{
+            this.isMoving = compound.getBoolean("isMoving");
+            // Absent from pre-queue saves that were stopped, where getInteger yields 0 -- the same
+            // value the field would otherwise have held.
+            this.targetY = compound.getInteger("targetY");
+            if(this.isMoving){
+                this.lastY = compound.getDouble("lastY");
+                this.currentY = compound.getDouble("currentY");
+                this.cage = ElevatorCage.read(compound.getCompoundTag("cage"), this.level.isRemote);
+            }
+            this.targetSpeed = compound.getDouble("targetSpeed");
+            this.speed = compound.getDouble("speed");
+            this.cageSideOffset = compound.getInteger("cageSideOffset");
+            this.cageDepthOffset = compound.getInteger("cageDepthOffset");
+            this.cageHeightOffset = compound.getInteger("cageHeightOffset");
+            this.cageSizeX = compound.getInteger("cageSizeX");
+            this.cageSizeY = compound.getInteger("cageSizeY");
+            this.cageSizeZ = compound.getInteger("cageSizeZ");
+        }
+        this.floors.clear();
+        for(int y : compound.getIntArray("floors"))
+            this.floors.add(y);
+        // Absent in saves written before the call queue existed, in which case getIntArray returns an
+        // empty array and the elevator simply starts with nothing queued.
+        this.callQueue.clear();
+        for(int y : compound.getIntArray("callQueue"))
+            this.callQueue.add(y);
+        this.callDirections.clear();
+        int[] directions = compound.getIntArray("callDirections");
+        // Guard the length: a truncated or hand-edited array must not throw here.
+        for(int i = 0; i + 1 < directions.length; i += 2)
+            this.callDirections.put(directions[i], directions[i + 1]);
+        // Absent in saves from before sounds existed, where the elevator should start out audible.
+        this.soundsEnabled = !compound.hasKey("soundsEnabled") || compound.getBoolean("soundsEnabled");
+        this.soundScheme = ElevatorSoundScheme.byName(compound.getString("soundScheme"));
+        this.emergencyState = EmergencyState.NONE;
+        for(EmergencyState state : EmergencyState.values())
+            if(state.name().equals(compound.getString("emergencyState")))
+                this.emergencyState = state;
+        this.emergencyHold = compound.getInteger("emergencyHold");
+        this.lastDirection = compound.getInteger("lastDirection");
+        this.dwellCounter = compound.getInteger("dwellCounter");
+        this.floorData.clear();
+        if(compound.hasKey("floorData", Constants.NBT.TAG_LIST)){
+            NBTBase base = compound.getTag("floorData");
+            if(base instanceof NBTTagList){
+                NBTTagList floorDataTag = (NBTTagList)base;
+                for(NBTBase tag : floorDataTag)
+                    this.floorData.add(FloorData.read((NBTTagCompound)tag));
+            }
+        }
+        // The two lists are indexed by the same floor number everywhere else in this class, and every
+        // one of those lookups is a plain get(). A save written before floorData existed, or one whose
+        // list is short for any other reason, would therefore throw on the first display draw rather
+        // than degrade. Padding costs nothing and turns a crash into an unnamed floor.
+        while(this.floorData.size() < this.floors.size())
+            this.floorData.add(new FloorData(null, EnumDyeColor.GRAY));
+        while(this.floorData.size() > this.floors.size())
+            this.floorData.remove(this.floorData.size() - 1);
     }
-}
+
+    private BlockPos getPos(int y){
+        return new BlockPos(this.x, y, this.z);
+    }
+
+    private ControllerBlockEntity getEntity(int y){
+        if(this.level == null)
+            return null;
+        TileEntity entity = this.level.getTileEntity(this.getPos(y));
+        return entity instanceof ControllerBlockEntity ? (ControllerBlockEntity)entity : null;
+    }
+
+    public int getFloorCount(){
+        return this.floors.size();
+    }
+
+    public int getFloorNumber(int y){
+        return this.floors.indexOf(y);
+    }
+
+    public int getClosestFloorNumber(int y){
+        if(y < this.floors.get(0))
+            return 0;
+        for(int floor = 1; floor < this.floors.size(); floor++){
+            if(y < (this.floors.get(floor - 1) + this.floors.get(floor)) / 2)
+                return floor - 1;
+        }
+        return this.floors.size() - 1; // this should never be reached
+    }
+
+    public int getFloorYLevel(int floor){
+        return this.floors.get(floor);
+    }
+
+    /**
+     * The floor the cabin is at, for display purposes -- while moving, the floor it is nearest to.
+     *
+     * @return a floor index, or -1 if it cannot be determined
+     */
+    public int getCabinFloorNumber(){
+        if(this.floors.isEmpty())
+            return -1;
+        if(this.isMoving)
+            return this.getClosestFloorNumber((int)Math.round(this.currentY));
+        int floor = this.getFloorNumber(this.targetY);
+        if(floor != -1)
+            return floor;
+        // The group has not moved yet, so targetY is not a floor. Fall back to whichever floor holds a
+        // cabin. This reads the cached availability flags rather than forcing a block scan.
+        for(int i = 0; i < this.floors.size(); i++)
+            if(this.isCageAvailableAt(i))
+                return i;
+        return -1;
+    }
+
+    public ControllerBlockEntity getEntityForFloor(int floor){
+        if(floor < 0 || floor >= this.floors.size())
+            return null;
+        return this.getEntity(this.floors.get(floor));
+    }
+
+    public boolean hasControllerAt(int yLevel){
+        return this.floors.contains(yLevel);
+    }
+
+    private void updateGroup(){
+        ElevatorGroupCapability.get(this.level).updateGroup(this);
+    }
+
+    private void syncMovement(){
+        if(!this.level.isRemote)
+            MovingElevators.CHANNEL.sendToDimension(this.level, new PacketSyncElevatorMovement(this.x, this.z, this.facing, this.currentY, this.speed));
+    }
+
+    public void validateControllersExist(Chunk chunk){
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.x, 0, this.z);
+        // Iterate downwards: removeFloor() shifts every later element down by one, so counting up
+        // skipped the floor after each removal and left controller-less floors in the group.
+        for(int floor = this.floors.size() - 1; floor >= 0; floor--){
+            pos.setY(this.floors.get(floor));
+            if(!(chunk.getTileEntity(pos, Chunk.EnumCreateEntityType.CHECK) instanceof ControllerBlockEntity))
+                this.removeFloor(floor);
+        }
+    }
+
+    private static class FloorData {
+
+        public String name;
+        public EnumDyeColor color;
+        public boolean isCageAvailable;
+        public int lastCageCheck = -1;
+
+        public FloorData(String name, EnumDyeColor color, boolean isCageAvailable){
+            this.name = name;
+            this.color = color;
+            this.isCageAvailable = isCageAvailable;
+        }
+
+        public FloorData(String name, EnumDyeColor color){
+            this(name, color, false);
+        }
+
+        public NBTTagCompound write(){
+            NBTTagCompound tag = new NBTTagCompound();
+            if(this.name != null)
+                tag.setString("name", this.name);
+            tag.setInteger("color", this.color.getDyeDamage());
+            tag.setBoolean("isCageAvailable", this.isCageAvailable);
+            return tag;
+        }
+
+        public static FloorData read(NBTTagCompound tag){
+            return new FloorData(
+                tag.hasKey("name") ? tag.getString("name") : null,
+                EnumDyeColor.byDyeDamage(tag.getInteger("color")),
+                tag.hasKey("isCageAvailable") && tag.getBoolean("isCageAvailable")
+            );
+        }
+    }
 }

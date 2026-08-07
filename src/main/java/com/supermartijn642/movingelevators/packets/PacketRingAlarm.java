@@ -26,6 +26,10 @@ public class PacketRingAlarm extends BlockEntityBasePacket<ElevatorCarPanelBlock
 
     @Override
     protected void handle(ElevatorCarPanelBlockEntity blockEntity, PacketContext context){
+        // The panel is a block in the world, so a message about it should come from somebody
+        // standing near it.
+        if(!PacketReach.isInReach(context.getSendingPlayer(), blockEntity.getPos()))
+            return;
         ElevatorGroup group = blockEntity.getGroup();
         if(group != null)
             group.ringAlarm();

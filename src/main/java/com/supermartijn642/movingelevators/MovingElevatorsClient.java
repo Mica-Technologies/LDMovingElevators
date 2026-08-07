@@ -166,12 +166,13 @@ public class MovingElevatorsClient {
      * @param floor zero-based floor index
      */
     public static String formatDisplayLabel(ElevatorGroup group, int floor){
-        // A readout that has lost its shaft has nothing to report an emergency about, so it falls
-        // back to the plain floor name rather than going blank.
         if(group == null)
+            // A readout that has lost its shaft has no emergency to report, and should not go blank.
             return formatFloorDisplayName(null, floor);
-        String emergency = group.getEmergencyDisplay();
-        return emergency == null ? formatFloorDisplayName(group.getFloorDisplayName(floor), floor) : emergency;
+        if(group.isEmergencyStopped())
+            return TextComponents.translation(group.isEmergencyFlashOn()
+                ? "movingelevators.emergency.flash_first" : "movingelevators.emergency.flash_second").format();
+        return formatFloorDisplayName(group.getFloorDisplayName(floor), floor);
     }
 
     @SubscribeEvent

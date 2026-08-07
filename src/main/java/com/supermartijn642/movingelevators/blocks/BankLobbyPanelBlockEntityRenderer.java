@@ -1,8 +1,10 @@
 package com.supermartijn642.movingelevators.blocks;
 
+import com.supermartijn642.core.TextComponents;
 import com.supermartijn642.core.render.CustomBlockEntityRenderer;
 import com.supermartijn642.core.render.RenderUtils;
 import com.supermartijn642.movingelevators.MovingElevatorsClient;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.OpenGlHelper;
@@ -153,6 +155,14 @@ public class BankLobbyPanelBlockEntityRenderer implements CustomBlockEntityRende
      * @return null when no bound elevator serves this landing, which draws as a dark screen
      */
     private static String readout(BankLobbyPanelBlockEntity entity){
+        // The one readout in the mod that was not saying anything during an emergency, and the one a
+        // waiting passenger most needs to hear it from -- they are standing at the lobby deciding
+        // whether to take the stairs.
+        if(entity.isBankOutOfService()){
+            ElevatorGroup group = entity.getAnyGroup();
+            return TextComponents.translation(group == null || group.isEmergencyFlashOn()
+                ? "movingelevators.emergency.flash_first" : "movingelevators.emergency.flash_second").format();
+        }
         int panelY = entity.getPanelY();
         String name = entity.getFloorName(panelY);
         if(name == null){

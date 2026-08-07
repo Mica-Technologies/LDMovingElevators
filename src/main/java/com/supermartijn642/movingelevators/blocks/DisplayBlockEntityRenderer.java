@@ -25,7 +25,16 @@ import org.lwjgl.opengl.GL11;
  */
 public class DisplayBlockEntityRenderer implements CustomBlockEntityRenderer<DisplayBlockEntity> {
 
-    private static final double TEXT_RENDER_DISTANCE = 15 * 15;
+    /**
+     * Squared, so this is 30 blocks. This full-cube display is a landing fixture like the remote
+     * call panel and the indicator -- read from across a lobby, not from arm's length as the cabin's
+     * own panel is -- so it takes the same cutoff those use.
+     * <p>
+     * Text is expensive to draw, which is why there is a cutoff at all. Past 64 blocks raising this
+     * alone would do nothing anyway: block entities stop being rendered at that range unless they ask
+     * for more.
+     */
+    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
 
     @Override
     public void render(DisplayBlockEntity entity, float partialTicks, int combinedOverlay, float alpha){
