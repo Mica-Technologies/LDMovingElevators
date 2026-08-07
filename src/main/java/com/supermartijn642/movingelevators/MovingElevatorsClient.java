@@ -175,6 +175,26 @@ public class MovingElevatorsClient {
         return formatFloorDisplayName(group.getFloorDisplayName(floor), floor);
     }
 
+    /**
+     * As {@link #formatDisplayLabel(ElevatorGroup, int)}, but for a readout that speaks for a
+     * particular landing and can therefore announce a car sent to it.
+     * <p>
+     * A bank picks a car and tells the person who asked; standing in a lobby of four shafts, that is
+     * only half an answer, because they still have to work out which door to stand at. Flashing the
+     * car's own name on its own landing readout is the other half, and it costs nothing -- the display
+     * is already there and already says something nobody needs while the car is on its way.
+     *
+     * @param landingY the y level of the floor this readout belongs to
+     */
+    public static String formatDisplayLabel(ElevatorGroup group, int floor, int landingY){
+        // An emergency outranks an announcement: a car nobody should board matters more than which
+        // car it is.
+        if(group != null && !group.isEmergencyStopped() && group.getName() != null
+            && group.isAnnouncingAt(landingY) && group.isAnnounceFlashOn())
+            return group.getName();
+        return formatDisplayLabel(group, floor);
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent e){
         if(e.phase == TickEvent.Phase.END && !ClientUtils.getMinecraft().isGamePaused() && ClientUtils.getWorld() != null)

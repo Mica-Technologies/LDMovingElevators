@@ -155,6 +155,16 @@ public class ElevatorGroup {
      * from inside would be worse than one with no name at all.
      */
     private String name;
+    /** Half a second on each half of the flashing announcement. */
+    private static final int ANNOUNCE_FLASH_TICKS = 10;
+    /**
+     * The landing this elevator is currently announcing itself at, or {@link Integer#MIN_VALUE}.
+     * <p>
+     * Set when a banked call is collected and cleared when the cabin departs, which covers the
+     * stretch a passenger most needs it: the car has arrived and they have to pick it out from the
+     * others before it goes without them.
+     */
+    private int announcingFloor = Integer.MIN_VALUE;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
     private int pendingDing;
     /** Which note the scheduled half of the arrival chime is. Decided on arrival, not when it plays,
@@ -547,6 +557,10 @@ public class ElevatorGroup {
                 this.callQueue.add(destination);
         this.doorHoldTicks.put(yLevel, BANKED_DWELL_TICKS);
         this.dwellCounter = BANKED_DWELL_TICKS;
+        // Keep identifying itself now it is standing here: en route the pending call did that, and it
+        // has just been consumed.
+        this.announcingFloor = yLevel;
+        this.shouldBeSynced = true;
         return true;
     }
 
@@ -879,6 +893,19 @@ public class ElevatorGroup {
         return this.emergencyState != EmergencyState.NONE;
     }
 
+    /**
+     * Whether this elevator should be identifying itself at a landing -- because it has been sent
+     * there by a bank and has not left again.
+     */
+    public boolean isAnnouncingAt(int yLevel){
+        return this.bankedDestinations.containsKey(yLevel) || this.announcingFloor == yLevel;
+    }
+
+    /** Which half of the announcement flash, off world time so every readout agrees without syncing. */
+    public boolean isAnnounceFlashOn(){
+        return this.level != null && (this.level.getTotalWorldTime() / ANNOUNCE_FLASH_TICKS) % 2 == 0;
+    }
+
     /** @return this elevator's name, or null if it has not been given one */
     public String getName(){
         return this.name;
@@ -1036,6 +1063,8 @@ public class ElevatorGroup {
         // feature exists to prevent.
         if(this.level == null || this.isMoving || this.emergencyState != EmergencyState.NONE)
             return;
+        // Whatever it was announcing, it is leaving.
+        this.announcingFloor = Integer.MIN_VALUE;
         // Anchored to where this trip begins, so the first sweep covers the ground already travelled
         // rather than only the window around wherever the cabin happens to be when the timer fires.
         this.lastShaftScanY = currentY;
@@ -1594,6 +1623,18 @@ public class ElevatorGroup {
         compound.setIntArray("callDirections", directions);
         compound.setBoolean("soundsEnabled", this.soundsEnabled);
         compound.setString("soundScheme", this.soundScheme.name());
+    // Synced as well as saved: the readouts that flash a car's name are drawn on the client, and a
+    // pending pickup it has never been told about cannot be announced.
+    int[] banked = new int[this.bankedDestinations.values().stream().mapToInt(Set::size).sum() * 2];
+    int bankedIndex = 0;
+    for(Map.Entry<Integer,Set<Integer>> entry : this.bankedDestinations.entrySet()){
+        for(int destination : entry.getValue()){
+            banked[bankedIndex++] = entry.getKey();
+            banked[bankedIndex++] = destination;
+        }
+    }
+    compound.setIntArray("bankedDestinations", banked);
+    compound.setInteger("announcingFloor", this.announcingFloor);
     compound.setBoolean("hasElevatorName", this.name != null);
     if(this.name != null)
         compound.setString("elevatorName", this.name);
@@ -1672,6 +1713,11 @@ public class ElevatorGroup {
         // Absent in saves from before sounds existed, where the elevator should start out audible.
         this.soundsEnabled = !compound.hasKey("soundsEnabled") || compound.getBoolean("soundsEnabled");
         this.soundScheme = ElevatorSoundScheme.byName(compound.getString("soundScheme"));
+    this.bankedDestinations.clear();
+    int[] banked = compound.getIntArray("bankedDestinations");
+    for(int i = 0; i + 1 < banked.length; i += 2)
+        this.bankedDestinations.computeIfAbsent(banked[i], y -> new LinkedHashSet<>()).add(banked[i + 1]);
+    this.announcingFloor = compound.hasKey("announcingFloor") ? compound.getInteger("announcingFloor") : Integer.MIN_VALUE;
     this.name = compound.getBoolean("hasElevatorName") ? compound.getString("elevatorName") : null;
         this.emergencyState = EmergencyState.NONE;
         for(EmergencyState state : EmergencyState.values())

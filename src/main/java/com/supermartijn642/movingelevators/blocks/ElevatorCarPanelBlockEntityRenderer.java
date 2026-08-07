@@ -49,14 +49,20 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
      * bank, and both of those are edge margin rather than free space. A tenth of a pixel is kept
      * clear at the top and bottom of the band, which is what makes the name as small as it is.
      */
-    private static final float NAME_X = 8 / 16f, NAME_Y = 10.4f / 16f;
+    private static final float NAME_X = 8 / 16f, NAME_Y = 10.15f / 16f;
     /**
      * Scale here is per font unit rather than per line, so a nine-pixel line stands 9/300 of a block
      * -- 0.48 of a face pixel -- which with the padding either side of it fills the 0.6 pixel budget
      * above exactly. The width cap never binds at that scale, since an eleven character name comes
      * out about 3.5 pixels wide on a 12 pixel plate; it is there so that no name can overhang.
      */
-    private static final float NAME_SCALE = 1 / 300f, NAME_MAX_WIDTH = 8 / 16f, NAME_PADDING = 0.06f / 16f;
+    /**
+     * Sized to nearly fill the gap between the readout and the top row of buttons rather than to be
+     * safely small. At 1/300 the glyph came out under half a pixel of the sixteen-pixel face -- present,
+     * unreadable, and worse than absent. The band runs from 9.5 to 10.8, and the inset this draws is
+     * about 1.19 of that, so it sits inside with a little air either side.
+     */
+    private static final float NAME_SCALE = 1 / 120f, NAME_MAX_WIDTH = 8 / 16f, NAME_PADDING = 0.06f / 16f;
     /** The name is not a floor, so it has no dye colour of its own; white reads on the inset screen. */
     private static final EnumDyeColor NAME_COLOR = EnumDyeColor.WHITE;
 

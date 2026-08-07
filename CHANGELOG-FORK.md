@@ -32,6 +32,9 @@ Based on upstream **Moving Elevators 1.4.12**.
   name you set yourself is never overwritten. The name belongs to the elevator rather than to the
   bank, so a car answers to it from its own car panel and from a second lobby panel that never did
   the naming. Set it in the elevator controller's screen.
+  When a bank sends a car to a landing, that landing's own readouts flash the car's name until it
+  leaves, so a passenger in a lobby of four shafts knows which door to stand at rather than only that
+  something is coming.
 
 - **Elevator sounds**, with an on/off toggle in the elevator controller's screen. A soft tick each
   time the cabin passes a landing, so a ride has some sense of progress, and a two-note chime on

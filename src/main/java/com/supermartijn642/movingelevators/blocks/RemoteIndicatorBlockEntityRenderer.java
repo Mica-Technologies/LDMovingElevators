@@ -59,7 +59,7 @@ public class RemoteIndicatorBlockEntityRenderer implements CustomBlockEntityRend
             return;
 
         String label = MovingElevatorsClient.stripFloorPrefix(
-            MovingElevatorsClient.formatDisplayLabel(group, floor));
+            MovingElevatorsClient.formatDisplayLabel(group, floor, entity.getFloorLevel()));
         if(label == null || label.isEmpty())
             return;
 
