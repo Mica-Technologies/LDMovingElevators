@@ -175,9 +175,10 @@ Based on upstream **Moving Elevators 1.4.12**.
   shaft — the one thing the feature exists to prevent. The call queue was already held during an
   emergency; a direct press was not.
 - The bank lobby panel said which world height a car was coming to rather than which floor.
-- A bank lobby panel item kept its links after being placed and went on accumulating more, so the
-  second panel you built was never the bank you thought you were building. Links move onto the panel
-  when you place it; copying a placed panel is the way to repeat one.
+- A lobby panel item appeared to accumulate links endlessly. It was counting controllers rather than
+  elevators, so a second controller in the same shaft added a duplicate. Linking is by shaft now, and
+  the item deliberately still keeps its links after a panel is placed, so one panel per floor lobby
+  takes no extra work — sneak and use in the air to empty it for a different bank.
 
 - The cabin wrote its blocks into the world without regard for anyone standing there, so arriving
   entombed them. The emergency stop made this sharp rather than theoretical: it levels to the

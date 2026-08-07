@@ -48,7 +48,7 @@ public class BankLobbyPanelBlockItem extends BaseBlockItem {
             // Sneaking in the air clears the lot, which is the only way back out of a half-built bank
             // short of throwing the item away.
             if(!bindings.isEmpty()){
-                setBindings(stack, java.util.Collections.emptyList());
+                clearBindings(stack);
                 player.sendStatusMessage(TextComponents.translation("movingelevators.remote_controller.clear").get(), true);
             }
             return ItemUseResult.success(stack);
