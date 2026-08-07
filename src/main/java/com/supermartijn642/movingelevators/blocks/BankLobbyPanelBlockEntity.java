@@ -215,9 +215,9 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
      * getting it right until a car fails to turn up. Rather than infer from behaviour, ask.
      */
     public void reportStatus(EntityPlayer player){
-        String landing = this.getFloorName(this.getPanelY());
+        String landing = this.getFloorName(this.getLandingY());
         player.sendMessage(TextComponents.translation("movingelevators.bank_lobby_panel.status.header",
-            TextComponents.string(landing == null || landing.isEmpty() ? Integer.toString(this.getPanelY()) : landing)
+            TextComponents.string(landing == null || landing.isEmpty() ? Integer.toString(this.getLandingY()) : landing)
                 .color(TextFormatting.GOLD).get()).color(TextFormatting.YELLOW).get());
 
         List<Binding> bindings = this.getBindings();
@@ -260,6 +260,28 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
             ? "movingelevators.bank_lobby_panel.status.aligned"
             : "movingelevators.bank_lobby_panel.status.mismatch")
             .color(aligned ? TextFormatting.GREEN : TextFormatting.RED).get());
+    }
+
+    /**
+     * The bank floor this panel speaks for: the one nearest its own height.
+     * <p>
+     * Nearest rather than exact, because a panel is hung at eye level and a controller sits at floor
+     * level, so demanding they share a y meant a panel mounted where anybody would actually mount one
+     * matched no floor at all. Dispatch already worked this way; the face did not, so the screen went
+     * dark on a panel that was dispatching perfectly well.
+     *
+     * @return the y level of the nearest bank floor, or the panel's own y when nothing is linked
+     */
+    public int getLandingY(){
+        int best = this.getPanelY(), bestDistance = Integer.MAX_VALUE;
+        for(int y : this.getBankFloors()){
+            int distance = Math.abs(y - this.getPanelY());
+            if(distance < bestDistance){
+                bestDistance = distance;
+                best = y;
+            }
+        }
+        return best;
     }
 
     /** The landing this panel stands on. */

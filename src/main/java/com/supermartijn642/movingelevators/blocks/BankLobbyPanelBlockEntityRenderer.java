@@ -163,7 +163,7 @@ public class BankLobbyPanelBlockEntityRenderer implements CustomBlockEntityRende
             return TextComponents.translation(group == null || group.isEmergencyFlashOn()
                 ? "movingelevators.emergency.flash_first" : "movingelevators.emergency.flash_second").format();
         }
-        int panelY = entity.getPanelY();
+        int panelY = entity.getLandingY();
         String name = entity.getFloorName(panelY);
         if(name == null){
             // Unnamed: number it by where the landing sits in the bank's own floor list, so the panel
