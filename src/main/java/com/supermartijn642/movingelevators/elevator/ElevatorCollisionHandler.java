@@ -5,6 +5,8 @@ import com.supermartijn642.movingelevators.packets.PacketOnElevator;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.item.EntityXPOrb;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.Vec3d;
@@ -101,7 +103,22 @@ public class ElevatorCollisionHandler {
     }
 
     private static boolean canCollideWith(Entity entity){
-        return !(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator()) && entity.canBeCollidedWith() && !entity.isRiding() && entity.getPushReaction() == EnumPushReaction.NORMAL;
+        return !(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
+            && (entity.canBeCollidedWith() || ridesWithoutBeingCollidable(entity))
+            && !entity.isRiding() && entity.getPushReaction() == EnumPushReaction.NORMAL;
+    }
+
+    /**
+     * Things the cabin should carry that nothing can walk into.
+     * <p>
+     * canBeCollidedWith asks whether an entity blocks movement, which dropped items and experience do
+     * not -- you walk through them. It is the wrong question for a moving floor: the cabin's own blocks
+     * leave the world while it travels, so anything the cabin declines to carry falls the length of the
+     * shaft. Emptying your inventory in a lift and finding it in the pit is a poor reward for tidying
+     * up. Minecarts and boats already ride, because they do block movement.
+     */
+    private static boolean ridesWithoutBeingCollidable(Entity entity){
+        return entity instanceof EntityItem || entity instanceof EntityXPOrb;
     }
 
     private static boolean canPullEntity(Entity entity){
