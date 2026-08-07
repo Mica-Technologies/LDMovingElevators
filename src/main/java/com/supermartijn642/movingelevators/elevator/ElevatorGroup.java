@@ -1043,12 +1043,10 @@ public class ElevatorGroup {
         if(!MovingElevators.CSM_LOADED || this.alarmPanelPos == null || this.floors.isEmpty())
             return;
         if(this.tickCounter % ALARM_POLL_INTERVAL == 0){
-            boolean fire = CsmCompat.isFireAlarmActiveAt(this.level, this.alarmPanelPos);
-            // A storm is sheltering rather than evacuating, and shelter is downwards -- CSM's own
-            // documentation puts occupants on the lowest floor rather than at the exit.
-            boolean storm = !fire && CsmCompat.isStormAlarmActiveAt(this.level, this.alarmPanelPos);
-            this.recalling = fire || storm;
-            this.recallTargetY = storm ? this.lowestFloorY() : this.recallFloorY;
+            // Fire only. A storm warning tells the people in a building to go and shelter, which they
+            // need working lifts to do -- taking the lifts away is the opposite of helping. Recall is
+            // a fire measure specifically, and the alarm sounding for anything else is not its cue.
+            this.recalling = CsmCompat.isFireAlarmActiveAt(this.level, this.alarmPanelPos);
             ServiceMode wanted = this.recalling ? ServiceMode.FIRE_RECALL
                 : this.serviceMode == ServiceMode.FIRE_RECALL ? ServiceMode.NORMAL : this.serviceMode;
             if(wanted != this.serviceMode){
@@ -1064,21 +1062,14 @@ public class ElevatorGroup {
         }
         if(!this.recalling || this.isMoving || this.emergencyState != EmergencyState.NONE)
             return;
-        if(this.getFloorNumber(this.recallTargetY) == -1)
+        if(this.getFloorNumber(this.recallFloorY) == -1)
             return;
-        if(this.isCabinAt(this.recallTargetY)){
+        if(this.isCabinAt(this.recallFloorY)){
             // Arrived: sit with the doors open. A recalled car is a way out, and a shut door is not.
             if(this.tickCounter % ALARM_POLL_INTERVAL == 0)
-                this.requestDoorOpen(this.recallTargetY);
+                this.requestDoorOpen(this.recallFloorY);
         }else if(this.dwellCounter <= 0)
-            this.onButtonPress(false, false, this.recallTargetY, null);
-    }
-
-    private int lowestFloorY(){
-        int lowest = Integer.MAX_VALUE;
-        for(int floor = 0; floor < this.getFloorCount(); floor++)
-            lowest = Math.min(lowest, this.getFloorYLevel(floor));
-        return lowest == Integer.MAX_VALUE ? this.recallFloorY : lowest;
+            this.onButtonPress(false, false, this.recallFloorY, null);
     }
 
     /** Ticks between checking whether the cabin has reached a different floor, for comparators. */

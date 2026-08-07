@@ -54,9 +54,9 @@ Based on upstream **Moving Elevators 1.4.12**.
   Mod's own, since that is how its sounders are wired to a panel and there is no sense in inventing a
   second way — and CSM's own linker can do the second step, so once you have wired a panel to its
   sounders you can attach the lifts without changing tools. When the alarm sounds the elevator drops everything it was asked to do,
-  returns to that floor and waits there with its doors open. A storm alarm sends it to the lowest
-  floor instead, which is where CSM has people shelter rather than leave. Its readouts scroll FIRE
-  RECALL throughout.
+  returns to that floor and waits there with its doors open. Its readouts scroll FIRE
+  RECALL throughout. Fire alarms only: a storm warning sends people to shelter, which they need
+  working lifts to reach.
   CSM is **not** a dependency: it is compiled against and never required, so this mod builds and runs
   exactly as before without it, and the feature simply never triggers.
 

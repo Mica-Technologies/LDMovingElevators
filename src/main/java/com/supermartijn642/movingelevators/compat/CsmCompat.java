@@ -63,12 +63,4 @@ public class CsmCompat {
         return CsmFireAlarmQuery.getActiveFireAlarmPanels(level).contains(panelPos);
     }
 
-    /**
-     * Whether the panel is sounding a storm alarm rather than a fire alarm. A different event with a
-     * different answer: CSM's own documentation has occupants shelter on the lowest floor rather than
-     * leave the building.
-     */
-    public static boolean isStormAlarmActiveAt(World level, BlockPos panelPos){
-        return CsmFireAlarmQuery.getActiveStormAlarmPanels(level).contains(panelPos);
-    }
 }
