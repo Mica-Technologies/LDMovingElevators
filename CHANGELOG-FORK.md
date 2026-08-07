@@ -186,11 +186,12 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 - Wall panels were indistinguishable grey slabs in the inventory. Everything a panel shows — readout,
   arrows, buttons — is drawn by its block entity renderer, and an item does not run one, so the icon
-  was blank metal on every side. Their item models now carry a darkened screen on the front, which is
-  item-only and cannot show through in the world.
+  was blank metal on every side. Their item models now carry a darkened screen, which is item-only and
+  cannot show through in the world.
 - The car panel offered door and alarm controls with nothing on its face to suggest they existed. Both
   car panels now draw them: an alarm bar across the bottom, and on the bank panel the pair of door
-  buttons above it, laid out like the screen they open.
+  buttons above it, laid out like the screen they open. Both plates hang three pixels below their
+  block to make room, which costs nothing since a panel is never mounted flush to a floor.
 
 - Passengers were thrown onto the roof of the cabin whenever it stopped. Arriving pushes anything
   standing where a block is about to appear, but it counted any contact at all as being inside a

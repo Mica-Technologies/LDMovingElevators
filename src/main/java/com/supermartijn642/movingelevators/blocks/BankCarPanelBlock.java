@@ -45,8 +45,13 @@ public class BankCarPanelBlock extends WallPanelBlock {
      * The same plate as the ordinary car panel. It was half height while its face had nothing below
      * the readout; the door and alarm controls live there now, so the full height is earned.
      */
+    /**
+     * Three pixels taller than its block at the bottom. The alarm bar had nowhere to go under the
+     * button bank, and a panel is never mounted flush to a floor -- it hangs at eye height -- so the
+     * overhang costs nothing and buys the controls room to be drawn at a size worth reading.
+     */
     private static final double MIN_X = 2 / 16d, MAX_X = 14 / 16d;
-    private static final double MIN_Y = 1 / 16d, MAX_Y = 15 / 16d;
+    private static final double MIN_Y = -2 / 16d, MAX_Y = 15 / 16d;
 
     public BankCarPanelBlock(BlockProperties properties){
         super(properties, MIN_X, MAX_X, MIN_Y, MAX_Y);

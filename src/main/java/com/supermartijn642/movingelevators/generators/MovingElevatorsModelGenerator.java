@@ -74,7 +74,7 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(2, 1, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
+            .element(element -> element.shape(2, -2, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
         // Its own model rather than the block's, with the front face darkened. Everything a panel
         // actually shows -- readout, arrows, buttons -- is drawn by its block entity renderer, and an
         // item does not run one, so inheriting the block model gives an icon of blank metal on every
@@ -86,16 +86,17 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
             .texture("screen", "blocks/display")
-            .element(element -> element.shape(2, 1, 14, 14, 15, 16)
+            .element(element -> element.shape(2, -2, 14, 14, 15, 16)
                 .allFaces(face -> face.texture("metal"))
-                .face(EnumFacing.NORTH, face -> face.texture("screen")));
+                .face(EnumFacing.NORTH, face -> face.texture("screen"))
+                .face(EnumFacing.SOUTH, face -> face.texture("screen")));
         // The same plate as the car panel. It was half height while its face was empty below the
         // readout; it now carries door and alarm controls there instead.
         this.model("block/bank_car_panel_block")
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(2, 1, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
+            .element(element -> element.shape(2, -2, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
         // Its own model rather than the block's, with the front face darkened. Everything a panel
         // actually shows -- readout, arrows, buttons -- is drawn by its block entity renderer, and an
         // item does not run one, so inheriting the block model gives an icon of blank metal on every
@@ -107,9 +108,10 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
             .texture("screen", "blocks/display")
-            .element(element -> element.shape(2, 1, 14, 14, 15, 16)
+            .element(element -> element.shape(2, -2, 14, 14, 15, 16)
                 .allFaces(face -> face.texture("metal"))
-                .face(EnumFacing.NORTH, face -> face.texture("screen")));
+                .face(EnumFacing.NORTH, face -> face.texture("screen"))
+                .face(EnumFacing.SOUTH, face -> face.texture("screen")));
         this.model("block/bank_lobby_panel_block")
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
@@ -128,7 +130,8 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("screen", "blocks/display")
             .element(element -> element.shape(4, 2, 14, 12, 15, 16)
                 .allFaces(face -> face.texture("metal"))
-                .face(EnumFacing.NORTH, face -> face.texture("screen")));
+                .face(EnumFacing.NORTH, face -> face.texture("screen"))
+                .face(EnumFacing.SOUTH, face -> face.texture("screen")));
         // Its own model rather than the block's, with the front face darkened. Everything a panel
         // actually shows -- readout, arrows, buttons -- is drawn by its block entity renderer, and an
         // item does not run one, so inheriting the block model gives an icon of blank metal on every
@@ -142,7 +145,8 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("screen", "blocks/display")
             .element(element -> element.shape(5, 1, 14, 11, 15, 16)
                 .allFaces(face -> face.texture("metal"))
-                .face(EnumFacing.NORTH, face -> face.texture("screen")));
+                .face(EnumFacing.NORTH, face -> face.texture("screen"))
+                .face(EnumFacing.SOUTH, face -> face.texture("screen")));
         // Its own model rather than the block's, with the front face darkened. Everything a panel
         // actually shows -- readout, arrows, buttons -- is drawn by its block entity renderer, and an
         // item does not run one, so inheriting the block model gives an icon of blank metal on every
@@ -156,7 +160,8 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("screen", "blocks/display")
             .element(element -> element.shape(1, 5.5f, 14, 15, 10.5f, 16)
                 .allFaces(face -> face.texture("metal"))
-                .face(EnumFacing.NORTH, face -> face.texture("screen")));
+                .face(EnumFacing.NORTH, face -> face.texture("screen"))
+                .face(EnumFacing.SOUTH, face -> face.texture("screen")));
         this.model("item/remote_display_block")
             .parent("block/remote_display_block")
             .texture("overlay", "blocks/display_overlay")

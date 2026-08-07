@@ -19,7 +19,7 @@
       ],
       "faces": {
         "south": {
-          "texture": "#metal"
+          "texture": "#screen"
         },
         "down": {
           "texture": "#metal"

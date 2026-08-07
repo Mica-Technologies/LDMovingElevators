@@ -138,8 +138,14 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
      * button bank's, but the two are the same colour and the lamps are drawn nearer the viewer, so
      * what shows is one dark field with the bank's lamps in it and the alarm's bar beneath them.
      */
-    private static final float ALARM_X = 8 / 16f, ALARM_Y = 1.9f / 16f;
-    private static final float ALARM_HALF_WIDTH = 5.35f / 16f, ALARM_HALF_HEIGHT = 0.25f / 16f;
+    /**
+     * The alarm bar sits in the three pixels the plate now hangs below its block. Under the button
+     * bank it had a pixel and a third to live in, bezel included, and came out overflowing the metal;
+     * below the block it has room to be a bar rather than a smear. Its socket runs -0.75 to 1.15,
+     * clear of the plate bottom at -2 and of the lowest button socket at 1.8.
+     */
+    private static final float ALARM_X = 8 / 16f, ALARM_Y = 0.2f / 16f;
+    private static final float ALARM_HALF_WIDTH = 5f / 16f, ALARM_HALF_HEIGHT = 0.45f / 16f;
 
     private static final double LABEL_DEPTH = 0.5 - WallPanelBlock.PLATE_DEPTH - 0.01;
 

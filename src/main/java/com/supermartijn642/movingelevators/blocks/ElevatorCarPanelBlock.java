@@ -39,8 +39,13 @@ public class ElevatorCarPanelBlock extends WallPanelBlock {
      * Tall, and wider than the landing panels: a readout, two direction arrows and a bank of floor
      * buttons all have to sit on this face without colliding, which 8 pixels could not manage.
      */
+    /**
+     * Three pixels taller than its block at the bottom. The alarm bar had nowhere to go under the
+     * button bank, and a panel is never mounted flush to a floor -- it hangs at eye height -- so the
+     * overhang costs nothing and buys the controls room to be drawn at a size worth reading.
+     */
     private static final double MIN_X = 2 / 16d, MAX_X = 14 / 16d;
-    private static final double MIN_Y = 1 / 16d, MAX_Y = 15 / 16d;
+    private static final double MIN_Y = -2 / 16d, MAX_Y = 15 / 16d;
 
     public ElevatorCarPanelBlock(BlockProperties properties){
         super(properties, MIN_X, MAX_X, MIN_Y, MAX_Y);
