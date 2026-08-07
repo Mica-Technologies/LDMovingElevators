@@ -12,6 +12,8 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import com.supermartijn642.movingelevators.compat.CsmCompat;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -182,7 +184,12 @@ public class ElevatorGroup {
      * furniture without taking it off the network altogether, which out of service does.
      */
     public enum ServiceMode {
-        NORMAL, INDEPENDENT, OUT_OF_SERVICE;
+        NORMAL, INDEPENDENT, OUT_OF_SERVICE,
+        /**
+         * A fire alarm has recalled the car. Not an emergency stop: the elevator is working, and is
+         * working on getting everybody to one floor and staying there.
+         */
+        FIRE_RECALL;
 
         public ServiceMode next(){
             ServiceMode[] modes = values();
@@ -195,6 +202,23 @@ public class ElevatorGroup {
     }
 
     private ServiceMode serviceMode = ServiceMode.NORMAL;
+
+    /**
+     * Whether City Super Mod is installed, asked once.
+     * <p>
+     * On a separate class from the code that names CSM types, so that this being false is what stops
+     * {@link CsmCompat} ever being resolved.
+     */
+    private static final boolean CSM_LOADED = Loader.isModLoaded("csm");
+    /**
+     * Ticks between asking the paired alarm panel whether it is sounding. Two seconds is prompt on the
+     * timescale of a building emptying, and the query costs nothing while nothing is alarming.
+     */
+    private static final int ALARM_POLL_INTERVAL = 40;
+    /** The fire alarm panel this elevator listens to, or null. Its position is its whole identity. */
+    private BlockPos alarmPanelPos;
+    /** The floor the alarm sends the car to. Set when the elevator is paired, from where it was paired. */
+    private int recallFloorY;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
     private int pendingDing;
     /** Which note the scheduled half of the arrival chime is. Decided on arrival, not when it plays,
@@ -276,6 +300,8 @@ public class ElevatorGroup {
             this.updateAlarm();
         if(!this.level.isRemote)
             this.updateOverload();
+        if(!this.level.isRemote)
+            this.updateFireRecall();
         if(!this.level.isRemote && this.shouldBeSynced){
             this.shouldBeSynced = false;
             this.updateGroup();
@@ -335,7 +361,9 @@ public class ElevatorGroup {
             // An overloaded cabin takes no calls either. Letting the queue run would have it try to
             // depart, fail, and drop the call as undeliverable -- so the calls would quietly vanish
             // while it sat there buzzing.
-            if(this.emergencyState == EmergencyState.NONE && !this.overloaded && !this.isOutOfService())
+            // A recalled car drives itself to one floor and stays; the queue would only argue with it.
+            if(this.emergencyState == EmergencyState.NONE && !this.overloaded
+                && !this.isOutOfService() && !this.isFireRecalled())
                 this.updateCallQueue();
         }
     }
@@ -527,7 +555,7 @@ public class ElevatorGroup {
      * already aboard and has said where they are going.
      */
     public void onCarCall(int yLevel, EntityPlayer requester){
-        if(!this.floors.contains(yLevel) || this.isOutOfService())
+        if(!this.floors.contains(yLevel) || !this.acceptsCarCalls())
             return;
         if(this.isMoving){
             this.queueCall(yLevel);
@@ -958,6 +986,87 @@ public class ElevatorGroup {
     public boolean isOutOfService(){
         return this.serviceMode == ServiceMode.OUT_OF_SERVICE;
     }
+
+    public boolean isFireRecalled(){
+        return this.serviceMode == ServiceMode.FIRE_RECALL;
+    }
+
+    /**
+     * Whether the people inside may still choose a floor. Independent service exists precisely so they
+     * can; a recall exists precisely so they cannot.
+     */
+    public boolean acceptsCarCalls(){
+        return this.serviceMode == ServiceMode.NORMAL || this.serviceMode == ServiceMode.INDEPENDENT;
+    }
+
+    public BlockPos getAlarmPanelPos(){
+        return this.alarmPanelPos;
+    }
+
+    /**
+     * Pairs this elevator to a fire alarm panel, and fixes where an alarm will send it.
+     *
+     * @param recallFloorY the floor to recall to -- the floor of the controller the pairing was made
+     *                     from, so a builder chooses it by standing where they want the car to end up
+     */
+    public void setAlarmPanel(BlockPos panelPos, int recallFloorY){
+        this.alarmPanelPos = panelPos;
+        this.recallFloorY = recallFloorY;
+        this.shouldBeSynced = true;
+    }
+
+    /**
+     * Asks the paired panel whether it is sounding, and puts the elevator into or out of recall.
+     * <p>
+     * Reconciles rather than edge-triggers: the mode is recomputed from the answer every time, so a
+     * transition missed for any reason corrects itself on the next poll. That matters because CSM
+     * drops a panel from its registry when the chunk unloads without announcing it, so anything that
+     * only listened for changes would eventually believe a stale answer.
+     */
+    private void updateFireRecall(){
+        if(!CSM_LOADED || this.alarmPanelPos == null || this.floors.isEmpty())
+            return;
+        if(this.tickCounter % ALARM_POLL_INTERVAL == 0){
+            boolean fire = CsmCompat.isFireAlarmActiveAt(this.level, this.alarmPanelPos);
+            // A storm is sheltering rather than evacuating, and shelter is downwards -- CSM's own
+            // documentation puts occupants on the lowest floor rather than at the exit.
+            boolean storm = !fire && CsmCompat.isStormAlarmActiveAt(this.level, this.alarmPanelPos);
+            this.recalling = fire || storm;
+            this.recallTargetY = storm ? this.lowestFloorY() : this.recallFloorY;
+            ServiceMode wanted = this.recalling ? ServiceMode.FIRE_RECALL
+                : this.serviceMode == ServiceMode.FIRE_RECALL ? ServiceMode.NORMAL : this.serviceMode;
+            if(wanted != this.serviceMode){
+                this.serviceMode = wanted;
+                // Whatever the building was asking for stopped mattering the moment the alarm sounded.
+                if(this.recalling){
+                    this.callQueue.clear();
+                    this.callDirections.clear();
+                    this.bankedDestinations.clear();
+                }
+                this.shouldBeSynced = true;
+            }
+        }
+        if(!this.recalling || this.isMoving || this.emergencyState != EmergencyState.NONE)
+            return;
+        if(this.getFloorNumber(this.recallTargetY) == -1)
+            return;
+        if(this.isCabinAt(this.recallTargetY)){
+            // Arrived: sit with the doors open. A recalled car is a way out, and a shut door is not.
+            if(this.tickCounter % ALARM_POLL_INTERVAL == 0)
+                this.requestDoorOpen(this.recallTargetY);
+        }else if(this.dwellCounter <= 0)
+            this.onButtonPress(false, false, this.recallTargetY, null);
+    }
+
+    private int lowestFloorY(){
+        int lowest = Integer.MAX_VALUE;
+        for(int floor = 0; floor < this.getFloorCount(); floor++)
+            lowest = Math.min(lowest, this.getFloorYLevel(floor));
+        return lowest == Integer.MAX_VALUE ? this.recallFloorY : lowest;
+    }
+
+    private boolean recalling;
+    private int recallTargetY;
 
     /** Whether the building may call this elevator, as opposed to the people already inside it. */
     public boolean acceptsHallCalls(){
@@ -1788,6 +1897,10 @@ public class ElevatorGroup {
     compound.setInteger("announcingFloor", this.announcingFloor);
     compound.setBoolean("overloaded", this.overloaded);
     compound.setString("serviceMode", this.serviceMode.name());
+    compound.setBoolean("hasAlarmPanel", this.alarmPanelPos != null);
+    if(this.alarmPanelPos != null)
+        compound.setLong("alarmPanelPos", this.alarmPanelPos.toLong());
+    compound.setInteger("recallFloorY", this.recallFloorY);
     compound.setBoolean("hasElevatorName", this.name != null);
     if(this.name != null)
         compound.setString("elevatorName", this.name);
@@ -1872,6 +1985,8 @@ public class ElevatorGroup {
         this.bankedDestinations.computeIfAbsent(banked[i], y -> new LinkedHashSet<>()).add(banked[i + 1]);
     this.announcingFloor = compound.hasKey("announcingFloor") ? compound.getInteger("announcingFloor") : Integer.MIN_VALUE;
     this.overloaded = compound.getBoolean("overloaded");
+    this.alarmPanelPos = compound.getBoolean("hasAlarmPanel") ? BlockPos.fromLong(compound.getLong("alarmPanelPos")) : null;
+    this.recallFloorY = compound.getInteger("recallFloorY");
     this.serviceMode = ServiceMode.NORMAL;
     for(ServiceMode mode : ServiceMode.values())
         if(mode.name().equals(compound.getString("serviceMode")))

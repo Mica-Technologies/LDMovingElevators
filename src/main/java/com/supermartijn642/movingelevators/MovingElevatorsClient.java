@@ -174,6 +174,15 @@ public class MovingElevatorsClient {
         if(group == null)
             // A readout that has lost its shaft has no emergency to report, and should not go blank.
             return formatFloorDisplayName(null, floor);
+        // A recalled car is the one thing on a readout worth interrupting anything else for.
+        if(group.isFireRecalled()){
+            String scrolled = TextComponents.translation("movingelevators.fire_recall.marquee").format() + "  ";
+            int steps = scrolled.length() - 1;
+            if(steps >= 1){
+                int step = group.marqueeStep(steps);
+                return scrolled.substring(step, Math.min(step + 2, scrolled.length()));
+            }
+        }
         // An elevator nobody can call should say so where people would otherwise stand waiting for it.
         if(group.isOutOfService()){
             String scrolled = TextComponents.translation("movingelevators.out_of_service.marquee").format() + "  ";

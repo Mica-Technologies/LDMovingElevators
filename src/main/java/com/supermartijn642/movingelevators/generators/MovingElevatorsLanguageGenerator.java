@@ -161,6 +161,9 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         // Two letters, because it shares a readout built for floor numbers.
         this.translation("movingelevators.independent_service.short", "IS");
         this.translation("movingelevators.out_of_service.marquee", "OUT OF SERVICE");
+        this.translation("movingelevators.fire_recall.marquee", "FIRE RECALL");
+        this.translation("movingelevators.service_mode.fire_recall", "Fire recall");
+        this.translation("movingelevators.elevator.alarm_noted", "Fire alarm panel noted at %s, %s, %s \u2014 now place this controller on the floor the elevator should recall to");
 
         // Two halves of the flashing emergency readout, abbreviating "emergency stop". Separate keys
         // rather than one string because a translation may not split at the same point English does.

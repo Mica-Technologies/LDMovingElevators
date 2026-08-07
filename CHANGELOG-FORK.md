@@ -25,6 +25,15 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Fire recall, driven by City Super Mod's fire alarms — optionally.** Sneak-click an alarm panel
+  with an elevator controller to note it, then place that controller on the floor the car should
+  return to; the elevator watches that panel and, when it sounds, drops everything it was asked to do,
+  returns to that floor and waits there with its doors open. A storm alarm sends it to the lowest
+  floor instead, which is where CSM has people shelter rather than leave. Its readouts scroll FIRE
+  RECALL throughout.
+  CSM is **not** a dependency: it is compiled against and never required, so this mod builds and runs
+  exactly as before without it, and the feature simply never triggers.
+
 - **Service modes.** *Out of service* is a switch on the elevator controller: the elevator answers
   nobody, is skipped by bank dispatch, and scrolls OUT OF SERVICE on its readouts so nobody stands
   waiting for a lift that is not coming. *Independent service* is a key switch inside the cabin: the

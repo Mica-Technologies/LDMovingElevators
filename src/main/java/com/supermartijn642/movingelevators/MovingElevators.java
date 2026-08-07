@@ -166,7 +166,7 @@ public class MovingElevators {
         handler.registerBlockEntityType("banklobbypaneltile", () -> BaseBlockEntityType.create(BankLobbyPanelBlockEntity::new, bank_lobby_panel_block));
         handler.registerBlockEntityType("elevatordoortile", () -> BaseBlockEntityType.create(ElevatorDoorBlockEntity::new, elevator_door_block, elevator_single_door_block));
         // Items
-        handler.registerItem("elevator_block", () -> new BaseBlockItem(elevator_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("elevator_block", () -> new ControllerBlockItem(elevator_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("display_block", () -> new BaseBlockItem(display_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("button_block", () -> new RemoteControllerBlockItem(button_block, ItemProperties.create().group(GROUP)));
         // Reuses RemoteControllerBlockItem so ControllerBlock's bind-on-right-click path, which keys

@@ -73,6 +73,15 @@ public class ControllerBlock extends ElevatorInputBlock {
     }
 
     @Override
+    public void onBlockPlacedBy(World level, BlockPos pos, IBlockState state, EntityLivingBase placer, ItemStack stack){
+        super.onBlockPlacedBy(level, pos, state, placer, stack);
+        BlockPos panel = ControllerBlockItem.readPanel(stack);
+        TileEntity entity = level.getTileEntity(pos);
+        if(panel != null && entity instanceof ControllerBlockEntity)
+            ((ControllerBlockEntity)entity).setPendingAlarmPanel(panel);
+    }
+
+    @Override
     public IBlockState getStateForPlacement(World level, BlockPos pos, EnumFacing facing, float hitX, float hitY, float hitZ, int meta, EntityLivingBase placer, EnumHand hand){
         return this.getDefaultState().withProperty(FACING, placer.getHorizontalFacing().getOpposite());
     }
