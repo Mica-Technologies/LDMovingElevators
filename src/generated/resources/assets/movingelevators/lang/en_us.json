@@ -114,7 +114,7 @@
   "movingelevators.out_of_service.marquee": "OUT OF SERVICE",
   "movingelevators.fire_recall.marquee": "FIRE RECALL",
   "movingelevators.item.alarm_linker": "Elevator Alarm Linker",
-  "movingelevators.alarm_linker.tooltip": "SNEAK and right-click a fire alarm panel, then right-click an elevator controller. The elevator returns to that controller's floor whenever that alarm sounds. Sneak and right-click the air to forget the panel",
+  "movingelevators.alarm_linker.tooltip": "SNEAK and right-click a fire alarm panel, then right-click an elevator controller. The elevator returns to that controller's floor whenever that alarm sounds. City Super Mod's own fire alarm linker works for the second step too. Sneak and right-click the air to forget the panel",
   "movingelevators.alarm_linker.tooltip.holding": "Holding fire alarm panel at %s — now right-click an elevator controller",
   "movingelevators.alarm_linker.selected": "Fire alarm panel selected at %s — now right-click an elevator controller",
   "movingelevators.alarm_linker.no_panel": "Sneak and right-click a fire alarm panel first",

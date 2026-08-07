@@ -13,7 +13,6 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import com.supermartijn642.movingelevators.compat.CsmCompat;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -203,13 +202,6 @@ public class ElevatorGroup {
 
     private ServiceMode serviceMode = ServiceMode.NORMAL;
 
-    /**
-     * Whether City Super Mod is installed, asked once.
-     * <p>
-     * On a separate class from the code that names CSM types, so that this being false is what stops
-     * {@link CsmCompat} ever being resolved.
-     */
-    private static final boolean CSM_LOADED = Loader.isModLoaded("csm");
     /**
      * Ticks between asking the paired alarm panel whether it is sounding. Two seconds is prompt on the
      * timescale of a building emptying, and the query costs nothing while nothing is alarming.
@@ -1024,7 +1016,7 @@ public class ElevatorGroup {
      * only listened for changes would eventually believe a stale answer.
      */
     private void updateFireRecall(){
-        if(!CSM_LOADED || this.alarmPanelPos == null || this.floors.isEmpty())
+        if(!MovingElevators.CSM_LOADED || this.alarmPanelPos == null || this.floors.isEmpty())
             return;
         if(this.tickCounter % ALARM_POLL_INTERVAL == 0){
             boolean fire = CsmCompat.isFireAlarmActiveAt(this.level, this.alarmPanelPos);

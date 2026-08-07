@@ -105,6 +105,19 @@ public class AlarmLinkerItem extends BaseItem {
             player.sendStatusMessage(TextComponents.translation("movingelevators.alarm_linker.no_elevator").color(TextFormatting.RED).get(), true);
             return;
         }
+        pairWith(player, panel, controller);
+    }
+
+    /**
+     * Attaches a known panel to an elevator, whichever tool selected it -- this mod's linker or City
+     * Super Mod's.
+     */
+    public static void pairWith(EntityPlayer player, BlockPos panel, ControllerBlockEntity controller){
+        ElevatorGroup group = controller.getGroup();
+        if(group == null){
+            player.sendStatusMessage(TextComponents.translation("movingelevators.alarm_linker.no_elevator").color(TextFormatting.RED).get(), true);
+            return;
+        }
         // The controller clicked decides where the car goes, so an elevator can be re-aimed at a
         // different floor by clicking a different controller of the same shaft.
         group.setAlarmPanel(panel, controller.getFloorLevel());

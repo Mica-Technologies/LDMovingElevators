@@ -163,7 +163,7 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.out_of_service.marquee", "OUT OF SERVICE");
         this.translation("movingelevators.fire_recall.marquee", "FIRE RECALL");
         this.item(MovingElevators.alarm_linker, "Elevator Alarm Linker");
-        this.translation("movingelevators.alarm_linker.tooltip", "SNEAK and right-click a fire alarm panel, then right-click an elevator controller. The elevator returns to that controller's floor whenever that alarm sounds. Sneak and right-click the air to forget the panel");
+        this.translation("movingelevators.alarm_linker.tooltip", "SNEAK and right-click a fire alarm panel, then right-click an elevator controller. The elevator returns to that controller's floor whenever that alarm sounds. City Super Mod's own fire alarm linker works for the second step too. Sneak and right-click the air to forget the panel");
         this.translation("movingelevators.alarm_linker.tooltip.holding", "Holding fire alarm panel at %s \u2014 now right-click an elevator controller");
         this.translation("movingelevators.alarm_linker.selected", "Fire alarm panel selected at %s \u2014 now right-click an elevator controller");
         this.translation("movingelevators.alarm_linker.no_panel", "Sneak and right-click a fire alarm panel first");

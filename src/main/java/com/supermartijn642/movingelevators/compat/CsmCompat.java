@@ -1,6 +1,8 @@
 package com.supermartijn642.movingelevators.compat;
 
 import com.micatechnologies.minecraft.csm.api.firealarm.CsmFireAlarmQuery;
+import com.micatechnologies.minecraft.csm.lifesafety.ItemFireAlarmLinker;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -24,6 +26,29 @@ import net.minecraft.world.World;
 public class CsmCompat {
 
     private CsmCompat(){
+    }
+
+    /**
+     * The panel a City Super Mod fire alarm linker currently has selected, or null if the item is not
+     * one or has selected nothing.
+     * <p>
+     * Lets a builder use the tool they are already holding. CSM's linker only knows how to attach
+     * CSM's own devices -- an elevator controller falls straight through it -- so this reads the
+     * selection and lets this mod do its own half of the job.
+     */
+    public static BlockPos getLinkerSelection(ItemStack stack){
+        if(!(stack.getItem() instanceof ItemFireAlarmLinker))
+            return null;
+        // Called reflectively only because the accessor is newer than the City Super Mod release this
+        // mod compiles against. Once a release ships with it, this becomes a direct call and the
+        // pinned version moves up. Until then reflection also buys graceful behaviour on an older CSM:
+        // the accessor is simply missing, this returns null, and this mod's own linker still works.
+        try{
+            Object selected = stack.getItem().getClass().getMethod("getSelectedPanel").invoke(stack.getItem());
+            return selected instanceof BlockPos ? (BlockPos)selected : null;
+        }catch(ReflectiveOperationException e){
+            return null;
+        }
     }
 
     /**

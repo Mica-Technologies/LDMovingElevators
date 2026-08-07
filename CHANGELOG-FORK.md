@@ -26,10 +26,11 @@ Based on upstream **Moving Elevators 1.4.12**.
 ### Added
 
 - **Fire recall, driven by City Super Mod's fire alarms — optionally.** Craft an **Elevator Alarm
-  Linker**, right-click a fire alarm panel with it and then right-click an elevator controller: the
+  Linker**, sneak-click a fire alarm panel with it and then right-click an elevator controller: the
   elevator returns to that controller's floor whenever that alarm sounds. The gesture is City Super
   Mod's own, since that is how its sounders are wired to a panel and there is no sense in inventing a
-  second way. When the alarm sounds the elevator drops everything it was asked to do,
+  second way — and CSM's own linker can do the second step, so once you have wired a panel to its
+  sounders you can attach the lifts without changing tools. When the alarm sounds the elevator drops everything it was asked to do,
   returns to that floor and waits there with its doors open. A storm alarm sends it to the lowest
   floor instead, which is where CSM has people shelter rather than leave. Its readouts scroll FIRE
   RECALL throughout.

@@ -33,6 +33,12 @@ import java.util.function.Supplier;
 public class MovingElevators {
 
     public static final Set<String> CAMOUFLAGE_MOD_BLACKLIST = Sets.newHashSet("secretroomsmod", "movingelevators");
+    /**
+     * Whether City Super Mod is installed. Asked once, and held here rather than in the compat class,
+     * because this being false is precisely what keeps that class from ever being resolved.
+     */
+    public static final boolean CSM_LOADED = net.minecraftforge.fml.common.Loader.isModLoaded("csm");
+
     public static final PacketChannel CHANNEL = PacketChannel.create("movingelevators");
 
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "elevator_block", registry = RegistryEntryAcceptor.Registry.BLOCKS)

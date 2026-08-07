@@ -1,6 +1,8 @@
 package com.supermartijn642.movingelevators.blocks;
 
 import com.supermartijn642.core.TextComponents;
+import com.supermartijn642.movingelevators.compat.CsmCompat;
+import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.core.block.BlockProperties;
 import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import net.minecraft.block.BlockHorizontal;
@@ -44,6 +46,19 @@ public class ControllerBlock extends ElevatorInputBlock {
             if(!level.isRemote)
                 AlarmLinkerItem.pair(player, player.getHeldItem(hand), (ControllerBlockEntity)blockEntity);
             return true;
+        }
+
+        // Mica: City Super Mod's own linker works here too. It is the tool a builder already has in
+        // hand after wiring the panel to its sounders, and reaching for a second one for the same job
+        // is the first thing that feels wrong. CSM cannot recognise an elevator, so this reads which
+        // panel that tool has selected and does this mod's half itself.
+        if(player != null && MovingElevators.CSM_LOADED && blockEntity instanceof ControllerBlockEntity){
+            BlockPos selected = CsmCompat.getLinkerSelection(player.getHeldItem(hand));
+            if(selected != null){
+                if(!level.isRemote)
+                    AlarmLinkerItem.pairWith(player, selected, (ControllerBlockEntity)blockEntity);
+                return true;
+            }
         }
 
         // Mica: a fixture that can serve several elevators collects controllers rather than
