@@ -53,19 +53,25 @@ Based on upstream **Moving Elevators 1.4.12**.
   on its own, and a button someone is actively holding down that produces no sound is
   indistinguishable from a broken one. Both schemes ring the same bell, since an alarm should not
   sound like a pleasant arrival whatever the rest of the scheme sounds like.
-- **Emergency stop.** While a cabin is moving it sweeps its own shaft every five seconds, ten blocks
-  above and below, and stops if it finds a player in there. The sweep is the cabin's footprint
-  extended vertically rather than a radius, because the shaft is exactly the column the cabin sweeps:
-  somebody standing on a landing beside it is in no danger and must not be able to halt the lift.
-  Riders are excluded by a slightly grown cabin box, since leaning into a wall would otherwise read
-  as being outside the cabin and stop the very lift they are on. Stopping means crawling to the
-  nearest floor rather than halting mid-shaft, which would trap whoever is inside, and then sitting
-  there with the doors open for thirty seconds — open, because whoever is in the shaft may want out
-  through the cabin, and whoever is inside should not be held in a box that has just stopped for an
-  emergency. That timer is a minimum rather than a licence: if the shaft is still occupied when it
-  expires, it buys another thirty seconds instead of the elevator deciding its wait was up and
-  running into someone. Calls are kept rather than dropped, so nothing has to be pressed again once
-  it returns to service. Every readout flashes "E" and "ST" while it lasts, driven off world time so
+- **Emergency stop.** While a cabin is moving it sweeps its own shaft every five seconds and stops if
+  it finds anything living in there. The sweep covers the volume the cabin has actually travelled
+  since the last one rather than a fixed window around where it happens to be — a window is only safe
+  if the cabin cannot outrun it, and at the top speed it covers a hundred blocks between sweeps. It
+  is the cabin's footprint extended vertically rather than a radius, because the shaft is exactly the
+  column the cabin sweeps: somebody standing on a landing beside it is in no danger and must not be
+  able to halt the lift. Riders are told apart from hazards by where their feet are — inside the
+  cabin's own span, rather than merely touching it, since anything standing on the roof touches the
+  cabin from above and anything pressed against a wall from the shaft side touches it from without.
+  Anything on the roof therefore stops the lift, the roof being outside the cab. Stopping means
+  crawling to the nearest floor rather than halting mid-shaft, which would trap whoever is inside,
+  and then sitting there with the doors open for thirty seconds — open, because whoever is in the
+  shaft may want out through the cabin, and whoever is inside should not be held in a box that has
+  just stopped for an emergency. That timer is a minimum rather than a licence: if the shaft is still
+  occupied when it expires, it buys another thirty seconds instead of the elevator deciding its wait
+  was up and running into someone. Returning to service resets the calls rather than resuming them,
+  since half a minute out of service is long enough that whoever pressed those buttons has had every
+  chance to walk off, and a lift setting out on errands nobody is waiting for is worse than one that
+  asks to be told again. Every readout flashes "E" and "ST" while it lasts, driven off world time so
   the whole building is on the same beat without anything synchronising it. Emergency is per elevator
   and never per bank: a bank shares dispatch, not shafts, and halting every car in a building because
   one shaft has a person in it would strand everybody else, which is its own hazard rather than a
@@ -171,9 +177,6 @@ Based on upstream **Moving Elevators 1.4.12**.
   meantime was destroyed on arrival — and a block the cabin was not allowed to break made it drop
   its own floor block as an item instead. It is rechecked in flight now, and the cabin diverts to
   the nearest clear floor.
-- The shaft sweep looked a fixed distance either side of the cabin, which is only safe if the cabin
-  cannot outrun it. At the top speed it covers a hundred blocks between sweeps, so most of the shaft
-  went unexamined. It now sweeps the volume actually travelled, which cannot leave a gap.
 - The landing panels, car panel and bank lobby panel did not check that whoever pressed them was
   nearby. The elevator screen already did.
 - The bank lobby panel stayed silent during an emergency. It now flashes when — and only when —
@@ -289,10 +292,6 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 - **"E" and "ST" on the emergency readouts are translatable.** They were the only user-visible words
   in the mod that were not, being an English abbreviation of "emergency stop".
-- **An elevator returning to service after an emergency stop now resets its calls** rather than
-  resuming them. Half a minute out of service is long enough that the people who pressed those
-  buttons have had every chance to walk off, and a lift setting out on errands nobody is waiting for
-  is worse than one that asks to be told again.
 - **The full-cube Elevator Display now reads from 30 blocks**, matching the other landing fixtures.
   The car panel keeps its shorter 15, since it is read at arm's length inside the cabin.
 
