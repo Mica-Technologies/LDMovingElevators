@@ -106,6 +106,15 @@ public class ElevatorGroup {
      */
     private final ArrayList<Integer> floors = new ArrayList<>();
     private final ArrayList<FloorData> floorData = new ArrayList<>();
+    /**
+     * Set when the cabin's contents change, as opposed to the elevator's state.
+     * <p>
+     * The cabin is nearly all of a sync: every block in it, with the NBT of any block entity among
+     * them. The rest -- the queue, which arrows are lit, what it sounds like -- is a few dozen bytes
+     * and changes constantly. Sending the cabin along with a button press meant broadcasting a cubic
+     * cabin's worth of block data to every player in the dimension because somebody had lit a lamp.
+     */
+    private boolean cageChanged = true;
     private boolean shouldBeSynced = false;
     private final Map<Integer,Set<BlockPos>> comparatorListeners = new Int2ObjectArrayMap<>();
 
@@ -1422,6 +1431,7 @@ public class ElevatorGroup {
 
         this.cage = cage;
         this.isMoving = true;
+        this.cageChanged = true;
         this.playAtCabin(ElevatorSoundScheme.Moment.DEPARTING);
         this.targetY = targetY;
         this.currentY = currentY;
@@ -1931,7 +1941,24 @@ public class ElevatorGroup {
         return removed;
     }
 
+    /**
+     * @return whether the next sync has to carry the cabin's contents, clearing the flag
+     */
+    public boolean takeCageChanged(){
+        boolean changed = this.cageChanged;
+        this.cageChanged = false;
+        return changed;
+    }
+
     public NBTTagCompound write(){
+        return this.write(true);
+    }
+
+    /**
+     * @param includeCage whether to write the cabin's contents, which is nearly all of the size of
+     *                    this and changes far less often than the rest of it
+     */
+    public NBTTagCompound write(boolean includeCage){
         NBTTagCompound compound = new NBTTagCompound();
         compound.setBoolean("isMoving", this.isMoving);
         // Written unconditionally: while stopped this is where the cabin came to rest, which is the
@@ -1941,7 +1968,8 @@ public class ElevatorGroup {
         if(this.isMoving){
             compound.setDouble("lastY", this.lastY);
             compound.setDouble("currentY", this.currentY);
-            compound.setTag("cage", this.cage.write());
+            if(includeCage)
+                compound.setTag("cage", this.cage.write());
         }
         compound.setDouble("targetSpeed", this.targetSpeed);
         compound.setDouble("speed", this.speed);
@@ -2040,7 +2068,10 @@ public class ElevatorGroup {
             if(this.isMoving){
                 this.lastY = compound.getDouble("lastY");
                 this.currentY = compound.getDouble("currentY");
-                this.cage = ElevatorCage.read(compound.getCompoundTag("cage"), this.level.isRemote);
+                // Absent when this is a state-only update: the cabin's contents have not changed, so
+                // the copy already held is still right and re-reading it would only rebuild it.
+                if(compound.hasKey("cage", Constants.NBT.TAG_COMPOUND))
+                    this.cage = ElevatorCage.read(compound.getCompoundTag("cage"), this.level.isRemote);
             }
             this.targetSpeed = compound.getDouble("targetSpeed");
             this.speed = compound.getDouble("speed");

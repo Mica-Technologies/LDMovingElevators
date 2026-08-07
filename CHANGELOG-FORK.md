@@ -248,6 +248,11 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- Pressing a button while an elevator was travelling broadcast the entire contents of its cabin —
+  every block, plus the data of any block entity among them — to every player in the dimension. The
+  cabin only changes when a trip begins, so it now rides along only then; a lamp lighting or a call
+  being queued sends the state alone. For a large cabin that is most of the message gone.
+
 - A chunk loading while a cabin was in flight could delete the elevator's floors and spill the whole
   cabin onto the ground as items. A controller's block entity is not always present the instant its
   chunk loads, so a floor could look missing when it was only not ready yet. Floors are no longer

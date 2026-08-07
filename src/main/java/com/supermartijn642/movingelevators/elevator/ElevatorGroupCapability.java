@@ -166,7 +166,11 @@ public class ElevatorGroupCapability {
 
     public void updateGroup(ElevatorGroup group){
         if(!this.level.isRemote && group != null)
-            MovingElevators.CHANNEL.sendToDimension(this.level, new PacketAddElevatorGroup(this.writeGroup(group)));
+            // The cabin's contents ride along only when they have actually changed, which is when a
+            // trip begins. Every other sync -- a lamp lighting, a call queued, a scheme cycled -- is
+            // now a few dozen bytes instead of every block in the cabin sent to the whole dimension.
+            MovingElevators.CHANNEL.sendToDimension(this.level,
+                new PacketAddElevatorGroup(this.writeGroup(group, group.takeCageChanged())));
     }
 
     private void removeGroup(ElevatorGroupPosition pos){
@@ -228,8 +232,12 @@ public class ElevatorGroupCapability {
     }
 
     private NBTTagCompound writeGroup(ElevatorGroup group){
+        return this.writeGroup(group, true);
+    }
+
+    private NBTTagCompound writeGroup(ElevatorGroup group, boolean includeCage){
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setTag("group", group.write());
+        tag.setTag("group", group.write(includeCage));
         tag.setTag("pos", new ElevatorGroupPosition(group.x, group.z, group.facing).write());
         return tag;
     }
