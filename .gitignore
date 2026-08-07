@@ -88,6 +88,10 @@ local.properties
 docs/agent-plans/
 docs/AGENT-PLANS/
 
+# Printable checklists generated for a play-test session. Regenerated whenever the
+# work being tested changes, so versioning them would only ever record a stale one.
+*-test-plan.pdf
+
 # Secrets. CURSEFORGE_TOKEN / MODRINTH_TOKEN are read from the environment by
 # publishMods and must never be committed in any form.
 *.env
