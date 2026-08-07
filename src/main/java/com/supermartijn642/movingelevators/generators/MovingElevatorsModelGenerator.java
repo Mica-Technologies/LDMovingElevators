@@ -74,7 +74,13 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(2, -2, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
+            // UVs pinned by hand. Minecraft derives them from the element's own coordinates, and this
+            // plate hangs below y=0, so the derived coordinates ran off the bottom of the sprite and
+            // sampled whatever sits next to it on the block atlas -- which is how a bucket ended up
+            // drawn across the foot of every car panel. The metal is uniform, so any square of it
+            // does; what matters is only that the square is inside the sprite.
+            .element(element -> element.shape(2, -2, 14, 14, 15, 16)
+                .allFaces(face -> face.texture("metal").uv(0, 0, 16, 16)));
         // Its own model rather than the block's, with the front face darkened. Everything a panel
         // actually shows -- readout, arrows, buttons -- is drawn by its block entity renderer, and an
         // item does not run one, so inheriting the block model gives an icon of blank metal on every
@@ -86,17 +92,28 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
             .texture("screen", "blocks/display")
+            // UVs pinned by hand. Minecraft derives them from the element's own coordinates, and this
+            // plate hangs below y=0, so the derived coordinates ran off the bottom of the sprite and
+            // sampled whatever sits next to it on the block atlas -- which is how a bucket ended up
+            // drawn across the foot of every car panel. The metal is uniform, so any square of it
+            // does; what matters is only that the square is inside the sprite.
             .element(element -> element.shape(2, -2, 14, 14, 15, 16)
-                .allFaces(face -> face.texture("metal"))
-                .face(EnumFacing.NORTH, face -> face.texture("screen"))
-                .face(EnumFacing.SOUTH, face -> face.texture("screen")));
+                .allFaces(face -> face.texture("metal").uv(0, 0, 16, 16))
+                .face(EnumFacing.NORTH, face -> face.texture("screen").uv(0, 0, 16, 16))
+                .face(EnumFacing.SOUTH, face -> face.texture("screen").uv(0, 0, 16, 16)));
         // The same plate as the car panel. It was half height while its face was empty below the
         // readout; it now carries door and alarm controls there instead.
         this.model("block/bank_car_panel_block")
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
-            .element(element -> element.shape(2, -2, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
+            // UVs pinned by hand. Minecraft derives them from the element's own coordinates, and this
+            // plate hangs below y=0, so the derived coordinates ran off the bottom of the sprite and
+            // sampled whatever sits next to it on the block atlas -- which is how a bucket ended up
+            // drawn across the foot of every car panel. The metal is uniform, so any square of it
+            // does; what matters is only that the square is inside the sprite.
+            .element(element -> element.shape(2, -2, 14, 14, 15, 16)
+                .allFaces(face -> face.texture("metal").uv(0, 0, 16, 16)));
         // Its own model rather than the block's, with the front face darkened. Everything a panel
         // actually shows -- readout, arrows, buttons -- is drawn by its block entity renderer, and an
         // item does not run one, so inheriting the block model gives an icon of blank metal on every
@@ -108,10 +125,15 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
             .texture("screen", "blocks/display")
+            // UVs pinned by hand. Minecraft derives them from the element's own coordinates, and this
+            // plate hangs below y=0, so the derived coordinates ran off the bottom of the sprite and
+            // sampled whatever sits next to it on the block atlas -- which is how a bucket ended up
+            // drawn across the foot of every car panel. The metal is uniform, so any square of it
+            // does; what matters is only that the square is inside the sprite.
             .element(element -> element.shape(2, -2, 14, 14, 15, 16)
-                .allFaces(face -> face.texture("metal"))
-                .face(EnumFacing.NORTH, face -> face.texture("screen"))
-                .face(EnumFacing.SOUTH, face -> face.texture("screen")));
+                .allFaces(face -> face.texture("metal").uv(0, 0, 16, 16))
+                .face(EnumFacing.NORTH, face -> face.texture("screen").uv(0, 0, 16, 16))
+                .face(EnumFacing.SOUTH, face -> face.texture("screen").uv(0, 0, 16, 16)));
         this.model("block/bank_lobby_panel_block")
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
