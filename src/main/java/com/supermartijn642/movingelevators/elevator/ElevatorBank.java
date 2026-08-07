@@ -70,6 +70,48 @@ public class ElevatorBank {
     }
 
     /**
+     * Chooses which elevator answers an ordinary up or down call from a landing.
+     * <p>
+     * The same question as {@link #pick} without a destination: somebody wants to go up, and any car
+     * that will come and is going that way will do. A car already coming for that direction wins
+     * outright, which is what stops a lobby summoning three lifts for three people who all want the
+     * same one.
+     * <p>
+     * With a single elevator bound this reduces to "that elevator", so a call panel wired to one shaft
+     * behaves exactly as it always has and pays nothing for the machinery.
+     *
+     * @return the elevator to call, or null if none can serve this landing
+     */
+    public static ElevatorGroup pickForHallCall(List<ElevatorGroup> groups, int panelY, boolean up){
+        ElevatorGroup best = null;
+        double bestScore = Double.MAX_VALUE;
+        for(ElevatorGroup group : groups){
+            if(group == null || group.isEmergencyStopped() || !group.acceptsHallCalls())
+                continue;
+            int landing = nearestFloorY(group, panelY);
+            if(landing == Integer.MIN_VALUE)
+                continue;
+            double score = group.hasHallCall(landing, up) ? SHARE_SCORE : hallCallScore(group, landing);
+            if(score < bestScore){
+                bestScore = score;
+                best = group;
+            }
+        }
+        return best;
+    }
+
+    /** As {@link #score}, minus the parts that only mean something once a destination is known. */
+    private static double hallCallScore(ElevatorGroup group, int landing){
+        double score = Math.abs(group.getCurrentY() - landing);
+        if(group.isMoving()){
+            int travel = group.getTravelDirection();
+            boolean towards = travel == 0 || travel == (int)Math.signum(landing - group.getCurrentY());
+            score += towards ? MOVING_TOWARDS_PENALTY : MOVING_AWAY_PENALTY;
+        }
+        return score + group.getCallQueue().size() * QUEUED_CALL_PENALTY;
+    }
+
+    /**
      * The floor of this elevator nearest the panel, so a panel hung a block above or below a landing
      * still speaks for that landing rather than for nothing.
      */

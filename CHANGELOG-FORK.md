@@ -156,7 +156,12 @@ Based on upstream **Moving Elevators 1.4.12**.
   and down call buttons below. The buttons are real hall calls rather than the existing "move the
   cabin one floor" arrows — pressing either fetches the cabin to that landing and tells the elevator
   which way you then want to travel, so it joins the call queue and gets served in sweep order. The
-  arrows light while a call is outstanding.
+  arrows light while a call is outstanding. One panel can serve a whole bank: right-click a
+  controller in each shaft it should cover, and a press sends exactly one elevator — whichever is
+  best placed to answer, sharing a car already coming for somebody going the same way rather than
+  fetching the lot. Linked to one shaft it is unchanged. Linking works the same way as the bank
+  lobby panel's, including the rule that shafts must agree about the floors they share, and
+  sneak-clicking a placed panel lists what it is linked to.
 - **Remote Elevator Indicator.** A second style of the same readout: a slim metal plate that mounts
   on the face of the block behind it, like a real hall indicator above a lift door, rather than
   filling a whole block. It is directional — the plate exists on one side only — and pops off if the

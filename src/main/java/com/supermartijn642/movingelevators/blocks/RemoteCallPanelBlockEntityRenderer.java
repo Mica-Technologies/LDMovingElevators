@@ -9,6 +9,8 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.List;
+
 /**
  * Draws a {@link RemoteCallPanelBlockEntity}: floor readout at the top of the plate, up and down call
  * arrows below it, lit when there is an outstanding call in that direction.
@@ -39,8 +41,14 @@ public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRend
     @Override
     public void render(RemoteCallPanelBlockEntity entity, float partialTicks, int combinedOverlay, float alpha){
         ElevatorGroup group = entity.getGroup();
-        if(group == null)
-            return;
+        if(group == null){
+            // A panel linked to several elevators outlives any one of them, so it falls back to a
+            // sibling rather than going dark when the primary binding's controller is pulled out.
+            List<ElevatorGroup> groups = entity.getGroups();
+            if(groups.isEmpty())
+                return;
+            group = groups.get(0);
+        }
 
         BlockPos pos = entity.getPos();
         Vec3d cameraPos = RenderUtils.getCameraPosition();
@@ -48,7 +56,6 @@ public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRend
             return;
 
         EnumFacing facing = entity.getFacing();
-        int floorLevel = entity.getFloorLevel();
 
         GlStateManager.pushMatrix();
 
@@ -65,10 +72,12 @@ public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRend
                     0.5f, SCREEN_CENTER_Y, MAX_SCALE, MAX_WIDTH, PADDING);
         }
 
+        // The arrows belong to the landing, not to one shaft: whichever linked elevator took the call
+        // lights the button that was pressed.
         FloorLabelRenderer.drawArrow(0.5f, UP_CENTER_Y, ARROW_HALF_WIDTH, ARROW_HALF_HEIGHT,
-            true, group.hasHallCall(floorLevel, true));
+            true, entity.getRespondingGroup(true) != null);
         FloorLabelRenderer.drawArrow(0.5f, DOWN_CENTER_Y, ARROW_HALF_WIDTH, ARROW_HALF_HEIGHT,
-            false, group.hasHallCall(floorLevel, false));
+            false, entity.getRespondingGroup(false) != null);
 
         GlStateManager.popMatrix();
     }

@@ -21,20 +21,22 @@ import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 
 /**
- * Carries a bank's worth of bindings before the panel is placed.
+ * Carries several controller bindings before the block is placed, for any fixture that can address
+ * more than one elevator -- the bank lobby panel and the landing call panel both use it.
  * <p>
  * The other remote fixtures keep one controller in item NBT and overwrite it on each click. This one
- * accumulates instead, because a bank panel is defined by the set of elevators it serves -- and
+ * accumulates instead, because such a fixture is defined by the set of elevators it serves -- and
  * clicking a controller that is already in the set removes it, so the one gesture both adds and takes
  * away and there is nothing to learn beyond "click the elevators you want".
  * <p>
  * Created for the Mica Technologies fork.
  */
-public class BankLobbyPanelBlockItem extends BaseBlockItem {
+public class MultiControllerBlockItem extends BaseBlockItem {
 
+    /** The NBT key predates the class name; changing it would orphan every item already bound. */
     public static final String BINDINGS_KEY = "bankBindings";
 
-    public BankLobbyPanelBlockItem(Block block, ItemProperties properties){
+    public MultiControllerBlockItem(Block block, ItemProperties properties){
         super(block, properties);
     }
 
@@ -99,9 +101,10 @@ public class BankLobbyPanelBlockItem extends BaseBlockItem {
      * for each one is tedious and easy to get wrong -- a bank where one panel knows about three cars
      * and its neighbour knows about two is a confusing thing to debug. Copying makes the second panel
      * exact by construction.
+     * <p>
+     * Takes the list rather than the panel, so any fixture that holds one can be copied from.
      */
-    public static void copyFrom(EntityPlayer player, ItemStack stack, BankLobbyPanelBlockEntity panel){
-        List<BankLobbyPanelBlockEntity.Binding> bindings = panel.getBindings();
+    public static void copyFrom(EntityPlayer player, ItemStack stack, List<BankLobbyPanelBlockEntity.Binding> bindings){
         setBindings(stack, bindings);
         player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby_panel.copied",
             TextComponents.number(bindings.size()).get()).get(), true);

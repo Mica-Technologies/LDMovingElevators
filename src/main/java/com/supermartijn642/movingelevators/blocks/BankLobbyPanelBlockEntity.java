@@ -13,6 +13,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 
 import java.util.ArrayList;
@@ -102,13 +103,22 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
      * and are simply skipped, so a bank degrades to the cars that are still there rather than breaking.
      */
     public List<ElevatorGroup> getGroups(){
+        return resolveGroups(this.world, this.bindings);
+    }
+
+    /**
+     * Turns a set of bindings into the elevators they currently reach. Static and taking the list, so
+     * the landing call panel -- which keeps its extra bindings beside an inherited primary one --
+     * resolves them by exactly the same rules.
+     */
+    public static List<ElevatorGroup> resolveGroups(World level, List<Binding> bindings){
         List<ElevatorGroup> groups = new ArrayList<>();
-        if(this.world == null)
+        if(level == null)
             return groups;
-        ElevatorGroupCapability capability = ElevatorGroupCapability.get(this.world);
+        ElevatorGroupCapability capability = ElevatorGroupCapability.get(level);
         if(capability == null)
             return groups;
-        for(Binding binding : this.bindings){
+        for(Binding binding : bindings){
             if(binding.facing == null)
                 continue;
             ElevatorGroup group = capability.get(binding.pos.getX(), binding.pos.getZ(), binding.facing);
@@ -216,17 +226,28 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
      */
     public void reportStatus(EntityPlayer player){
         String landing = this.getFloorName(this.getLandingY());
-        player.sendMessage(TextComponents.translation("movingelevators.bank_lobby_panel.status.header",
-            TextComponents.string(landing == null || landing.isEmpty() ? Integer.toString(this.getLandingY()) : landing)
-                .color(TextFormatting.GOLD).get()).color(TextFormatting.YELLOW).get());
+        reportStatus(player, this.world, "movingelevators.bank_lobby_panel.status.header",
+            landing == null || landing.isEmpty() ? Integer.toString(this.getLandingY()) : landing, this.getBindings());
+    }
 
-        List<Binding> bindings = this.getBindings();
+    /**
+     * The body of {@link #reportStatus(EntityPlayer)}, taking the bindings rather than reading them,
+     * so every fixture that holds a set of them answers the question in exactly the same words. A
+     * player should have to learn this readout once.
+     *
+     * @param headerKey names the fixture doing the talking; everything below it is the same for all
+     * @param landing the floor the fixture speaks for, already resolved to a name or a bare y level
+     */
+    public static void reportStatus(EntityPlayer player, World level, String headerKey, String landing, List<Binding> bindings){
+        player.sendMessage(TextComponents.translation(headerKey,
+            TextComponents.string(landing).color(TextFormatting.GOLD).get()).color(TextFormatting.YELLOW).get());
+
         if(bindings.isEmpty()){
             player.sendMessage(TextComponents.translation("movingelevators.bank_lobby_panel.status.none").color(TextFormatting.GRAY).get());
             return;
         }
 
-        ElevatorGroupCapability capability = ElevatorGroupCapability.get(this.world);
+        ElevatorGroupCapability capability = ElevatorGroupCapability.get(level);
         ElevatorGroup first = null;
         boolean aligned = true, anyResolved = false;
         int index = 0;

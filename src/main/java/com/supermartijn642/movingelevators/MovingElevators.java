@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 /**
  * Created 4/5/2020 by SuperMartijn642
  */
-@Mod(modid = "@mod_id@", name = "@mod_name@", version = "@mod_version@", dependencies = "required-after:forge@@forge_dependency@;required-after:supermartijn642corelib@@core_library_dependency@;required-after:supermartijn642configlib@@config_library_dependency@")
+@Mod(modid = "@mod_id@", name = "@mod_name@", version = "@mod_version@", dependencies = "required-after:forge@@forge_dependency@;required-after:supermartijn642corelib@@core_library_dependency@;required-after:supermartijn642configlib@@config_library_dependency@;after:csm")
 public class MovingElevators {
 
     public static final Set<String> CAMOUFLAGE_MOD_BLACKLIST = Sets.newHashSet("secretroomsmod", "movingelevators");
@@ -173,12 +173,12 @@ public class MovingElevators {
         // off that item class, works for the display too.
         handler.registerItem("remote_display_block", () -> new RemoteControllerBlockItem(remote_display_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("remote_indicator_block", () -> new RemoteControllerBlockItem(remote_indicator_block, ItemProperties.create().group(GROUP)));
-        handler.registerItem("remote_call_panel_block", () -> new RemoteControllerBlockItem(remote_call_panel_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("remote_call_panel_block", () -> new MultiControllerBlockItem(remote_call_panel_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_car_panel_block", () -> new RemoteControllerBlockItem(elevator_car_panel_block, ItemProperties.create().group(GROUP)));
         // Its own item class rather than RemoteControllerBlockItem: this one collects a set of
         // controllers instead of remembering the last, and can copy a placed panel's whole bank.
         handler.registerItem("bank_car_panel_block", () -> new RemoteControllerBlockItem(bank_car_panel_block, ItemProperties.create().group(GROUP)));
-        handler.registerItem("bank_lobby_panel_block", () -> new BankLobbyPanelBlockItem(bank_lobby_panel_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("bank_lobby_panel_block", () -> new MultiControllerBlockItem(bank_lobby_panel_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_door_block", () -> new BaseBlockItem(elevator_door_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_single_door_block", () -> new BaseBlockItem(elevator_single_door_block, ItemProperties.create().group(GROUP)));
         // Sounds

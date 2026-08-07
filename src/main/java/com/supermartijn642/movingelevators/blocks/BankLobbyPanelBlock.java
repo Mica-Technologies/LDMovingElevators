@@ -64,10 +64,10 @@ public class BankLobbyPanelBlock extends WallPanelBlock {
 
         // Clicking a configured panel with another panel copies its bank, so the second station in a
         // lobby costs one click instead of a repeat of the whole binding walk.
-        if(player != null && player.getHeldItem(hand).getItem() instanceof BankLobbyPanelBlockItem){
+        if(player != null && player.getHeldItem(hand).getItem() instanceof MultiControllerBlockItem){
             if(!level.isRemote){
                 if(panel.isBound())
-                    BankLobbyPanelBlockItem.copyFrom(player, player.getHeldItem(hand), panel);
+                    MultiControllerBlockItem.copyFrom(player, player.getHeldItem(hand), panel.getBindings());
                 else
                     player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby.unbound").get(), true);
             }
@@ -92,12 +92,12 @@ public class BankLobbyPanelBlock extends WallPanelBlock {
         // all serving the same bank, and clearing on place would mean re-linking or copying for each
         // one. Sneak and use in the air to empty the item when starting a different bank.
         if(entity instanceof BankLobbyPanelBlockEntity)
-            ((BankLobbyPanelBlockEntity)entity).setBindings(BankLobbyPanelBlockItem.readBindings(stack));
+            ((BankLobbyPanelBlockEntity)entity).setBindings(MultiControllerBlockItem.readBindings(stack));
     }
 
     @Override
     protected void appendItemInformation(ItemStack stack, @Nullable IBlockAccess level, Consumer<ITextComponent> info, boolean advanced){
-        List<BankLobbyPanelBlockEntity.Binding> bindings = BankLobbyPanelBlockItem.readBindings(stack);
+        List<BankLobbyPanelBlockEntity.Binding> bindings = MultiControllerBlockItem.readBindings(stack);
         if(bindings.isEmpty())
             info.accept(TextComponents.translation("movingelevators.bank_lobby_panel.tooltip").color(TextFormatting.AQUA).get());
         else

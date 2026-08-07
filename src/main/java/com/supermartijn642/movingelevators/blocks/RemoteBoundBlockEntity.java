@@ -51,6 +51,14 @@ public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
     }
 
     /**
+     * @return the side the bound controller faces, which together with its column is what identifies
+     * an elevator; null when unbound
+     */
+    public EnumFacing getControllerFacing(){
+        return this.controllerFacing;
+    }
+
+    /**
      * The floor this fixture speaks for: the one its bound controller is on. A panel hung anywhere in
      * the shaft still calls and reports for that landing, which is how the existing remote panel
      * behaves.

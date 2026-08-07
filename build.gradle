@@ -95,11 +95,29 @@ repositories {
         filter { includeGroup "maven.modrinth" }
     }
     maven { url = "https://repo.spongepowered.org/maven" }
+    // Mica: City Super Mod, published as GitHub release artifacts rather than to a maven. Only ever
+    // resolved for compilation -- see the compileOnly note in dependencies below.
+    ivy {
+        name "CSM GitHub Releases"
+        url "https://github.com/Mica-Technologies/minecraft-city-super-mod/releases/download/"
+        patternLayout { artifact "[revision]/[artifact]-[revision].[ext]" }
+        metadataSources { artifact() }
+        content { includeGroup "Mica-Technologies" }
+    }
 }
 
 dependencies {
     // Forge
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    // Mica: City Super Mod's fire alarm API, for fire recall. compileOnly on purpose -- CSM is NOT a
+    // dependency of this mod and must never become one. It is absent from the runtime classpath, from
+    // the dev runs and from the published jar, so the mod builds and runs without it. Everything that
+    // touches a CSM type lives in compat/CsmCompat, which is only ever reached behind a
+    // Loader.isModLoaded("csm") check; that containment is the entire guarantee, and it fails at
+    // runtime rather than at build time, so do not import CSM anywhere else. Matches how SUM consumes
+    // the same API.
+    compileOnly "Mica-Technologies:minecraft-city-super-mod:${csm_version}"
 
     // SpongePowered Mixin
     annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
