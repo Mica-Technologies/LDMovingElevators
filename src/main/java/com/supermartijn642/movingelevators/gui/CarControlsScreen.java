@@ -230,6 +230,6 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         int x = this.keySwitchX(blockEntity);
         if(mouseX >= x && mouseX < x + KeySwitchWidget.SIZE
             && mouseY >= KEY_SWITCH_Y && mouseY < KEY_SWITCH_Y + KeySwitchWidget.SIZE)
-            ScreenUtils.drawTooltip(FloorSelectScreen.independentTooltip(blockEntity), mouseX, mouseY);
+            FloorSelectScreen.drawIndependentTooltip(blockEntity, x, mouseY);
     }
 }

@@ -87,6 +87,27 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      * it needs a key. A control drawn as a locked keyhole with no words at all is a puzzle, and the
      * state alone -- "Independent service: Normal service" -- says nothing about what would change.
      */
+    /**
+     * Drawn to the left of the switch rather than at the cursor.
+     * <p>
+     * The switch sits at the panel's right edge, and the tooltip helper places its box to the right of
+     * whatever it is given, with no notion of the screen edge to clamp against -- so at the cursor it
+     * ran off the display. Growing leftwards from the switch keeps it over the panel, which is on
+     * screen by definition.
+     */
+    static void drawIndependentTooltip(ElevatorCarPanelBlockEntity blockEntity, int switchX, int mouseY){
+        java.util.List<ITextComponent> lines = independentTooltip(blockEntity);
+        int widest = 0;
+        for(ITextComponent line : lines)
+            widest = Math.max(widest, ClientUtils.getFontRenderer().getStringWidth(line.getFormattedText()));
+        // The helper insets its box from the position it is handed; this puts the box's far edge back
+        // beside the switch rather than a box-width past it.
+        ScreenUtils.drawTooltip(lines, switchX - widest - TOOLTIP_BOX_INSET, mouseY);
+    }
+
+    /** What the tooltip helper adds between the position it is given and the text it draws. */
+    private static final int TOOLTIP_BOX_INSET = 16;
+
     static java.util.List<ITextComponent> independentTooltip(ElevatorCarPanelBlockEntity blockEntity){
         ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
         ElevatorGroup.ServiceMode mode = group == null ? ElevatorGroup.ServiceMode.NORMAL : group.getServiceMode();
@@ -323,6 +344,6 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         int x = this.keySwitchX(blockEntity);
         if(mouseX >= x && mouseX < x + KeySwitchWidget.SIZE
             && mouseY >= KEY_SWITCH_Y && mouseY < KEY_SWITCH_Y + KeySwitchWidget.SIZE)
-            ScreenUtils.drawTooltip(FloorSelectScreen.independentTooltip(blockEntity), mouseX, mouseY);
+            FloorSelectScreen.drawIndependentTooltip(blockEntity, x, mouseY);
     }
 }
