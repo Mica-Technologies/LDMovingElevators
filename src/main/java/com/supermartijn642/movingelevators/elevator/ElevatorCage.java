@@ -8,7 +8,9 @@ import com.supermartijn642.movingelevators.extensions.MovingElevatorsLevelChunk;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockButton;
 import net.minecraft.block.BlockPressurePlate;
+import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
@@ -22,6 +24,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
@@ -224,7 +227,16 @@ public class ElevatorCage {
         this.bounds = new AxisAlignedBB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
-    public void place(World level, BlockPos startPos){
+    /**
+     * @param travelDirection which way the cabin was moving when it came to rest: positive up, negative
+     *                        down, zero unknown. Anything caught in the blocks about to be placed is
+     *                        shoved that way -- see {@link #pushEntitiesClear}.
+     */
+    public void place(World level, BlockPos startPos, double travelDirection){
+        // Before a single block is set, because a cell filled early would trap an entity the sweep has
+        // not looked at yet.
+        this.pushEntitiesClear(level, startPos, travelDirection);
+
         IBlockState[][][] oldStates = new IBlockState[this.xSize][this.ySize][this.zSize];
         for(int x = 0; x < this.xSize; x++){
             for(int y = 0; y < this.ySize; y++){
@@ -313,6 +325,97 @@ public class ElevatorCage {
                 }
             }
         }
+    }
+
+    /**
+     * How far past the cabin's face a shoved entity is set down. Flush would do geometrically, but a
+     * position exactly on the boundary resolves into the blocks about as readily as out of them, and
+     * placement is a one-shot -- nothing runs afterwards to catch an entity that landed wrong.
+     */
+    private static final double PUSH_CLEARANCE = 0.01;
+    /**
+     * Entity boxes are shrunk by this before being tested against the cabin's cells, as
+     * {@link ElevatorCollisionHandler} does for its own collisions. Somebody standing on the cabin roof
+     * shares a plane with it without being inside it; counting that as engulfed would fling a passenger
+     * off the top of a descending cabin all the way beneath it.
+     */
+    private static final double FLUSH_CONTACT_MARGIN = 1E-7;
+
+    /**
+     * Shoves entities out of the cells the cabin is about to fill with blocks.
+     * <p>
+     * The cabin materialises wherever it stops, and the emergency stop exists precisely to bring it to
+     * a floor <i>because</i> somebody is standing in the shaft -- so without this the safety feature
+     * entombs the very person it fired for. A player who logged out inside the cabin and rejoins after
+     * it has moved, and mobs that wandered in, arrive in the same predicament.
+     * <p>
+     * Entities go the way the cabin was travelling, like a piston, and clear of the whole cage rather
+     * than of the one cell they were caught in -- clearing the cell alone would just hand them to the
+     * next cell along. The hollow interior is left alone on purpose: those cells receive no block, so
+     * passengers riding the cabin are intersecting nothing and must not be thrown out of their own lift.
+     */
+    private void pushEntitiesClear(World level, BlockPos startPos, double travelDirection){
+        AxisAlignedBB cage = new AxisAlignedBB(startPos, startPos.add(this.xSize, this.ySize, this.zSize));
+        // An unknown direction goes up, because that leaves whoever was in the way standing on the roof
+        // rather than dropped down the shaft they were just rescued from.
+        boolean pushUp = travelDirection >= 0;
+        double clearAbove = startPos.getY() + this.ySize + PUSH_CLEARANCE;
+        double clearBelow = startPos.getY() - PUSH_CLEARANCE;
+
+        // One query over the whole cage rather than one per cell: a cabin runs to hundreds of cells and
+        // the shaft is empty for almost all of them.
+        for(Entity entity : level.getEntitiesInAABBexcluding(null, cage, ElevatorCage::canBePushedAside)){
+            if(!this.intersectsSolidCell(startPos, entity.getEntityBoundingBox().shrink(FLUSH_CONTACT_MARGIN)))
+                continue;
+            double y = pushUp ? clearAbove : clearBelow - entity.height;
+            // setPositionAndUpdate rather than setPosition, because on a player the former goes out over
+            // the connection and actually tells the client it has been moved; a bare reposition leaves
+            // the client walking around at the old spot until the server rubber-bands it back.
+            entity.setPositionAndUpdate(entity.posX, y, entity.posZ);
+            // Its momentum was worked out for a place it is no longer in, and the distance it just
+            // covered was the cabin's doing, so it must not read as a fall it can be hurt by.
+            entity.motionY = 0;
+            entity.fallDistance = 0;
+        }
+    }
+
+    /**
+     * Whether the given box overlaps a cell that is about to be given a block.
+     * <p>
+     * Worked out from the box's own index range rather than by walking the cage, so testing one entity
+     * costs the handful of cells it actually stands in no matter how big the cabin is.
+     */
+    private boolean intersectsSolidCell(BlockPos startPos, AxisAlignedBB box){
+        // ceil - 1 rather than floor for the upper bounds, so a box ending exactly on a cell boundary
+        // stops at the cell before it instead of claiming one it only touches.
+        int minX = Math.max(0, MathHelper.floor(box.minX) - startPos.getX());
+        int maxX = Math.min(this.xSize - 1, MathHelper.ceil(box.maxX) - 1 - startPos.getX());
+        int minY = Math.max(0, MathHelper.floor(box.minY) - startPos.getY());
+        int maxY = Math.min(this.ySize - 1, MathHelper.ceil(box.maxY) - 1 - startPos.getY());
+        int minZ = Math.max(0, MathHelper.floor(box.minZ) - startPos.getZ());
+        int maxZ = Math.min(this.zSize - 1, MathHelper.ceil(box.maxZ) - 1 - startPos.getZ());
+        for(int x = minX; x <= maxX; x++)
+            for(int y = minY; y <= maxY; y++)
+                for(int z = minZ; z <= maxZ; z++)
+                    // The same null cell place() skips: nothing gets built there, so nothing can be caught in it.
+                    if(this.blockStates[x][y][z] != null)
+                        return true;
+        return false;
+    }
+
+    /**
+     * Whether the cabin closing around this entity is worth moving it for.
+     * <p>
+     * Spectators walk through blocks, a passenger goes wherever whatever carries it goes -- pulling it
+     * out from under its own mount would only strand it -- and anything a piston refuses to move is not
+     * ours to move either. Fake players have no connection to tell about it and nothing to suffocate.
+     */
+    private static boolean canBePushedAside(Entity entity){
+        if(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
+            return false;
+        if(entity instanceof EntityPlayerMP && ((EntityPlayerMP)entity).connection == null)
+            return false;
+        return !entity.isRiding() && entity.getPushReaction() == EnumPushReaction.NORMAL;
     }
 
     public List<ItemStack> getDrops(){

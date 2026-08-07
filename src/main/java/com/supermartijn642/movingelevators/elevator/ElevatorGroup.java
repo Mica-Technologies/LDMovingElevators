@@ -182,8 +182,13 @@ public class ElevatorGroup {
     /** Half a second on each half of the flashing readout. */
     private static final int EMERGENCY_FLASH_TICKS = 10;
 
+    /** Ticks between checks that the floor the cabin is heading for is still clear. */
+    private static final int DESTINATION_CHECK_INTERVAL = 20;
+
     private EmergencyState emergencyState = EmergencyState.NONE;
     private int emergencyHold;
+    /** Where the cabin was at the last shaft sweep, so the next one can cover the gap between. */
+    private double lastShaftScanY = Double.NaN;
 
     public ElevatorGroup(World level, int x, int z, EnumFacing facing){
         this.level = level;
@@ -208,8 +213,15 @@ public class ElevatorGroup {
             // Swept while moving only: a parked cabin is not a hazard to stand next to, and this is
             // the one state where somebody in the shaft is about to be run into.
             if(!this.level.isRemote && this.emergencyState == EmergencyState.NONE
-                && this.tickCounter % SHAFT_SCAN_INTERVAL == 0 && this.isShaftObstructedByPlayer())
-                this.triggerEmergencyStop();
+                && this.tickCounter % SHAFT_SCAN_INTERVAL == 0){
+                double previous = Double.isNaN(this.lastShaftScanY) ? this.currentY : this.lastShaftScanY;
+                this.lastShaftScanY = this.currentY;
+                if(this.isShaftObstructedSince(previous))
+                    this.triggerEmergencyStop();
+            }
+            // S2: the destination is checked before departure and could be built into afterwards.
+            if(!this.level.isRemote && this.tickCounter % DESTINATION_CHECK_INTERVAL == 0)
+                this.considerBlockedDestination();
 
             if(!this.level.isRemote)
                 this.considerRetarget();
@@ -658,11 +670,28 @@ public class ElevatorGroup {
      * danger and must not stop the lift.
      */
     private boolean isShaftObstructedByPlayer(){
+        return this.isShaftObstructedSince(this.currentY);
+    }
+
+    /**
+     * As {@link #isShaftObstructedByPlayer()}, but covering everything the cabin has passed through
+     * since it was last at {@code previousY} as well as where it is now.
+     * <p>
+     * A fixed window around the current position is only safe if the cabin cannot outrun it, and it
+     * can: at the top speed it covers a hundred blocks between sweeps while looking ten either way,
+     * so the great majority of the shaft went unexamined and somebody standing in it was simply
+     * driven through. Sweeping the travelled volume cannot have a gap by construction, whatever the
+     * speed and interval are set to.
+     */
+    private boolean isShaftObstructedSince(double previousY){
         Vec3d anchor = this.getCageAnchorPos(this.currentY);
         AxisAlignedBB cabin = new AxisAlignedBB(anchor.x, anchor.y, anchor.z,
             anchor.x + this.cageSizeX, anchor.y + this.cageSizeY, anchor.z + this.cageSizeZ);
-        AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, cabin.minY - SHAFT_SCAN_REACH, cabin.minZ,
-            cabin.maxX, cabin.maxY + SHAFT_SCAN_REACH, cabin.maxZ);
+        Vec3d previousAnchor = this.getCageAnchorPos(previousY);
+        double sweptMinY = Math.min(cabin.minY, previousAnchor.y);
+        double sweptMaxY = Math.max(cabin.maxY, previousAnchor.y + this.cageSizeY);
+        AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, sweptMinY - SHAFT_SCAN_REACH, cabin.minZ,
+            cabin.maxX, sweptMaxY + SHAFT_SCAN_REACH, cabin.maxZ);
         // Grown, because a passenger standing against the cabin wall pokes marginally outside it and
         // must not be mistaken for somebody in the shaft -- that would stop the lift they are riding.
         AxisAlignedBB passengers = cabin.grow(0.25);
@@ -673,6 +702,50 @@ public class ElevatorGroup {
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Diverts the cabin if the floor it is heading for has stopped being clear.
+     * <p>
+     * The destination is checked once before departure and never again, so anything that arrives in
+     * the meantime -- a player building, falling sand, flowing water -- is simply destroyed on
+     * arrival. Worse, a block the cabin is not allowed to break makes the placement drop the cabin's
+     * own block as an item instead, so part of the floor you are standing on turns into an item
+     * entity with no explanation.
+     */
+    private void considerBlockedDestination(){
+        if(this.emergencyState != EmergencyState.NONE || this.isDestinationClear(this.targetY))
+            return;
+        int best = Integer.MIN_VALUE;
+        double bestDistance = Double.MAX_VALUE;
+        for(int floor = 0; floor < this.getFloorCount(); floor++){
+            int y = this.getFloorYLevel(floor);
+            if(y == this.targetY)
+                continue;
+            double distance = Math.abs(y - this.currentY);
+            if(distance < bestDistance && this.isDestinationClear(y)){
+                bestDistance = distance;
+                best = y;
+            }
+        }
+        // Nowhere better to go. Carrying on is no worse than the old behaviour, and stopping in the
+        // shaft would strand whoever is aboard.
+        if(best == Integer.MIN_VALUE)
+            return;
+        this.targetY = best;
+        this.shouldBeSynced = true;
+    }
+
+    /** Whether the cabin's volume at a floor is empty. The cabin is out of the world while it travels,
+     * so anything found here arrived after it set off. */
+    private boolean isDestinationClear(int yLevel){
+        BlockPos startPos = this.getCageAnchorBlockPos(yLevel);
+        for(int x = 0; x < this.cageSizeX; x++)
+            for(int y = 0; y < this.cageSizeY; y++)
+                for(int z = 0; z < this.cageSizeZ; z++)
+                    if(!this.level.isAirBlock(startPos.add(x, y, z)))
+                        return false;
+        return true;
     }
 
     /** Redirects the cabin to the nearest floor at a crawl. */
@@ -715,6 +788,13 @@ public class ElevatorGroup {
             return;
         }
         this.emergencyState = EmergencyState.NONE;
+        // Calls are reset rather than resumed. The queue was built before whatever happened in the
+        // shaft, and after half a minute out of service the people who pressed those buttons have
+        // had every chance to give up and walk off -- an elevator setting out on a round of errands
+        // nobody is waiting for is worse than one that asks to be told again.
+        this.callQueue.clear();
+        this.callDirections.clear();
+        this.bankedDestinations.clear();
         this.requestDoorClose(this.targetY);
         this.shouldBeSynced = true;
     }
@@ -829,7 +909,10 @@ public class ElevatorGroup {
         // Arriving opens the doors, exactly as a real elevator does.
         this.requestDoorOpen(this.targetY);
 
-        this.cage.place(this.level, this.getCageAnchorBlockPos(this.targetY));
+        // The direction travelled, taken from the movement rather than from lastDirection -- that
+        // has already been reassigned above to the way the cabin is going next, which is frequently
+        // the opposite of the way it came in.
+        this.cage.place(this.level, this.getCageAnchorBlockPos(this.targetY), this.currentY - this.lastY);
         this.floorData.get(this.getFloorNumber(this.targetY)).isCageAvailable = true;
 
         this.moveElevator(this.lastY, this.currentY);
@@ -873,6 +956,9 @@ public class ElevatorGroup {
     private void startElevator(int currentY, int targetY){
         if(this.level == null || this.isMoving)
             return;
+        // Anchored to where this trip begins, so the first sweep covers the ground already travelled
+        // rather than only the window around wherever the cabin happens to be when the timer fires.
+        this.lastShaftScanY = currentY;
 
         ElevatorCage cage = ElevatorCage.createCageAndClear(this.level, this.getCageAnchorBlockPos(currentY), this.cageSizeX, this.cageSizeY, this.cageSizeZ);
         if(cage == null)
