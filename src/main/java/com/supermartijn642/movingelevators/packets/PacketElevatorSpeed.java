@@ -1,6 +1,7 @@
 package com.supermartijn642.movingelevators.packets;
 
 import com.supermartijn642.core.network.PacketContext;
+import com.supermartijn642.movingelevators.MovingElevatorsConfig;
 import com.supermartijn642.movingelevators.blocks.ControllerBlockEntity;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import net.minecraft.entity.player.EntityPlayer;
@@ -36,7 +37,9 @@ public class PacketElevatorSpeed extends ElevatorGroupPacket {
 
     @Override
     public boolean verify(PacketContext context){
-        return this.speed >= 0.1 && this.speed <= 1;
+        // The ceiling comes from config rather than a literal, because the slider that produces this
+        // value reads the same setting -- two copies of a bound are two chances to disagree.
+        return this.speed >= 0.1 && this.speed <= MovingElevatorsConfig.maxCabinSpeed.get() / 10d;
     }
 
     @Override

@@ -25,6 +25,10 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Five more configuration options**: `bankedDwellTicks`, `emergencyHoldTicks`, `doorLinkRange`,
+  `shaftScanReach` and `maxCabinSpeed`. The speed ceiling was previously written twice, once in the
+  screen and once in the message that validates it, in different units; both now read the setting.
+
 - **Comparators read more than "is it here".** The landing readouts report which floor the cabin is on
   as a signal strength, following it as it travels; the call panel reports the calls waiting at its
   landing, and which direction they are for, since a build that only knows somebody is waiting cannot
@@ -231,6 +235,11 @@ Based on upstream **Moving Elevators 1.4.12**.
   CI as a `Test Release Tooling` job on every pull request.
 
 ### Fixed
+
+- A chunk loading while a cabin was in flight could delete the elevator's floors and spill the whole
+  cabin onto the ground as items. A controller's block entity is not always present the instant its
+  chunk loads, so a floor could look missing when it was only not ready yet. Floors are no longer
+  audited while the cabin is moving; one that has genuinely gone is caught by the next check.
 
 - Wall panels were indistinguishable grey slabs in the inventory. Everything a panel shows — readout,
   arrows, buttons — is drawn by its block entity renderer, and an item does not run one, so the icon

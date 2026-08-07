@@ -65,7 +65,9 @@ public class ElevatorGroup {
      * they are at a panel that may be across the lobby, and they pressed it before it arrived. The
      * "close doors" button cuts it short, so nobody has to wait out the full spell.
      */
-    private static final int BANKED_DWELL_TICKS = 300;
+    private static int bankedDwellTicks(){
+        return MovingElevatorsConfig.bankedDwellTicks.get();
+    }
 
     /**
      * Destinations to add to the queue once the cabin actually reaches a pickup floor, keyed by that
@@ -257,14 +259,18 @@ public class ElevatorGroup {
      */
     private static final double ROOF_CLEARANCE = 0.05;
     /** How far above and below the cabin counts as being in its way. */
-    private static final int SHAFT_SCAN_REACH = 10;
+    private static int shaftScanReach(){
+        return MovingElevatorsConfig.shaftScanReach.get();
+    }
     /**
      * Levelling speed: a crawl. The point of an emergency stop is to end the movement that put
      * somebody at risk, not to replace it with a sudden one.
      */
     private static final double EMERGENCY_SPEED = 0.02;
     /** Thirty seconds sitting at the floor before it will even consider going back into service. */
-    private static final int EMERGENCY_HOLD_TICKS = 600;
+    private static int emergencyHoldTicks(){
+        return MovingElevatorsConfig.emergencyHoldTicks.get();
+    }
     /** Half a second on each half of the flashing readout. */
     private static final int EMERGENCY_FLASH_TICKS = 10;
 
@@ -612,8 +618,8 @@ public class ElevatorGroup {
         for(int destination : banked)
             if(destination != yLevel && this.getFloorNumber(destination) != -1)
                 this.callQueue.add(destination);
-        this.doorHoldTicks.put(yLevel, BANKED_DWELL_TICKS);
-        this.dwellCounter = BANKED_DWELL_TICKS;
+        this.doorHoldTicks.put(yLevel, bankedDwellTicks());
+        this.dwellCounter = bankedDwellTicks();
         // Keep identifying itself now it is standing here: en route the pending call did that, and it
         // has just been consumed.
         this.announcingFloor = yLevel;
@@ -820,9 +826,9 @@ public class ElevatorGroup {
         // whatever it would have reached first went unseen, which is why somebody standing below a
         // descending cabin was run into rather than stopped for.
         double travel = Math.signum(this.targetY - this.currentY);
-        double lookAhead = SHAFT_SCAN_REACH + Math.abs(this.speed) * SHAFT_SCAN_INTERVAL;
-        double below = travel < 0 ? lookAhead : SHAFT_SCAN_REACH;
-        double above = travel > 0 ? lookAhead : SHAFT_SCAN_REACH;
+        double lookAhead = shaftScanReach() + Math.abs(this.speed) * SHAFT_SCAN_INTERVAL;
+        double below = travel < 0 ? lookAhead : shaftScanReach();
+        double above = travel > 0 ? lookAhead : shaftScanReach();
         AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, sweptMinY - below, cabin.minZ,
             cabin.maxX, sweptMaxY + above, cabin.maxZ);
         for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, shaft)){
@@ -929,7 +935,7 @@ public class ElevatorGroup {
             return;
         }
         if(this.isShaftObstructed()){
-            this.emergencyHold = EMERGENCY_HOLD_TICKS;
+            this.emergencyHold = emergencyHoldTicks();
             return;
         }
         this.emergencyState = EmergencyState.NONE;
@@ -1177,9 +1183,9 @@ public class ElevatorGroup {
             return;
         }
         this.emergencyState = EmergencyState.HOLDING;
-        this.emergencyHold = EMERGENCY_HOLD_TICKS;
-        this.dwellCounter = EMERGENCY_HOLD_TICKS;
-        this.doorHoldTicks.put(this.targetY, EMERGENCY_HOLD_TICKS);
+        this.emergencyHold = emergencyHoldTicks();
+        this.dwellCounter = emergencyHoldTicks();
+        this.doorHoldTicks.put(this.targetY, emergencyHoldTicks());
         this.requestDoorOpen(this.targetY);
         this.playAtCabin(ElevatorSoundScheme.Moment.OBSTRUCTED);
         this.shouldBeSynced = true;
@@ -1231,11 +1237,19 @@ public class ElevatorGroup {
         if(this.level.isRemote || !this.soundsEnabled)
             return;
         double from = Math.min(this.lastY, this.currentY), to = Math.max(this.lastY, this.currentY);
+        // A tick of travel spans a fraction of a block, so almost every tick crosses no floor at all.
+        // Checking the span before touching the floor list turns the common case into one comparison
+        // instead of a walk of the whole building, on every moving elevator, every tick.
+        if(from == to)
+            return;
         for(int floor = 0; floor < this.floors.size(); floor++){
             int y = this.floors.get(floor);
+            if(y > to)
+                // floors is kept in ascending order, so nothing after this can be in range either.
+                break;
             // Strictly greater than 'from' so a floor is not announced twice when the cabin starts
             // moving from a standstill on top of it.
-            if(y > from && y <= to)
+            if(y > from)
                 this.playAtCabin(ElevatorSoundScheme.Moment.PASSING_FLOOR);
         }
     }
@@ -1280,9 +1294,9 @@ public class ElevatorGroup {
         // inside it should not be held in a box that has just stopped for an emergency.
         if(this.emergencyState == EmergencyState.LEVELLING){
             this.emergencyState = EmergencyState.HOLDING;
-            this.emergencyHold = EMERGENCY_HOLD_TICKS;
-            this.dwellCounter = EMERGENCY_HOLD_TICKS;
-            this.doorHoldTicks.put(this.targetY, EMERGENCY_HOLD_TICKS);
+            this.emergencyHold = emergencyHoldTicks();
+            this.dwellCounter = emergencyHoldTicks();
+            this.doorHoldTicks.put(this.targetY, emergencyHoldTicks());
         }
         // Carry on the way whoever called from this landing wanted to travel. With both arrows
         // pressed the current direction wins, which is what a real elevator does.
@@ -2090,6 +2104,21 @@ public class ElevatorGroup {
      * @return a floor index, or -1 if it cannot be determined
      */
     public int getCabinFloorNumber(){
+        // Cached for the tick it was computed in. Every door block entity asks once a tick, a doorway
+        // has up to four of them, and every landing renderer asks once a frame -- and the answer can
+        // reach a full scan of the cabin's volume. It cannot change within a tick, so computing it
+        // more than once a tick is pure waste.
+        if(this.cabinFloorTick == this.tickCounter)
+            return this.cachedCabinFloor;
+        this.cabinFloorTick = this.tickCounter;
+        this.cachedCabinFloor = this.computeCabinFloorNumber();
+        return this.cachedCabinFloor;
+    }
+
+    private int cabinFloorTick = -1;
+    private int cachedCabinFloor = -1;
+
+    private int computeCabinFloorNumber(){
         if(this.floors.isEmpty())
             return -1;
         if(this.isMoving)
@@ -2125,6 +2154,13 @@ public class ElevatorGroup {
     }
 
     public void validateControllersExist(Chunk chunk){
+        // Never while the cabin is in flight. A controller's block entity is not always present the
+        // instant its chunk loads, so a floor can look missing when it is merely not ready yet -- and
+        // removing the last floor of a moving elevator spawns the whole cabin as item drops. The check
+        // runs again on the next chunk load, by which point the answer can be trusted; a floor that is
+        // genuinely gone is caught then, and an elevator disintegrating mid-ride never is.
+        if(this.isMoving)
+            return;
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(this.x, 0, this.z);
         // Iterate downwards: removeFloor() shifts every later element down by one, so counting up
         // skipped the floor after each removal and left controller-less floors in the group.

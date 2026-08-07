@@ -40,7 +40,9 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
      * How far from a landing's controller column a doorway may stand and still adopt it. A cabin can
      * be up to fifteen blocks across, so its doors sit well off the controller's own column.
      */
-    private static final int ADOPT_RANGE = 12;
+    private static int adoptRange(){
+        return MovingElevatorsConfig.doorLinkRange.get();
+    }
     /** Only retried periodically: an unbound door is looking for something that may not exist yet. */
     private static final int ADOPT_INTERVAL = 40;
 
@@ -226,7 +228,7 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         for(ElevatorGroup group : capability.getGroups()){
             double dx = group.x - this.pos.getX(), dz = group.z - this.pos.getZ();
             double distance = dx * dx + dz * dz;
-            if(distance > ADOPT_RANGE * ADOPT_RANGE || distance >= bestDistance)
+            if(distance > adoptRange() * adoptRange() || distance >= bestDistance)
                 continue;
             for(int floor = 0; floor < group.getFloorCount(); floor++){
                 int y = group.getFloorYLevel(floor);
@@ -253,9 +255,9 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
 
         if(!this.isBound()){
             // The range is passed in rather than written into the message, which said "12 blocks"
-            // regardless of what ADOPT_RANGE actually was.
+            // regardless of what adoptRange() actually was.
             player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.searching",
-                TextComponents.number(ADOPT_RANGE).get()).color(TextFormatting.YELLOW).get());
+                TextComponents.number(adoptRange()).get()).color(TextFormatting.YELLOW).get());
             return;
         }
         BlockPos controller = this.getControllerPos();

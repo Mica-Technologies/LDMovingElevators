@@ -5,6 +5,7 @@ import com.supermartijn642.core.TextComponents;
 import com.supermartijn642.core.gui.ScreenUtils;
 import com.supermartijn642.core.gui.widget.BlockEntityBaseWidget;
 import com.supermartijn642.movingelevators.MovingElevators;
+import com.supermartijn642.movingelevators.MovingElevatorsConfig;
 import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import com.supermartijn642.movingelevators.blocks.ControllerBlockEntity;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
@@ -120,7 +121,7 @@ public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity>
         LeftRightArrowWidget heightOffsetDecrease = this.addWidget(new LeftRightArrowWidget(247, 63, true, TextComponents.translation("movingelevators.elevator_screen.cabin_height.decrease_offset").get(), () -> blockEntity.getGroup().canDecreaseCageHeightOffset(), () -> MovingElevators.CHANNEL.sendToServer(new PacketDecreaseCabinHeightOffset(this.blockEntityPos))));
         LeftRightArrowWidget heightOffsetIncrease = this.addWidget(new LeftRightArrowWidget(267, 63, false, TextComponents.translation("movingelevators.elevator_screen.cabin_height.increase_offset").get(), () -> blockEntity.getGroup().canIncreaseCageHeightOffset(), () -> MovingElevators.CHANNEL.sendToServer(new PacketIncreaseCabinHeightOffset(this.blockEntityPos))));
         // Speed
-        this.addWidget(new SliderWidget(190, 92, 84, 1, 10, (int)Math.round(blockEntity.getGroup().getTargetSpeed() * 10), speed -> TextComponents.translation("movingelevators.elevator_screen.current_speed", TextComponents.number(speed / 10d, 1).get()).get(), speed -> MovingElevators.CHANNEL.sendToServer(new PacketElevatorSpeed(this.blockEntityPos, speed / 10d))));
+        this.addWidget(new SliderWidget(190, 92, 84, 1, MovingElevatorsConfig.maxCabinSpeed.get(), (int)Math.round(blockEntity.getGroup().getTargetSpeed() * 10), speed -> TextComponents.translation("movingelevators.elevator_screen.current_speed", TextComponents.number(speed / 10d, 1).get()).get(), speed -> MovingElevators.CHANNEL.sendToServer(new PacketElevatorSpeed(this.blockEntityPos, speed / 10d))));
 
         // Cabin preview
         Supplier<BlockPos> previewSizeIncrease = () -> new BlockPos(widthSizeIncrease.active && widthSizeIncrease.isFocused() ? 1 : widthSizeDecrease.active && widthSizeDecrease.isFocused() ? -1 : 0, heightSizeIncrease.active && heightSizeIncrease.isFocused() ? 1 : heightSizeDecrease.active && heightSizeDecrease.isFocused() ? -1 : 0, depthSizeIncrease.active && depthSizeIncrease.isFocused() ? 1 : depthSizeDecrease.active && depthSizeDecrease.isFocused() ? -1 : 0);
