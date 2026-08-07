@@ -165,6 +165,14 @@ public class ElevatorGroup {
      * others before it goes without them.
      */
     private int announcingFloor = Integer.MIN_VALUE;
+
+    /** Ticks between occupancy counts. An entity sweep of the cabin is cheap; doing it every tick is not. */
+    private static final int OVERLOAD_CHECK_INTERVAL = 10;
+    /** Ticks between buzzes while overloaded. Often enough to nag, not so often as to become a tone. */
+    private static final int OVERLOAD_BUZZ_INTERVAL = 12;
+    /** How often the held doors are told again to stay open, comfortably inside their own timer. */
+    private static final int OVERLOAD_DOOR_REFRESH = 20;
+    private boolean overloaded;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
     private int pendingDing;
     /** Which note the scheduled half of the arrival chime is. Decided on arrival, not when it plays,
@@ -244,6 +252,8 @@ public class ElevatorGroup {
             this.playAtCabin(this.pendingChime);
         if(!this.level.isRemote)
             this.updateAlarm();
+        if(!this.level.isRemote)
+            this.updateOverload();
         if(!this.level.isRemote && this.shouldBeSynced){
             this.shouldBeSynced = false;
             this.updateGroup();
@@ -300,7 +310,10 @@ public class ElevatorGroup {
             this.updateEmergencyHold();
             // An elevator in emergency takes no calls. They keep their place in the queue and are
             // served once it is back in service, so nobody has to press anything again.
-            if(this.emergencyState == EmergencyState.NONE)
+            // An overloaded cabin takes no calls either. Letting the queue run would have it try to
+            // depart, fail, and drop the call as undeliverable -- so the calls would quietly vanish
+            // while it sat there buzzing.
+            if(this.emergencyState == EmergencyState.NONE && !this.overloaded)
                 this.updateCallQueue();
         }
     }
@@ -906,6 +919,91 @@ public class ElevatorGroup {
     }
 
     /**
+     * How many can ride: one per block of cabin floor.
+     * <p>
+     * Floor area rather than volume, because it is standing room that runs out -- a taller cabin does
+     * not hold more people, and a wider one plainly does.
+     */
+    public int getCabinCapacity(){
+        return this.cageSizeX * this.cageSizeZ;
+    }
+
+    /** How many are aboard. Counted the same way the shaft sweep tells a passenger from a hazard. */
+    public int getCabinOccupancy(){
+        if(this.level == null)
+            return 0;
+        Vec3d anchor = this.getCageAnchorPos(this.currentY);
+        AxisAlignedBB cabin = new AxisAlignedBB(anchor.x, anchor.y, anchor.z,
+            anchor.x + this.cageSizeX, anchor.y + this.cageSizeY, anchor.z + this.cageSizeZ);
+        int aboard = 0;
+        for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, cabin)){
+            if(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
+                continue;
+            if(this.isRidingInside(cabin, entity))
+                aboard++;
+        }
+        return aboard;
+    }
+
+    public boolean isOverloaded(){
+        return this.overloaded;
+    }
+
+    /**
+     * Which frame of a scrolling readout to show, off world time so every panel in the cabin scrolls
+     * together without anything synchronising them.
+     */
+    public int marqueeStep(int steps){
+        return this.level == null || steps <= 0 ? 0 : (int)((this.level.getTotalWorldTime() / 4) % steps);
+    }
+
+    /**
+     * Counts who is aboard and, when there are too many, refuses to go anywhere: doors held open at
+     * the floor it is standing at, and a buzz inside until somebody gets off.
+     * <p>
+     * Held open rather than merely stopped, because the way out of an overload is for a passenger to
+     * leave, and a closed door makes that the one thing nobody can do.
+     */
+    private void updateOverload(){
+        if(this.tickCounter % OVERLOAD_CHECK_INTERVAL == 0){
+            boolean over = this.getCabinOccupancy() > this.getCabinCapacity();
+            if(over != this.overloaded){
+                this.overloaded = over;
+                this.shouldBeSynced = true;
+            }
+        }
+        if(!this.overloaded || this.isMoving)
+            return;
+        if(this.tickCounter % OVERLOAD_DOOR_REFRESH == 0)
+            this.requestDoorOpen(this.targetY);
+        if(this.tickCounter % OVERLOAD_BUZZ_INTERVAL == 0)
+            this.playAtCabin(ElevatorSoundScheme.Moment.OVERLOAD);
+    }
+
+    /**
+     * The emergency stop as a passenger asks for it, from inside the cabin.
+     * <p>
+     * A cabin already standing still cannot be brought to a halt, but it can be taken out of service,
+     * which is the half of the behaviour that still means something when the button is pressed at a
+     * floor.
+     */
+    public void requestEmergencyStop(){
+        if(this.emergencyState != EmergencyState.NONE)
+            return;
+        if(this.isMoving){
+            this.triggerEmergencyStop();
+            return;
+        }
+        this.emergencyState = EmergencyState.HOLDING;
+        this.emergencyHold = EMERGENCY_HOLD_TICKS;
+        this.dwellCounter = EMERGENCY_HOLD_TICKS;
+        this.doorHoldTicks.put(this.targetY, EMERGENCY_HOLD_TICKS);
+        this.requestDoorOpen(this.targetY);
+        this.playAtCabin(ElevatorSoundScheme.Moment.OBSTRUCTED);
+        this.shouldBeSynced = true;
+    }
+
+    /**
      * Whether this elevator should be identifying itself at a landing -- because it has been sent
      * there by a bank and has not left again.
      */
@@ -1073,7 +1171,7 @@ public class ElevatorGroup {
         // emergency, but a floor pressed on the car panel reaches this directly and drove the cabin
         // off mid-emergency -- with somebody still in the shaft, which is the one thing the whole
         // feature exists to prevent.
-        if(this.level == null || this.isMoving || this.emergencyState != EmergencyState.NONE)
+        if(this.level == null || this.isMoving || this.emergencyState != EmergencyState.NONE || this.overloaded)
             return;
         // Whatever it was announcing, it is leaving.
         this.announcingFloor = Integer.MIN_VALUE;
@@ -1647,6 +1745,7 @@ public class ElevatorGroup {
     }
     compound.setIntArray("bankedDestinations", banked);
     compound.setInteger("announcingFloor", this.announcingFloor);
+    compound.setBoolean("overloaded", this.overloaded);
     compound.setBoolean("hasElevatorName", this.name != null);
     if(this.name != null)
         compound.setString("elevatorName", this.name);
@@ -1730,6 +1829,7 @@ public class ElevatorGroup {
     for(int i = 0; i + 1 < banked.length; i += 2)
         this.bankedDestinations.computeIfAbsent(banked[i], y -> new LinkedHashSet<>()).add(banked[i + 1]);
     this.announcingFloor = compound.hasKey("announcingFloor") ? compound.getInteger("announcingFloor") : Integer.MIN_VALUE;
+    this.overloaded = compound.getBoolean("overloaded");
     this.name = compound.getBoolean("hasElevatorName") ? compound.getString("elevatorName") : null;
         this.emergencyState = EmergencyState.NONE;
         for(EmergencyState state : EmergencyState.values())

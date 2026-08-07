@@ -154,6 +154,11 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.emergency.flash_second", "ST");
 
         this.translation("movingelevators.elevator.alarm_sound", "Elevator alarm rings");
+        this.translation("movingelevators.elevator.overload_sound", "Elevator overloaded");
+        // Scrolled two characters at a time across a floor readout, so a translation wants to be
+        // short and to read in pairs.
+        this.translation("movingelevators.overload.marquee", "OVERLOAD");
+        this.translation("movingelevators.floor_select.emergency_stop", "Emergency stop");
         this.translation("movingelevators.floor_select.alarm", "Alarm");
         this.translation("movingelevators.floor_select.alarm.tooltip", "Hold to ring the alarm");
 

@@ -53,6 +53,9 @@ public enum ElevatorSoundScheme {
             // The same bell struck low and once. An emergency stop should be heard by whoever caused
             // it, and read as something going wrong rather than as another chime.
             entries.put(Moment.OBSTRUCTED, new Entry(() -> MovingElevators.alarm_sound, 0.9f, 0.6f));
+            // Flat and low. An overload is a nuisance to be cleared, not an emergency, and it repeats
+            // until somebody steps off -- a chime would wear out its welcome in seconds.
+            entries.put(Moment.OVERLOAD, new Entry(() -> MovingElevators.overload_sound, 0.7f, 0.6f));
             // DEPARTING and CALL_ACCEPTED are intentionally silent.
         }
     },
@@ -86,6 +89,7 @@ public enum ElevatorSoundScheme {
             // a pleasant arrival, whatever the rest of the scheme sounds like.
             entries.put(Moment.ALARM, new Entry(() -> MovingElevators.alarm_sound, 1f, 2f));
             entries.put(Moment.OBSTRUCTED, new Entry(() -> MovingElevators.alarm_sound, 0.9f, 0.7f));
+            entries.put(Moment.OVERLOAD, new Entry(() -> MovingElevators.overload_sound, 0.7f, 0.8f));
         }
 
         @Override
@@ -116,7 +120,9 @@ public enum ElevatorSoundScheme {
          * sounds like. */
         ALARM,
         CALL_ACCEPTED,
-        OBSTRUCTED;
+        OBSTRUCTED,
+        /** One buzz of the overload alarm. Repeated by the elevator for as long as it is too full. */
+        OVERLOAD;
 
         /**
          * The chime for arriving when the car is next headed {@code direction} (1 up, -1 down, 0

@@ -144,6 +144,9 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
      * below the block it has room to be a bar rather than a smear. Its socket runs -0.75 to 1.15,
      * clear of the plate bottom at -2 and of the lowest button socket at 1.8.
      */
+    /** Red, because it is the one thing this screen ever says that is not simply where you are. */
+    private static final EnumDyeColor OVERLOAD_COLOR = EnumDyeColor.RED;
+
     private static final float ALARM_X = 8 / 16f, ALARM_Y = 0.2f / 16f;
     private static final float ALARM_HALF_WIDTH = 5f / 16f, ALARM_HALF_HEIGHT = 0.45f / 16f;
 
@@ -176,8 +179,13 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
 
         int cabinFloor = group.getCabinFloorNumber();
 
-        // Readout
-        if(cabinFloor >= 0 && cabinFloor < group.getFloorCount()){
+        // Readout. An overload takes the screen over entirely: which floor the cabin is at stops being
+        // the useful thing to say the moment it is not going anywhere until somebody steps off.
+        String overload = MovingElevatorsClient.overloadMarquee(group);
+        if(overload != null)
+            FloorLabelRenderer.drawFittedLabel(overload, OVERLOAD_COLOR,
+                SCREEN_X, SCREEN_Y, SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT, SCREEN_PADDING);
+        else if(cabinFloor >= 0 && cabinFloor < group.getFloorCount()){
             String label = MovingElevatorsClient.stripFloorPrefix(
                 MovingElevatorsClient.formatDisplayLabel(group, cabinFloor));
             if(label != null && !label.isEmpty())

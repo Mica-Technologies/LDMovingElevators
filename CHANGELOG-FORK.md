@@ -25,6 +25,17 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Cabins have a capacity, and refuse to move when it is exceeded.** One passenger per block of cabin
+  floor — it is standing room that runs out, so floor area rather than volume. An overloaded cabin
+  holds its doors open at the floor it is standing at, since the way out of an overload is for
+  somebody to leave and a shut door makes that the one thing nobody can do; it buzzes inside until
+  they do; and its readouts scroll OVERLOAD two characters at a time in place of the floor. It also
+  takes no calls while overloaded, so nothing is quietly lost while it waits.
+- **An emergency stop button on the car panels.** Not a toggle: an emergency stop a passenger can
+  also cancel is a switch, and the elevator already decides when it is safe to resume — it waits out
+  its hold and checks the shaft is clear. Moving, it halts and crawls to the nearest floor; already
+  parked, it goes out of service with the doors open.
+
 - **Elevator Bank Car Panel** — the in-cabin panel for an elevator that belongs to a bank. It has the
   floor readout, the direction arrows, the doors and the alarm, and deliberately no floor buttons:
   destination dispatch takes floor selection away from the car, since you say where you are going at

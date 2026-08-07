@@ -10,6 +10,7 @@ import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import com.supermartijn642.movingelevators.blocks.ElevatorCarPanelBlockEntity;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.packets.PacketDoorControl;
+import com.supermartijn642.movingelevators.packets.PacketEmergencyStop;
 import com.supermartijn642.movingelevators.packets.PacketRingAlarm;
 import com.supermartijn642.movingelevators.packets.PacketRequestFloor;
 import net.minecraft.util.math.BlockPos;
@@ -31,7 +32,11 @@ import javax.annotation.Nonnull;
 public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlockEntity> {
 
     private static final int BUTTON_SIZE = 22, GAP = 3, PADDING = 7, HEADER = 22;
-    /** Door controls sit under the grid, in their own row, with the alarm in a row below that. */
+    /**
+     * Door controls sit under the grid, in their own row, with the alarm in a row below that and the
+     * emergency stop below the alarm. Every one of those rows is {@link #DOOR_ROW_HEIGHT} tall and
+     * {@link #GAP} apart, so the three read as one block of controls.
+     */
     private static final int DOOR_ROW_HEIGHT = 20, DOOR_ROW_GAP = 5, DOOR_LABEL_PADDING = 6;
     /** Rows before the grid grows sideways instead, so a tall shaft cannot run off the screen. */
     private static final int MAX_ROWS = 8;
@@ -83,6 +88,10 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         int doorOpen = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.door_open").format());
         int doorClose = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.door_close").format());
         widest = Math.max(widest, doorOpen + doorClose + DOOR_LABEL_PADDING * 2 + GAP);
+        // The emergency stop spans the whole interior on its own, and its label is far longer than
+        // any other button's, so it can set the panel's width where the short alarm label never does.
+        int emergencyStop = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.emergency_stop").format());
+        widest = Math.max(widest, emergencyStop + DOOR_LABEL_PADDING * 2);
 
         ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
         if(group != null){
@@ -99,7 +108,7 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     protected int height(ElevatorCarPanelBlockEntity blockEntity){
         int rows = rowsFor(floorCount(blockEntity));
         return PADDING + HEADER + rows * BUTTON_SIZE + (rows - 1) * GAP
-            + DOOR_ROW_GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
+            + DOOR_ROW_GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
     }
 
     private static int floorCount(ElevatorCarPanelBlockEntity blockEntity){
@@ -154,8 +163,9 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     }
 
     /**
-     * "Open doors" and "Close doors", the two controls a real car station has that are not floors.
-     * They act on whichever floor the cabin is parked at, so they do nothing while it is in motion.
+     * "Open doors" and "Close doors", the two controls a real car station has that are not floors,
+     * plus the alarm and the emergency stop below them. The door buttons act on whichever floor the
+     * cabin is parked at, so they do nothing while it is in motion.
      */
     private void addDoorControls(ElevatorCarPanelBlockEntity blockEntity, int rows){
         int y = PADDING + HEADER + rows * BUTTON_SIZE + (rows - 1) * GAP + DOOR_ROW_GAP;
@@ -179,6 +189,16 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
             () -> TextComponents.translation("movingelevators.floor_select.alarm").format(),
             TextComponents.translation("movingelevators.floor_select.alarm.tooltip").get(),
             () -> MovingElevators.CHANNEL.sendToServer(new PacketRingAlarm(this.blockEntityPos))));
+
+        // A plain FloorButtonWidget rather than the alarm's hold-to-ring widget: the stop is a single
+        // press that latches on the elevator itself, so holding it would send the same request over
+        // and over for no benefit. Full width and bottom-most, the way the physical control is the
+        // odd one out at the end of the station.
+        this.addWidget(new FloorButtonWidget(PADDING, y + (DOOR_ROW_HEIGHT + GAP) * 2, available + GAP, DOOR_ROW_HEIGHT,
+            () -> TextComponents.translation("movingelevators.floor_select.emergency_stop").format(),
+            () -> false, () -> false,
+            TextComponents.translation("movingelevators.floor_select.emergency_stop").get(),
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketEmergencyStop(this.blockEntityPos))));
     }
 
     /**

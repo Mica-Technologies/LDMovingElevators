@@ -200,6 +200,27 @@ public class MovingElevatorsClient {
         return formatDisplayLabel(group, floor);
     }
 
+    /**
+     * Two characters of a scrolling "overload", or null when the cabin is not too full.
+     * <p>
+     * A two-character window because that is all a floor readout is: it shows a floor number, so it
+     * has room for a floor number. Scrolling a word through it says the thing anyway, and a readout
+     * that is visibly doing something unusual is itself part of the message.
+     * <p>
+     * The word comes from the language file rather than the elevator, since it is a word, and the two
+     * trailing blanks let it clear the screen before coming round again instead of running together.
+     */
+    public static String overloadMarquee(ElevatorGroup group){
+        if(group == null || !group.isOverloaded())
+            return null;
+        String scrolled = TextComponents.translation("movingelevators.overload.marquee").format() + "  ";
+        int steps = scrolled.length() - 1;
+        if(steps < 1)
+            return null;
+        int step = group.marqueeStep(steps);
+        return scrolled.substring(step, Math.min(step + 2, scrolled.length()));
+    }
+
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent e){
         if(e.phase == TickEvent.Phase.END && !ClientUtils.getMinecraft().isGamePaused() && ClientUtils.getWorld() != null)

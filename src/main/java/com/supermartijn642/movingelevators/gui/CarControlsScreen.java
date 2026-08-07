@@ -9,6 +9,7 @@ import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import com.supermartijn642.movingelevators.blocks.ElevatorCarPanelBlockEntity;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.packets.PacketDoorControl;
+import com.supermartijn642.movingelevators.packets.PacketEmergencyStop;
 import com.supermartijn642.movingelevators.packets.PacketRingAlarm;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.math.BlockPos;
@@ -38,7 +39,11 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      * has no grid to tune around, so it will drift on purpose sooner or later.
      */
     private static final int GAP = 3, PADDING = 7, HEADER = 22;
-    /** The door row, with the alarm in a row below it, matching the car panel's spacing exactly. */
+    /**
+     * The door row, with the alarm in a row below it and the emergency stop below that, matching the
+     * car panel's rows and spacing exactly -- a passenger moving between a banked car and an ordinary
+     * one should find the same controls in the same places.
+     */
     private static final int DOOR_ROW_HEIGHT = 20, DOOR_ROW_GAP = 5, DOOR_LABEL_PADDING = 6;
 
     public CarControlsScreen(BlockPos entityPos){
@@ -58,9 +63,9 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     }
 
     /**
-     * The widest of the title, the door row and the current-floor line -- the last measured from every
-     * floor name rather than the one the cabin happens to be at, so the panel keeps one width while
-     * the elevator moves instead of resizing under the cursor.
+     * The widest of the title, the door row, the emergency stop and the current-floor line -- the
+     * last measured from every floor name rather than the one the cabin happens to be at, so the
+     * panel keeps one width while the elevator moves instead of resizing under the cursor.
      */
     private static int headerWidth(ElevatorCarPanelBlockEntity blockEntity){
         FontRenderer fontRenderer = ClientUtils.getFontRenderer();
@@ -70,6 +75,10 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         int doorOpen = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.door_open").format());
         int doorClose = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.door_close").format());
         widest = Math.max(widest, doorOpen + doorClose + DOOR_LABEL_PADDING * 2 + GAP);
+        // The emergency stop spans the whole interior on its own, and its label is far longer than
+        // any other button's, so it can set the panel's width where the short alarm label never does.
+        int emergencyStop = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.emergency_stop").format());
+        widest = Math.max(widest, emergencyStop + DOOR_LABEL_PADDING * 2);
 
         ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
         if(group != null){
@@ -84,7 +93,7 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
 
     @Override
     protected int height(ElevatorCarPanelBlockEntity blockEntity){
-        return doorRowY() + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
+        return doorRowY() + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
     }
 
     /**
@@ -115,8 +124,9 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     }
 
     /**
-     * "Open doors" and "Close doors", plus the alarm. Same widgets, labels and messages as the
-     * ordinary car panel -- a banked car takes away the floor buttons, not the controls beside them.
+     * "Open doors" and "Close doors", plus the alarm and the emergency stop. Same widgets, labels and
+     * messages as the ordinary car panel -- a banked car takes away the floor buttons, not the
+     * controls beside them.
      */
     private void addDoorControls(ElevatorCarPanelBlockEntity blockEntity){
         int y = doorRowY();
@@ -140,6 +150,16 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
             () -> TextComponents.translation("movingelevators.floor_select.alarm").format(),
             TextComponents.translation("movingelevators.floor_select.alarm.tooltip").get(),
             () -> MovingElevators.CHANNEL.sendToServer(new PacketRingAlarm(this.blockEntityPos))));
+
+        // A plain FloorButtonWidget rather than the alarm's hold-to-ring widget: the stop is a single
+        // press that latches on the elevator itself, so holding it would send the same request over
+        // and over for no benefit. Full width and bottom-most, the way the physical control is the
+        // odd one out at the end of the station.
+        this.addWidget(new FloorButtonWidget(PADDING, y + (DOOR_ROW_HEIGHT + GAP) * 2, available + GAP, DOOR_ROW_HEIGHT,
+            () -> TextComponents.translation("movingelevators.floor_select.emergency_stop").format(),
+            () -> false, () -> false,
+            TextComponents.translation("movingelevators.floor_select.emergency_stop").get(),
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketEmergencyStop(this.blockEntityPos))));
     }
 
     @Override
