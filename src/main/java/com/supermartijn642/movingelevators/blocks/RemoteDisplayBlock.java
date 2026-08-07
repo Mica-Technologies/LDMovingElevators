@@ -8,6 +8,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
@@ -82,5 +83,24 @@ public class RemoteDisplayBlock extends CamoBlock {
             ITextComponent dimension = TextComponents.dimension(DimensionType.getById(tag.getInteger("controllerDim"))).color(TextFormatting.GOLD).get();
             info.accept(TextComponents.translation("movingelevators.remote_controller.tooltip.bound", x, y, z, dimension).get());
         }
+    }
+
+    /**
+     * A readout block reports the floor it is displaying, which is the cabin's floor as a number
+     * rather than merely whether it is here. The controller keeps saying "cabin present" instead, so
+     * redstone built against it goes on working.
+     */
+    @Override
+    public boolean hasComparatorInputOverride(IBlockState state){
+        return true;
+    }
+
+    @Override
+    public int getComparatorInputOverride(IBlockState state, World level, BlockPos pos){
+        TileEntity entity = level.getTileEntity(pos);
+        if(!(entity instanceof RemoteDisplayBlockEntity))
+            return 0;
+        ElevatorGroup group = ((RemoteDisplayBlockEntity)entity).getGroup();
+        return group == null ? 0 : group.getComparatorFloor();
     }
 }

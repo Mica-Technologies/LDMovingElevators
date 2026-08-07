@@ -163,4 +163,37 @@ public class RemoteCallPanelBlock extends WallPanelBlock {
             info.accept(TextComponents.translation("movingelevators.remote_controller.tooltip.bound", x, y, z, dimension).get());
         }
     }
+
+    /** Nothing waiting. */
+    private static final int CALL_NONE = 0;
+    /** Somebody wants to go down from this landing. */
+    private static final int CALL_DOWN = 7;
+    /** Both arrows are lit -- distinct from either alone, and stronger than both, since it is both. */
+    private static final int CALL_BOTH = 11;
+    /** Somebody wants to go up. Full strength, so the commonest case drives a repeater unaided. */
+    private static final int CALL_UP = 15;
+
+    /**
+     * A call button reports the calls waiting at its landing, which is the thing it exists to collect.
+     * Direction is worth encoding rather than a plain yes: a redstone build that only knows somebody
+     * is waiting cannot tell an arriving lift which way they are going.
+     */
+    @Override
+    public boolean hasComparatorInputOverride(IBlockState state){
+        return true;
+    }
+
+    @Override
+    public int getComparatorInputOverride(IBlockState state, World level, BlockPos pos){
+        TileEntity entity = level.getTileEntity(pos);
+        if(!(entity instanceof RemoteCallPanelBlockEntity))
+            return CALL_NONE;
+        RemoteCallPanelBlockEntity panel = (RemoteCallPanelBlockEntity)entity;
+        ElevatorGroup group = panel.getGroup();
+        if(group == null)
+            return CALL_NONE;
+        boolean up = group.hasHallCall(panel.getFloorLevel(), true);
+        boolean down = group.hasHallCall(panel.getFloorLevel(), false);
+        return up && down ? CALL_BOTH : up ? CALL_UP : down ? CALL_DOWN : CALL_NONE;
+    }
 }

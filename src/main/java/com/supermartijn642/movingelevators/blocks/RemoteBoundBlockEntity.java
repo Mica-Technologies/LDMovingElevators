@@ -24,6 +24,7 @@ import net.minecraftforge.common.util.Constants;
 public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
 
     protected BlockPos controllerPos = BlockPos.ORIGIN;
+    private boolean registeredComparator;
     private EnumFacing controllerFacing = null;
 
     protected RemoteBoundBlockEntity(BaseBlockEntityType<?> blockEntityType){
@@ -91,7 +92,27 @@ public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
             ElevatorGroupCapability capability = ElevatorGroupCapability.get(this.world);
             group = capability == null ? null : capability.get(this.controllerPos.getX(), this.controllerPos.getZ(), this.controllerFacing);
         }
-        return group != null && group.hasControllerAt(this.controllerPos.getY()) ? group : null;
+        if(group == null || !group.hasControllerAt(this.controllerPos.getY()))
+            return null;
+        // Registered the first time anything asks, which is the first time a comparator reads this
+        // block. These panels do not tick, so there is no other moment at which to do it, and by the
+        // time something wants the value the elevator certainly exists -- which it may well not have
+        // when the panel itself loaded.
+        if(!this.registeredComparator && this.world != null && !this.world.isRemote){
+            this.registeredComparator = true;
+            group.addComparatorListener(this.getFloorLevel(), this.pos);
+        }
+        return group;
+    }
+
+    @Override
+    public void invalidate(){
+        super.invalidate();
+        if(this.registeredComparator && this.world != null && !this.world.isRemote){
+            ElevatorGroup group = this.getGroup();
+            if(group != null)
+                group.removeComparatorListener(this.pos);
+        }
     }
 
     public boolean hasGroup(){

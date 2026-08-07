@@ -196,6 +196,18 @@ not strand a whole building.
 
 ---
 
+## Comparators
+
+Each block reports the thing it already shows, so a comparator says what the block says.
+
+| Block | Signal |
+|---|---|
+| Elevator Controller, Remote Elevator Panel | `15` while a cabin is at that floor, `0` otherwise — unchanged, so existing redstone keeps working |
+| Remote Elevator Indicator, Remote Elevator Display | The floor the cabin is on: `1` for the lowest floor, `0` when it cannot be said. A comparator counts no higher than 15, so taller buildings read `15` for everything above that |
+| Remote Elevator Call Panel | The calls waiting at its landing: `0` none, `7` down, `15` up, `11` both |
+
+The floor readouts follow the cabin as it travels rather than only updating when it stops.
+
 ## Configuration
 
 Config lives in `config/movingelevators-common.toml`, written by SuperMartijn642's Config Lib. There

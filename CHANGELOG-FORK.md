@@ -25,6 +25,13 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Comparators read more than "is it here".** The landing readouts report which floor the cabin is on
+  as a signal strength, following it as it travels; the call panel reports the calls waiting at its
+  landing, and which direction they are for, since a build that only knows somebody is waiting cannot
+  tell an arriving lift which way they mean to go. Each block reports the thing it already displays.
+  The controller and remote panel still report cabin presence exactly as before, so redstone built
+  against them is untouched.
+
 - **Fire recall, driven by City Super Mod's fire alarms — optionally.** Craft an **Elevator Alarm
   Linker**, sneak-click a fire alarm panel with it and then right-click an elevator controller: the
   elevator returns to that controller's floor whenever that alarm sounds. The gesture is City Super

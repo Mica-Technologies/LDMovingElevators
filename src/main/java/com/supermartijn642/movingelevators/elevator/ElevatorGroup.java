@@ -294,6 +294,8 @@ public class ElevatorGroup {
             this.updateOverload();
         if(!this.level.isRemote)
             this.updateFireRecall();
+        if(!this.level.isRemote)
+            this.updateComparatorFloor();
         if(!this.level.isRemote && this.shouldBeSynced){
             this.shouldBeSynced = false;
             this.updateGroup();
@@ -1057,12 +1059,51 @@ public class ElevatorGroup {
         return lowest == Integer.MAX_VALUE ? this.recallFloorY : lowest;
     }
 
+    /** Ticks between checking whether the cabin has reached a different floor, for comparators. */
+    private static final int COMPARATOR_FLOOR_INTERVAL = 5;
+    private int lastComparatorFloor = Integer.MIN_VALUE;
     private boolean recalling;
     private int recallTargetY;
 
     /** Whether the building may call this elevator, as opposed to the people already inside it. */
     public boolean acceptsHallCalls(){
         return this.serviceMode == ServiceMode.NORMAL;
+    }
+
+    /**
+     * The cabin's floor as a comparator signal: 1 for the lowest floor, 0 when it cannot be said.
+     * <p>
+     * One-based so that zero can mean "no answer" rather than "the ground floor", which a comparator
+     * has no other way to distinguish. Saturates at fifteen, because that is as high as a comparator
+     * counts; a taller building simply reads fifteen for everything above it, which is honest and
+     * still leaves the lower floors useful.
+     */
+    public int getComparatorFloor(){
+        int floor = this.getCabinFloorNumber();
+        return floor < 0 || floor >= this.getFloorCount() ? 0 : Math.min(15, floor + 1);
+    }
+
+    /**
+     * Tells every registered comparator to look again.
+     * <p>
+     * All of them rather than one floor's, unlike an arrival: a readout showing which floor the cabin
+     * is on is wrong the moment it moves, wherever it happens to be hanging.
+     */
+    private void notifyAllComparators(){
+        for(Set<BlockPos> positions : this.comparatorListeners.values())
+            for(BlockPos pos : positions)
+                if(this.level.isBlockLoaded(pos))
+                    this.level.updateComparatorOutputLevel(pos, this.level.getBlockState(pos).getBlock());
+    }
+
+    private void updateComparatorFloor(){
+        if(this.tickCounter % COMPARATOR_FLOOR_INTERVAL != 0)
+            return;
+        int floor = this.getComparatorFloor();
+        if(floor != this.lastComparatorFloor){
+            this.lastComparatorFloor = floor;
+            this.notifyAllComparators();
+        }
     }
 
     public int getCabinCapacity(){
