@@ -31,7 +31,10 @@ Based on upstream **Moving Elevators 1.4.12**.
   car still goes where its passengers ask but stops being offered to the building, which is how you
   keep a lift to yourself without taking it off the network. The key switch is shown to everybody and
   always looks locked; turning it needs the `movingelevators.independent_service` permission, which
-  operators have by default and a permissions mod can grant to anyone.
+  operators have by default and a permissions mod can grant to anyone. Hovering it explains what it
+  is, what the setting does and that it is locked; a car on independent service also alternates
+  between its floor and "IS" on the landing readouts, so it is clear from outside why that lift keeps
+  passing you by.
 
 - **Cabins have a capacity, and refuse to move when it is exceeded.** One passenger per block of cabin
   floor — it is standing room that runs out, so floor area rather than volume. An overloaded cabin

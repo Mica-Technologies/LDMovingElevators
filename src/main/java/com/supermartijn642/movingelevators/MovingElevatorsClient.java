@@ -183,6 +183,11 @@ public class MovingElevatorsClient {
                 return scrolled.substring(step, Math.min(step + 2, scrolled.length()));
             }
         }
+        // A car on independent service is working, and will still never answer the button you just
+        // pressed. Alternating with the floor says both things at once: it is alive, and it is not
+        // yours. Two letters because that is what a floor readout has room for.
+        if(group.getServiceMode() == ElevatorGroup.ServiceMode.INDEPENDENT && group.isAnnounceFlashOn())
+            return TextComponents.translation("movingelevators.independent_service.short").format();
         if(group.isEmergencyStopped())
             return TextComponents.translation(group.isEmergencyFlashOn()
                 ? "movingelevators.emergency.flash_first" : "movingelevators.emergency.flash_second").format();

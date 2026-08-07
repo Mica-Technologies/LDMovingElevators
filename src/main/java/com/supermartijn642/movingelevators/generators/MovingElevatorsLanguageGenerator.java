@@ -155,6 +155,10 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.service_mode.out_of_service", "Out of service");
         this.translation("movingelevators.service_mode.not_allowed", "Looks like this requires a key I don't have...");
         this.translation("movingelevators.floor_select.independent", "Independent service: %s");
+        this.translation("movingelevators.floor_select.independent.what", "The car answers its own buttons only, not calls from the floors");
+        this.translation("movingelevators.floor_select.independent.key", "Turning this key switch requires permission");
+        // Two letters, because it shares a readout built for floor numbers.
+        this.translation("movingelevators.independent_service.short", "IS");
         this.translation("movingelevators.out_of_service.marquee", "OUT OF SERVICE");
 
         // Two halves of the flashing emergency readout, abbreviating "emergency stop". Separate keys

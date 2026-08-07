@@ -144,7 +144,7 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      * switch means and when it reads as thrown comes from the car panel so the two cannot drift.
      */
     private void addKeySwitch(ElevatorCarPanelBlockEntity blockEntity){
-        this.addWidget(new KeySwitchWidget(this.width(blockEntity) - PADDING - KeySwitchWidget.SIZE, KEY_SWITCH_Y,
+        this.addWidget(new KeySwitchWidget(keySwitchX(blockEntity), KEY_SWITCH_Y,
             () -> FloorSelectScreen.isOnIndependentService(blockEntity),
             () -> FloorSelectScreen.independentTooltip(blockEntity),
             // Sent unconditionally: the server is the one that decides who may throw this, and a
@@ -210,5 +210,26 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
                     this.width() / 2f, 15);
             }
         }
+    }
+
+    private int keySwitchX(ElevatorCarPanelBlockEntity blockEntity){
+        return this.width(blockEntity) - PADDING - KeySwitchWidget.SIZE;
+    }
+
+    /**
+     * The key switch's tooltip is drawn here rather than by the widget.
+     * <p>
+     * A container only renders tooltips for whichever child it currently considers focused, and that
+     * never produced one for this switch. It is the single control on the panel that cannot be
+     * understood without words -- an unlabelled keyhole -- so it is worth taking the explicit route
+     * rather than depending on focus bookkeeping to work out.
+     */
+    @Override
+    protected void renderTooltips(int mouseX, int mouseY, ElevatorCarPanelBlockEntity blockEntity){
+        super.renderTooltips(mouseX, mouseY, blockEntity);
+        int x = this.keySwitchX(blockEntity);
+        if(mouseX >= x && mouseX < x + KeySwitchWidget.SIZE
+            && mouseY >= KEY_SWITCH_Y && mouseY < KEY_SWITCH_Y + KeySwitchWidget.SIZE)
+            ScreenUtils.drawTooltip(FloorSelectScreen.independentTooltip(blockEntity), mouseX, mouseY);
     }
 }

@@ -4,7 +4,6 @@ import com.supermartijn642.core.gui.ScreenUtils;
 import com.supermartijn642.core.gui.widget.premade.AbstractButtonWidget;
 import net.minecraft.util.text.ITextComponent;
 
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -53,9 +52,9 @@ public class KeySwitchWidget extends AbstractButtonWidget {
     private static final int FOCUS_OVERLAY = 0x30FFFFFF;
 
     private final Supplier<Boolean> isLit;
-    private final Supplier<ITextComponent> tooltip;
+    private final Supplier<java.util.List<ITextComponent>> tooltip;
 
-    public KeySwitchWidget(int x, int y, Supplier<Boolean> isLit, Supplier<ITextComponent> tooltip, Runnable onPress){
+    public KeySwitchWidget(int x, int y, Supplier<Boolean> isLit, Supplier<java.util.List<ITextComponent>> tooltip, Runnable onPress){
         super(x, y, SIZE, SIZE, onPress);
         this.isLit = isLit;
         this.tooltip = tooltip;
@@ -63,14 +62,8 @@ public class KeySwitchWidget extends AbstractButtonWidget {
 
     @Override
     public ITextComponent getNarrationMessage(){
-        return this.tooltip.get();
-    }
-
-    @Override
-    protected void getTooltips(Consumer<ITextComponent> tooltips){
-        // Supplied rather than fixed at construction: the switch has no room for a word of label, so
-        // the tooltip is the only place the current service mode is written, and it has to follow it.
-        tooltips.accept(this.tooltip.get());
+        java.util.List<ITextComponent> lines = this.tooltip.get();
+        return lines.isEmpty() ? null : lines.get(0);
     }
 
     @Override

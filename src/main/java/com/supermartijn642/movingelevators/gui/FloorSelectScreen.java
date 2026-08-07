@@ -16,6 +16,7 @@ import com.supermartijn642.movingelevators.packets.PacketRequestFloor;
 import com.supermartijn642.movingelevators.packets.PacketToggleIndependentService;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nonnull;
 
@@ -81,11 +82,19 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      * duplicates -- what a control means is not a knob to nudge, and the two panels describing the
      * same switch differently would be a bug rather than drift.
      */
-    static ITextComponent independentTooltip(ElevatorCarPanelBlockEntity blockEntity){
+    /**
+     * Three lines rather than one: what the switch is set to, what that setting does, and that turning
+     * it needs a key. A control drawn as a locked keyhole with no words at all is a puzzle, and the
+     * state alone -- "Independent service: Normal service" -- says nothing about what would change.
+     */
+    static java.util.List<ITextComponent> independentTooltip(ElevatorCarPanelBlockEntity blockEntity){
         ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
         ElevatorGroup.ServiceMode mode = group == null ? ElevatorGroup.ServiceMode.NORMAL : group.getServiceMode();
-        return TextComponents.translation("movingelevators.floor_select.independent",
-            TextComponents.translation(mode.getNameTranslationKey()).get()).get();
+        return java.util.Arrays.asList(
+            TextComponents.translation("movingelevators.floor_select.independent",
+                TextComponents.translation(mode.getNameTranslationKey()).color(TextFormatting.GOLD).get()).get(),
+            TextComponents.translation("movingelevators.floor_select.independent.what").color(TextFormatting.GRAY).get(),
+            TextComponents.translation("movingelevators.floor_select.independent.key").color(TextFormatting.DARK_GRAY).get());
     }
 
     /**
@@ -110,7 +119,7 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      * would be wrong the moment the two disagreed.
      */
     private void addKeySwitch(ElevatorCarPanelBlockEntity blockEntity){
-        this.addWidget(new KeySwitchWidget(this.width(blockEntity) - PADDING - KeySwitchWidget.SIZE, KEY_SWITCH_Y,
+        this.addWidget(new KeySwitchWidget(keySwitchX(blockEntity), KEY_SWITCH_Y,
             () -> isOnIndependentService(blockEntity),
             () -> independentTooltip(blockEntity),
             () -> MovingElevators.CHANNEL.sendToServer(new PacketToggleIndependentService(this.blockEntityPos))));
@@ -294,5 +303,26 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
                     this.width() / 2f, 15);
             }
         }
+    }
+
+    private int keySwitchX(ElevatorCarPanelBlockEntity blockEntity){
+        return this.width(blockEntity) - PADDING - KeySwitchWidget.SIZE;
+    }
+
+    /**
+     * The key switch's tooltip is drawn here rather than by the widget.
+     * <p>
+     * A container only renders tooltips for whichever child it currently considers focused, and that
+     * never produced one for this switch. It is the single control on the panel that cannot be
+     * understood without words -- an unlabelled keyhole -- so it is worth taking the explicit route
+     * rather than depending on focus bookkeeping to work out.
+     */
+    @Override
+    protected void renderTooltips(int mouseX, int mouseY, ElevatorCarPanelBlockEntity blockEntity){
+        super.renderTooltips(mouseX, mouseY, blockEntity);
+        int x = this.keySwitchX(blockEntity);
+        if(mouseX >= x && mouseX < x + KeySwitchWidget.SIZE
+            && mouseY >= KEY_SWITCH_Y && mouseY < KEY_SWITCH_Y + KeySwitchWidget.SIZE)
+            ScreenUtils.drawTooltip(FloorSelectScreen.independentTooltip(blockEntity), mouseX, mouseY);
     }
 }
