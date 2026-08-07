@@ -37,6 +37,15 @@ public class ControllerBlock extends ElevatorInputBlock {
 
     @Override
     protected boolean onRightClick(IBlockState state, World level, CamoBlockEntity blockEntity, BlockPos pos, EntityPlayer player, EnumHand hand, EnumFacing hitSide, Vec3d hitLocation){
+        // Mica: the alarm linker has to be checked before anything else here, including the branch
+        // below that opens the screen. A block is asked about a right-click before the held item is,
+        // so without this the screen opened and the linker never saw the click at all.
+        if(player != null && player.getHeldItem(hand).getItem() instanceof AlarmLinkerItem && blockEntity instanceof ControllerBlockEntity){
+            if(!level.isRemote)
+                AlarmLinkerItem.pair(player, player.getHeldItem(hand), (ControllerBlockEntity)blockEntity);
+            return true;
+        }
+
         // Mica: a fixture that can serve several elevators collects controllers rather than
         // remembering the last one, so it takes this path instead of the single-binding one below.
         // Clicking the same controller twice takes it back out of the set.

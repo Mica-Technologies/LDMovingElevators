@@ -49,26 +49,11 @@ public class AlarmLinkerItem extends BaseItem {
         if(level.isRemote)
             return InteractionFeedback.SUCCESS;
 
-        TileEntity entity = level.getTileEntity(hitPos);
-        if(entity instanceof ControllerBlockEntity){
-            BlockPos panel = readPanel(stack);
-            if(panel == null){
-                player.sendStatusMessage(TextComponents.translation("movingelevators.alarm_linker.no_panel").color(TextFormatting.RED).get(), true);
-                return InteractionFeedback.SUCCESS;
-            }
-            ControllerBlockEntity controller = (ControllerBlockEntity)entity;
-            ElevatorGroup group = controller.getGroup();
-            if(group == null){
-                player.sendStatusMessage(TextComponents.translation("movingelevators.alarm_linker.no_elevator").color(TextFormatting.RED).get(), true);
-                return InteractionFeedback.SUCCESS;
-            }
-            // The controller clicked decides where the car goes, so one elevator can be re-aimed at a
-            // different floor by clicking a different controller of the same shaft.
-            group.setAlarmPanel(panel, controller.getFloorLevel());
-            player.sendStatusMessage(TextComponents.translation("movingelevators.alarm_linker.paired",
-                position(panel)).color(TextFormatting.GREEN).get(), true);
+        // A controller never reaches this method: the block is asked about a right-click before the
+        // item is, so ControllerBlock calls pair() directly. Guarded anyway, or a click on a
+        // controller face that the block declined would quietly record it as an alarm panel.
+        if(level.getTileEntity(hitPos) instanceof ControllerBlockEntity)
             return InteractionFeedback.SUCCESS;
-        }
 
         // Anything else is taken to be the panel. It is remembered rather than acted on, so the second
         // click has something to attach.
@@ -97,6 +82,28 @@ public class AlarmLinkerItem extends BaseItem {
         info.accept(panel == null
             ? TextComponents.translation("movingelevators.alarm_linker.tooltip").color(TextFormatting.AQUA).get()
             : TextComponents.translation("movingelevators.alarm_linker.tooltip.holding", position(panel)).color(TextFormatting.GOLD).get());
+    }
+
+    /**
+     * Attaches the remembered panel to an elevator. Called by {@link ControllerBlock}, which is handed
+     * the right-click before this item is.
+     */
+    public static void pair(EntityPlayer player, ItemStack stack, ControllerBlockEntity controller){
+        BlockPos panel = readPanel(stack);
+        if(panel == null){
+            player.sendStatusMessage(TextComponents.translation("movingelevators.alarm_linker.no_panel").color(TextFormatting.RED).get(), true);
+            return;
+        }
+        ElevatorGroup group = controller.getGroup();
+        if(group == null){
+            player.sendStatusMessage(TextComponents.translation("movingelevators.alarm_linker.no_elevator").color(TextFormatting.RED).get(), true);
+            return;
+        }
+        // The controller clicked decides where the car goes, so an elevator can be re-aimed at a
+        // different floor by clicking a different controller of the same shaft.
+        group.setAlarmPanel(panel, controller.getFloorLevel());
+        player.sendStatusMessage(TextComponents.translation("movingelevators.alarm_linker.paired",
+            position(panel)).color(TextFormatting.GREEN).get(), true);
     }
 
     private static ITextComponent position(BlockPos pos){
