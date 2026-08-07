@@ -351,6 +351,12 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Changed
 
+- **A lobby panel now shows which floors already have a car coming.** Those buttons highlight and
+  alternate between the floor and the name of the car on its way to it. The request leaves the panel
+  the instant it is made and the screen stays open, so a press previously left no trace on the thing
+  that was pressed; naming the car also answers what a passenger asks next. That a lobby panel is
+  shared makes this better rather than worse — everyone waiting can see what is already arranged.
+
 - **Linking a bank lobby panel is now about elevators rather than controllers.** An elevator is its
   shaft, so clicking any controller in a shaft links or unlinks that whole elevator; clicking a
   second controller in the same shaft used to add a duplicate, after which the panel reported two

@@ -263,6 +263,20 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
     }
 
     /**
+     * The elevator already booked to carry somebody from this landing to a floor, or null if none is.
+     * <p>
+     * What a destination panel is for: the request leaves the panel the moment it is made, so without
+     * this the only sign a press registered was a line of chat, on a screen that stays open.
+     */
+    public ElevatorGroup getPendingCar(int destinationY){
+        int landing = this.getLandingY();
+        for(ElevatorGroup group : this.getGroups())
+            if(group.getBankedDestinationsFrom(landing).contains(destinationY))
+                return group;
+        return null;
+    }
+
+    /**
      * The bank floor this panel speaks for: the one nearest its own height.
      * <p>
      * Nearest rather than exact, because a panel is hung at eye level and a controller sits at floor

@@ -7,6 +7,7 @@ import com.supermartijn642.core.gui.widget.BlockEntityBaseWidget;
 import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import com.supermartijn642.movingelevators.blocks.BankLobbyPanelBlockEntity;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.packets.PacketBankDestination;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.math.BlockPos;
@@ -143,10 +144,18 @@ public class BankLobbyScreen extends BlockEntityBaseWidget<BankLobbyPanelBlockEn
             boolean isPanelFloor = index == panelFloor;
             String name = MovingElevatorsClient.formatFloorDisplayName(blockEntity.getFloorName(floorY), floorIndex);
             this.addWidget(new FloorButtonWidget(x, y, BUTTON_SIZE, BUTTON_SIZE,
-                () -> shortLabel(blockEntity, floorY, floorIndex),
-                // Nothing lights up: the request is answered by a car, not held on the panel, and a
-                // lobby panel is shared -- lighting one player's destination would show it to everyone.
-                () -> false,
+                // A floor with a car coming alternates between its own number and the name of the
+                // car coming for it. The press leaves the panel immediately and the screen stays open,
+                // so without this the only evidence it registered is a line of chat -- and naming the
+                // car answers the question a passenger asks next anyway. That a lobby panel is shared
+                // makes this better rather than worse: everyone waiting can see what is already on
+                // its way and for which floor.
+                () -> {
+                    ElevatorGroup car = blockEntity.getPendingCar(floorY);
+                    return car != null && car.getName() != null && car.isAnnounceFlashOn()
+                        ? car.getName() : shortLabel(blockEntity, floorY, floorIndex);
+                },
+                () -> blockEntity.getPendingCar(floorY) != null,
                 () -> isPanelFloor,
                 TextComponents.string(name).get(),
                 // Asking for the floor you are already standing on is a trip to nowhere, so the button
