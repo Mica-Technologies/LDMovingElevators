@@ -148,6 +148,15 @@ public class ElevatorGroup {
      */
 
     private boolean soundsEnabled = true;
+    /**
+     * Whether this cabin plays music. Separate from the sound toggle, because wanting the chimes and
+     * not the muzak is an entirely ordinary preference.
+     */
+    private boolean cabinMusicEnabled = true;
+    /** Ticks left of the track currently playing, counted down in steps of the check interval. */
+    private int cabinMusicRemaining;
+    /** How often the cabin is checked for listeners. A second is prompt enough to start a record. */
+    private static final int MUSIC_CHECK_INTERVAL = 20;
     private ElevatorSoundScheme soundScheme = ElevatorSoundScheme.STANDARD;
     /**
      * What this elevator is called: "A", "Freight", or nothing.
@@ -302,6 +311,8 @@ public class ElevatorGroup {
             this.updateFireRecall();
         if(!this.level.isRemote)
             this.updateComparatorFloor();
+        if(!this.level.isRemote)
+            this.updateCabinMusic();
         if(!this.level.isRemote && this.shouldBeSynced){
             this.shouldBeSynced = false;
             this.updateGroup();
@@ -524,6 +535,10 @@ public class ElevatorGroup {
         int merged = (previous == null ? 0 : previous) | (up ? CALL_UP : CALL_DOWN);
         if(previous == null || previous != merged){
             this.callDirections.put(yLevel, merged);
+            // Acknowledged where it was pressed. A landing button whose lift is eight floors away
+            // gives no other sign it registered until the lamp is noticed.
+            this.playAt(new Vec3d(this.getPos(yLevel)).addVector(0.5, 0.5, 0.5),
+                ElevatorSoundScheme.Moment.CALL_ACCEPTED);
             // The lamps are drawn from this map on the client, so a change nobody is told about is a
             // button that visibly does nothing. Pressing the second arrow while the cabin is already
             // on its way changes nothing else -- queueCall returns early because the floor is already
@@ -557,6 +572,7 @@ public class ElevatorGroup {
     public void onCarCall(int yLevel, EntityPlayer requester){
         if(!this.floors.contains(yLevel) || !this.acceptsCarCalls())
             return;
+        this.playAtCabin(ElevatorSoundScheme.Moment.CALL_ACCEPTED);
         if(this.isMoving){
             this.queueCall(yLevel);
             return;
@@ -1215,6 +1231,38 @@ public class ElevatorGroup {
         this.shouldBeSynced = true;
     }
 
+    public boolean isCabinMusicEnabled(){
+        return this.cabinMusicEnabled;
+    }
+
+    public void setCabinMusicEnabled(boolean enabled){
+        this.cabinMusicEnabled = enabled;
+        this.shouldBeSynced = true;
+    }
+
+    /**
+     * Plays the cabin's music, and starts it again when it runs out.
+     * <p>
+     * Only while somebody is aboard. An empty lift playing to itself would be every lift in a
+     * building playing at once, heard from every landing, forever -- and nothing about a track
+     * started for nobody can be switched off by the person it eventually annoys.
+     * <p>
+     * The elevator cannot stop a track once handed to a client, so switching the music off takes
+     * effect at the end of the one playing rather than immediately.
+     */
+    private void updateCabinMusic(){
+        if(this.tickCounter % MUSIC_CHECK_INTERVAL != 0)
+            return;
+        if(this.cabinMusicRemaining > 0){
+            this.cabinMusicRemaining -= MUSIC_CHECK_INTERVAL;
+            return;
+        }
+        if(!this.cabinMusicEnabled || !this.soundsEnabled || this.getCabinOccupancy() <= 0)
+            return;
+        this.playAtCabin(ElevatorSoundScheme.Moment.CABIN_MUSIC);
+        this.cabinMusicRemaining = this.soundScheme.cabinMusicLengthTicks();
+    }
+
     public ElevatorSoundScheme getSoundScheme(){
         return this.soundScheme;
     }
@@ -1383,6 +1431,7 @@ public class ElevatorGroup {
 
         this.cage = cage;
         this.isMoving = true;
+        this.playAtCabin(ElevatorSoundScheme.Moment.DEPARTING);
         this.targetY = targetY;
         this.currentY = currentY;
         this.lastY = this.currentY;
@@ -1929,6 +1978,7 @@ public class ElevatorGroup {
         }
         compound.setIntArray("callDirections", directions);
         compound.setBoolean("soundsEnabled", this.soundsEnabled);
+    compound.setBoolean("cabinMusicEnabled", this.cabinMusicEnabled);
         compound.setString("soundScheme", this.soundScheme.name());
     // Synced as well as saved: the readouts that flash a car's name are drawn on the client, and a
     // pending pickup it has never been told about cannot be announced.
@@ -2025,6 +2075,7 @@ public class ElevatorGroup {
             this.callDirections.put(directions[i], directions[i + 1]);
         // Absent in saves from before sounds existed, where the elevator should start out audible.
         this.soundsEnabled = !compound.hasKey("soundsEnabled") || compound.getBoolean("soundsEnabled");
+    this.cabinMusicEnabled = !compound.hasKey("cabinMusicEnabled") || compound.getBoolean("cabinMusicEnabled");
         this.soundScheme = ElevatorSoundScheme.byName(compound.getString("soundScheme"));
     this.bankedDestinations.clear();
     int[] banked = compound.getIntArray("bankedDestinations");

@@ -25,6 +25,18 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Cabin music.** Vanilla's shopping-mall record for the Standard scheme, which is already elevator
+  music in everything but name, and something ambient for Modern. It plays only while somebody is
+  actually aboard — an empty lift playing to itself would be every lift in a building playing at
+  once, heard from every landing, and a track started for nobody cannot be switched off by whoever it
+  eventually annoys. Its switch is on the car panel, since it is turned off by the person listening
+  to it, and it is its own setting rather than part of the sound scheme: wanting the chimes and not
+  the music is an ordinary preference. Switching it off takes effect at the end of the track playing,
+  because a sound already handed to a client cannot be recalled.
+- **Two more sounds.** A low thud as the brake lets go, for the people already aboard, and a dry tick
+  when a call registers — sounded at the button pressed rather than at the cabin, since a landing
+  button whose lift is eight floors away otherwise gives no sign it took.
+
 - **Five more configuration options**: `bankedDwellTicks`, `emergencyHoldTicks`, `doorLinkRange`,
   `shaftScanReach` and `maxCabinSpeed`. The speed ceiling was previously written twice, once in the
   screen and once in the message that validates it, in different units; both now read the setting.

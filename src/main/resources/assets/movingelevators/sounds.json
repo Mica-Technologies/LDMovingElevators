@@ -61,5 +61,39 @@
     "sounds": [
       "note/bass"
     ]
+  },
+  "depart_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.depart_sound",
+    "sounds": [
+      "note/bass"
+    ]
+  },
+  "call_accepted_sound": {
+    "category": "block",
+    "subtitle": "movingelevators.elevator.call_accepted_sound",
+    "sounds": [
+      "note/hat"
+    ]
+  },
+  "cabin_music_standard": {
+    "category": "record",
+    "subtitle": "movingelevators.elevator.cabin_music",
+    "sounds": [
+      {
+        "name": "records/mall",
+        "stream": true
+      }
+    ]
+  },
+  "cabin_music_modern": {
+    "category": "record",
+    "subtitle": "movingelevators.elevator.cabin_music",
+    "sounds": [
+      {
+        "name": "records/wait",
+        "stream": true
+      }
+    ]
   }
 }

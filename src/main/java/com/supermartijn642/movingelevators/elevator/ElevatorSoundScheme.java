@@ -56,7 +56,14 @@ public enum ElevatorSoundScheme {
             // Flat and low. An overload is a nuisance to be cleared, not an emergency, and it repeats
             // until somebody steps off -- a chime would wear out its welcome in seconds.
             entries.put(Moment.OVERLOAD, new Entry(() -> MovingElevators.overload_sound, 0.7f, 0.6f));
-            // DEPARTING and CALL_ACCEPTED are intentionally silent.
+            // A low thud as the brake lets go. Quiet: it marks the start of a journey for the people
+            // already aboard, and should not carry to the floor being left.
+            entries.put(Moment.DEPARTING, new Entry(() -> MovingElevators.depart_sound, 0.3f, 0.7f));
+            // A dry tick, the sound of a button that has taken. Short enough to press repeatedly
+            // without it turning into a rhythm.
+            entries.put(Moment.CALL_ACCEPTED, new Entry(() -> MovingElevators.call_accepted_sound, 0.4f, 1.5f));
+            // Vanilla's shopping-mall record, which is already elevator music in everything but name.
+            entries.put(Moment.CABIN_MUSIC, new Entry(() -> MovingElevators.cabin_music_standard, 0.35f, 1f));
         }
     },
 
@@ -90,6 +97,16 @@ public enum ElevatorSoundScheme {
             entries.put(Moment.ALARM, new Entry(() -> MovingElevators.alarm_sound, 1f, 2f));
             entries.put(Moment.OBSTRUCTED, new Entry(() -> MovingElevators.alarm_sound, 0.9f, 0.7f));
             entries.put(Moment.OVERLOAD, new Entry(() -> MovingElevators.overload_sound, 0.7f, 0.8f));
+            entries.put(Moment.DEPARTING, new Entry(() -> MovingElevators.depart_sound, 0.25f, 1.1f));
+            entries.put(Moment.CALL_ACCEPTED, new Entry(() -> MovingElevators.modern_chime_sound, 0.45f, 1.7f));
+            // Something ambient rather than jaunty, to match the rest of this scheme.
+            entries.put(Moment.CABIN_MUSIC, new Entry(() -> MovingElevators.cabin_music_modern, 0.35f, 1f));
+        }
+
+        @Override
+        public int cabinMusicLengthTicks(){
+            // "wait" runs 3:58.
+            return 4780;
         }
 
         @Override
@@ -122,7 +139,9 @@ public enum ElevatorSoundScheme {
         CALL_ACCEPTED,
         OBSTRUCTED,
         /** One buzz of the overload alarm. Repeated by the elevator for as long as it is too full. */
-        OVERLOAD;
+        OVERLOAD,
+        /** The whole of a cabin music track, started again when it ends. */
+        CABIN_MUSIC;
 
         /**
          * The chime for arriving when the car is next headed {@code direction} (1 up, -1 down, 0
@@ -199,6 +218,18 @@ public enum ElevatorSoundScheme {
      */
     public int chimeGapTicks(){
         return 11;
+    }
+
+    /**
+     * How long this scheme's cabin music runs, in ticks, so the elevator knows when to start it again.
+     * <p>
+     * Carried by the scheme rather than measured, because nothing can ask a sound how long it is once
+     * it has been handed to the client. Erring slightly long leaves a breath of silence between plays;
+     * erring short would overlap the track with itself, which is the one outcome worth avoiding.
+     */
+    public int cabinMusicLengthTicks(){
+        // "mall" runs 3:17.
+        return 3960;
     }
 
     /** Translation key for this scheme's name, as shown in the elevator screen. */

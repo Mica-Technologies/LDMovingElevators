@@ -13,6 +13,7 @@ import com.supermartijn642.movingelevators.packets.PacketDoorControl;
 import com.supermartijn642.movingelevators.packets.PacketEmergencyStop;
 import com.supermartijn642.movingelevators.packets.PacketRingAlarm;
 import com.supermartijn642.movingelevators.packets.PacketRequestFloor;
+import com.supermartijn642.movingelevators.packets.PacketToggleCabinMusic;
 import com.supermartijn642.movingelevators.packets.PacketToggleIndependentService;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.ITextComponent;
@@ -35,9 +36,9 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
 
     private static final int BUTTON_SIZE = 22, GAP = 3, PADDING = 7, HEADER = 22;
     /**
-     * Door controls sit under the grid, in their own row, with the alarm in a row below that and the
-     * emergency stop below the alarm. Every one of those rows is {@link #DOOR_ROW_HEIGHT} tall and
-     * {@link #GAP} apart, so the three read as one block of controls.
+     * Door controls sit under the grid, in their own row, with the alarm in a row below that, the
+     * emergency stop below the alarm and cabin music below the stop. Every one of those rows is
+     * {@link #DOOR_ROW_HEIGHT} tall and {@link #GAP} apart, so the four read as one block of controls.
      */
     private static final int DOOR_ROW_HEIGHT = 20, DOOR_ROW_GAP = 5, DOOR_LABEL_PADDING = 6;
     /** Rows before the grid grows sideways instead, so a tall shaft cannot run off the screen. */
@@ -127,6 +128,60 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     }
 
     /**
+     * The cabin music button's face: the control's name and what it is currently set to.
+     * <p>
+     * The state is on the button rather than only in a tooltip because this is a toggle, and a toggle
+     * labelled just "Cabin music" tells a passenger nothing about which way pressing it will go.
+     * <p>
+     * Shared with {@link CarControlsScreen} for the same reason the key switch's text is -- what a
+     * control says is not a layout knob, and the two panels wording one toggle differently would be a
+     * bug rather than deliberate drift.
+     */
+    static String musicLabel(ElevatorCarPanelBlockEntity blockEntity){
+        return TextComponents.translation("movingelevators.floor_select.music",
+            TextComponents.translation(isCabinMusicEnabled(blockEntity)
+                ? "movingelevators.floor_select.music.on"
+                : "movingelevators.floor_select.music.off").get()).format();
+    }
+
+    /** Whether cabin music should read as on. Null-guarded like every other group read here. */
+    static boolean isCabinMusicEnabled(ElevatorCarPanelBlockEntity blockEntity){
+        ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
+        return group != null && group.isCabinMusicEnabled();
+    }
+
+    /**
+     * The cabin music toggle, built here for both screens. Each screen still places it with its own
+     * constants -- only what the button says and when it lights comes from here, the same split the
+     * key switch uses.
+     * <p>
+     * Its tooltip and narration are overridden rather than left to the component handed to the
+     * constructor. {@link FloorButtonWidget} captures that component once, and this is the one button
+     * on either panel whose own press changes its text, so a captured one would sit under the cursor
+     * contradicting the face it was drawn on. The constructor still wants a component; nothing reads
+     * it once both methods that would are overridden.
+     */
+    static FloorButtonWidget musicButton(int x, int y, int width, int height, ElevatorCarPanelBlockEntity blockEntity, Runnable onPress){
+        return new FloorButtonWidget(x, y, width, height,
+            () -> musicLabel(blockEntity),
+            () -> isCabinMusicEnabled(blockEntity),
+            // Never the inverted "the cabin is here" styling: that means a floor, and this is not one.
+            () -> false,
+            TextComponents.string(musicLabel(blockEntity)).get(),
+            onPress){
+            @Override
+            public ITextComponent getNarrationMessage(){
+                return TextComponents.string(musicLabel(blockEntity)).get();
+            }
+
+            @Override
+            protected void getTooltips(java.util.function.Consumer<ITextComponent> tooltips){
+                tooltips.accept(this.getNarrationMessage());
+            }
+        };
+    }
+
+    /**
      * Adds the independent service key switch to the top-right of the header, where both screens put
      * it.
      * <p>
@@ -176,6 +231,15 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         // any other button's, so it can set the panel's width where the short alarm label never does.
         int emergencyStop = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.emergency_stop").format());
         widest = Math.max(widest, emergencyStop + DOOR_LABEL_PADDING * 2);
+        // Cabin music spans the interior the same way, and its label carries the state. Both states
+        // are measured rather than the current one, so that pressing the button cannot resize the
+        // panel out from under the cursor -- the same reason the floor line below measures every
+        // floor name instead of the one the cabin is at.
+        int musicOn = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.music",
+            TextComponents.translation("movingelevators.floor_select.music.on").get()).format());
+        int musicOff = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.music",
+            TextComponents.translation("movingelevators.floor_select.music.off").get()).format());
+        widest = Math.max(widest, Math.max(musicOn, musicOff) + DOOR_LABEL_PADDING * 2);
 
         ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
         if(group != null){
@@ -193,7 +257,7 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     protected int height(ElevatorCarPanelBlockEntity blockEntity){
         int rows = rowsFor(floorCount(blockEntity));
         return PADDING + HEADER + rows * BUTTON_SIZE + (rows - 1) * GAP
-            + DOOR_ROW_GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
+            + DOOR_ROW_GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
     }
 
     private static int floorCount(ElevatorCarPanelBlockEntity blockEntity){
@@ -254,8 +318,8 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
 
     /**
      * "Open doors" and "Close doors", the two controls a real car station has that are not floors,
-     * plus the alarm and the emergency stop below them. The door buttons act on whichever floor the
-     * cabin is parked at, so they do nothing while it is in motion.
+     * plus the alarm, the emergency stop and the cabin music toggle below them. The door buttons act
+     * on whichever floor the cabin is parked at, so they do nothing while it is in motion.
      */
     private void addDoorControls(ElevatorCarPanelBlockEntity blockEntity, int rows){
         int y = PADDING + HEADER + rows * BUTTON_SIZE + (rows - 1) * GAP + DOOR_ROW_GAP;
@@ -289,6 +353,13 @@ public class FloorSelectScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
             () -> false, () -> false,
             TextComponents.translation("movingelevators.floor_select.emergency_stop").get(),
             () -> MovingElevators.CHANNEL.sendToServer(new PacketEmergencyStop(this.blockEntityPos))));
+
+        // Below the stop rather than above it: everything above is something a passenger presses to
+        // change what the car does, and this only changes what the car sounds like. Same widget,
+        // width and spacing as the stop, so the block of controls stays one shape.
+        this.addWidget(musicButton(PADDING, y + (DOOR_ROW_HEIGHT + GAP) * 3, available + GAP, DOOR_ROW_HEIGHT,
+            blockEntity,
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketToggleCabinMusic(this.blockEntityPos))));
     }
 
     /**

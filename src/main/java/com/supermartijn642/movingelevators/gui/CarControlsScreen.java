@@ -11,6 +11,7 @@ import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.packets.PacketDoorControl;
 import com.supermartijn642.movingelevators.packets.PacketEmergencyStop;
 import com.supermartijn642.movingelevators.packets.PacketRingAlarm;
+import com.supermartijn642.movingelevators.packets.PacketToggleCabinMusic;
 import com.supermartijn642.movingelevators.packets.PacketToggleIndependentService;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.math.BlockPos;
@@ -41,9 +42,9 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
      */
     private static final int GAP = 3, PADDING = 7, HEADER = 22;
     /**
-     * The door row, with the alarm in a row below it and the emergency stop below that, matching the
-     * car panel's rows and spacing exactly -- a passenger moving between a banked car and an ordinary
-     * one should find the same controls in the same places.
+     * The door row, with the alarm in a row below it, the emergency stop below that and cabin music
+     * below the stop, matching the car panel's rows and spacing exactly -- a passenger moving between
+     * a banked car and an ordinary one should find the same controls in the same places.
      */
     private static final int DOOR_ROW_HEIGHT = 20, DOOR_ROW_GAP = 5, DOOR_LABEL_PADDING = 6;
     /**
@@ -89,6 +90,14 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
         // any other button's, so it can set the panel's width where the short alarm label never does.
         int emergencyStop = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.emergency_stop").format());
         widest = Math.max(widest, emergencyStop + DOOR_LABEL_PADDING * 2);
+        // Cabin music spans the interior the same way, and its label carries the state. Both states
+        // are measured rather than the current one, so that pressing the button cannot resize the
+        // panel out from under the cursor. Same as the car panel's.
+        int musicOn = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.music",
+            TextComponents.translation("movingelevators.floor_select.music.on").get()).format());
+        int musicOff = fontRenderer.getStringWidth(TextComponents.translation("movingelevators.floor_select.music",
+            TextComponents.translation("movingelevators.floor_select.music.off").get()).format());
+        widest = Math.max(widest, Math.max(musicOn, musicOff) + DOOR_LABEL_PADDING * 2);
 
         ElevatorGroup group = blockEntity == null ? null : blockEntity.getGroup();
         if(group != null){
@@ -104,7 +113,7 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
 
     @Override
     protected int height(ElevatorCarPanelBlockEntity blockEntity){
-        return doorRowY() + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
+        return doorRowY() + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + GAP + DOOR_ROW_HEIGHT + PADDING;
     }
 
     /**
@@ -153,9 +162,9 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
     }
 
     /**
-     * "Open doors" and "Close doors", plus the alarm and the emergency stop. Same widgets, labels and
-     * messages as the ordinary car panel -- a banked car takes away the floor buttons, not the
-     * controls beside them.
+     * "Open doors" and "Close doors", plus the alarm, the emergency stop and the cabin music toggle.
+     * Same widgets, labels and messages as the ordinary car panel -- a banked car takes away the floor
+     * buttons, not the controls beside them.
      */
     private void addDoorControls(ElevatorCarPanelBlockEntity blockEntity){
         int y = doorRowY();
@@ -189,6 +198,14 @@ public class CarControlsScreen extends BlockEntityBaseWidget<ElevatorCarPanelBlo
             () -> false, () -> false,
             TextComponents.translation("movingelevators.floor_select.emergency_stop").get(),
             () -> MovingElevators.CHANNEL.sendToServer(new PacketEmergencyStop(this.blockEntityPos))));
+
+        // Below the stop, at the same offset the car panel puts it: the row order is the one thing
+        // these two screens cannot be allowed to drift on, since a passenger moving between a banked
+        // car and an ordinary one reaches for the last button without reading it. What the button
+        // says and when it lights comes from the car panel; only the placement is ours.
+        this.addWidget(FloorSelectScreen.musicButton(PADDING, y + (DOOR_ROW_HEIGHT + GAP) * 3, available + GAP, DOOR_ROW_HEIGHT,
+            blockEntity,
+            () -> MovingElevators.CHANNEL.sendToServer(new PacketToggleCabinMusic(this.blockEntityPos))));
     }
 
     @Override

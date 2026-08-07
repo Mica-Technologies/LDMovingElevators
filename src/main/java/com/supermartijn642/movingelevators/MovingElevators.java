@@ -101,6 +101,14 @@ public class MovingElevators {
     public static SoundEvent alarm_sound;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "overload_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
     public static SoundEvent overload_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "depart_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent depart_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "call_accepted_sound", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent call_accepted_sound;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "cabin_music_standard", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent cabin_music_standard;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "cabin_music_modern", registry = RegistryEntryAcceptor.Registry.SOUND_EVENTS)
+    public static SoundEvent cabin_music_modern;
 
     public static final CreativeItemGroup GROUP = CreativeItemGroup.create("movingelevators", () -> elevator_block.asItem());
 
@@ -130,6 +138,7 @@ public class MovingElevators {
         CHANNEL.registerMessage(PacketEmergencyStop.class, PacketEmergencyStop::new, true);
         CHANNEL.registerMessage(PacketToggleOutOfService.class, PacketToggleOutOfService::new, true);
         CHANNEL.registerMessage(PacketToggleIndependentService.class, PacketToggleIndependentService::new, true);
+        CHANNEL.registerMessage(PacketToggleCabinMusic.class, PacketToggleCabinMusic::new, true);
         CHANNEL.registerMessage(PacketSetFloorName.class, PacketSetFloorName::new, true);
         CHANNEL.registerMessage(PacketSyncElevatorMovement.class, PacketSyncElevatorMovement::new, true);
         CHANNEL.registerMessage(PacketToggleShowControllerButtons.class, PacketToggleShowControllerButtons::new, true);
@@ -200,6 +209,10 @@ public class MovingElevators {
         handler.registerSoundEvent("modern_passing_floor_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "modern_passing_floor_sound")));
         handler.registerSoundEvent("alarm_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "alarm_sound")));
         handler.registerSoundEvent("overload_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "overload_sound")));
+        handler.registerSoundEvent("depart_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "depart_sound")));
+        handler.registerSoundEvent("call_accepted_sound", () -> new SoundEvent(new ResourceLocation("movingelevators", "call_accepted_sound")));
+        handler.registerSoundEvent("cabin_music_standard", () -> new SoundEvent(new ResourceLocation("movingelevators", "cabin_music_standard")));
+        handler.registerSoundEvent("cabin_music_modern", () -> new SoundEvent(new ResourceLocation("movingelevators", "cabin_music_modern")));
     }
 
     private static void registerGenerators(){
