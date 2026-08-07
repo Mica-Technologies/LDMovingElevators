@@ -178,8 +178,13 @@ public class ElevatorGroup {
         NONE, LEVELLING, HOLDING
     }
 
-    /** Ticks between shaft sweeps. Cheap enough at this rate to run on every moving elevator. */
-    private static final int SHAFT_SCAN_INTERVAL = 100;
+    /**
+     * Ticks between shaft sweeps. Half a second: one entity query per moving elevator at that rate is
+     * nothing, and the interval sets how far ahead the sweep has to see. It was five seconds, over
+     * which a cabin at the default speed covers twenty blocks -- so it was finding people it had
+     * already driven through rather than people it was about to.
+     */
+    private static final int SHAFT_SCAN_INTERVAL = 10;
     /**
      * How far below the top of the cabin something must stand to count as being inside it rather than
      * on its roof. Small: it only has to absorb floating-point drift, since a rider's feet sit exactly
@@ -718,8 +723,16 @@ public class ElevatorGroup {
         Vec3d previousAnchor = this.getCageAnchorPos(previousY);
         double sweptMinY = Math.min(cabin.minY, previousAnchor.y);
         double sweptMaxY = Math.max(cabin.maxY, previousAnchor.y + this.cageSizeY);
-        AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, sweptMinY - SHAFT_SCAN_REACH, cabin.minZ,
-            cabin.maxX, sweptMaxY + SHAFT_SCAN_REACH, cabin.maxZ);
+        // Reaching further the way the cabin is going, by everything it will cover before the next
+        // sweep. Looking a fixed distance both ways is only a warning if the cabin cannot outrun it;
+        // whatever it would have reached first went unseen, which is why somebody standing below a
+        // descending cabin was run into rather than stopped for.
+        double travel = Math.signum(this.targetY - this.currentY);
+        double lookAhead = SHAFT_SCAN_REACH + Math.abs(this.speed) * SHAFT_SCAN_INTERVAL;
+        double below = travel < 0 ? lookAhead : SHAFT_SCAN_REACH;
+        double above = travel > 0 ? lookAhead : SHAFT_SCAN_REACH;
+        AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, sweptMinY - below, cabin.minZ,
+            cabin.maxX, sweptMaxY + above, cabin.maxZ);
         for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, shaft)){
             if(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
                 continue;

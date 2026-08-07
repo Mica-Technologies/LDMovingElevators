@@ -168,6 +168,15 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- Passengers were thrown onto the roof of the cabin whenever it stopped. Arriving pushes anything
+  standing where a block is about to appear, but it judged that by which cells held a block rather
+  than by what those blocks actually fill — and a wall panel is a two-pixel plate on the face of a
+  whole cell, so the spot you stand in to press one counted as being inside it.
+- The shaft sweep found people the cabin had already driven through rather than people it was about
+  to reach. It looked ten blocks either way every five seconds, over which a cabin covers twenty at
+  the default speed. It now sweeps twice a second and reaches further ahead the way it is going, by
+  everything it will cover before the next sweep.
+
 - Pressing the second arrow at a landing did nothing visible. Both directions were recorded, but a
   press that only added a direction never told the client, so the second lamp stayed dark and the
   button looked broken.

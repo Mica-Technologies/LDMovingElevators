@@ -365,7 +365,7 @@ public class ElevatorCage {
         // One query over the whole cage rather than one per cell: a cabin runs to hundreds of cells and
         // the shaft is empty for almost all of them.
         for(Entity entity : level.getEntitiesInAABBexcluding(null, cage, ElevatorCage::canBePushedAside)){
-            if(!this.intersectsSolidCell(startPos, entity.getEntityBoundingBox().shrink(FLUSH_CONTACT_MARGIN)))
+            if(!this.intersectsSolidBlock(startPos, entity.getEntityBoundingBox().shrink(FLUSH_CONTACT_MARGIN)))
                 continue;
             double y = pushUp ? clearAbove : clearBelow - entity.height;
             // setPositionAndUpdate rather than setPosition, because on a player the former goes out over
@@ -385,21 +385,19 @@ public class ElevatorCage {
      * Worked out from the box's own index range rather than by walking the cage, so testing one entity
      * costs the handful of cells it actually stands in no matter how big the cabin is.
      */
-    private boolean intersectsSolidCell(BlockPos startPos, AxisAlignedBB box){
-        // ceil - 1 rather than floor for the upper bounds, so a box ending exactly on a cell boundary
-        // stops at the cell before it instead of claiming one it only touches.
-        int minX = Math.max(0, MathHelper.floor(box.minX) - startPos.getX());
-        int maxX = Math.min(this.xSize - 1, MathHelper.ceil(box.maxX) - 1 - startPos.getX());
-        int minY = Math.max(0, MathHelper.floor(box.minY) - startPos.getY());
-        int maxY = Math.min(this.ySize - 1, MathHelper.ceil(box.maxY) - 1 - startPos.getY());
-        int minZ = Math.max(0, MathHelper.floor(box.minZ) - startPos.getZ());
-        int maxZ = Math.min(this.zSize - 1, MathHelper.ceil(box.maxZ) - 1 - startPos.getZ());
-        for(int x = minX; x <= maxX; x++)
-            for(int y = minY; y <= maxY; y++)
-                for(int z = minZ; z <= maxZ; z++)
-                    // The same null cell place() skips: nothing gets built there, so nothing can be caught in it.
-                    if(this.blockStates[x][y][z] != null)
-                        return true;
+    /**
+     * Whether the entity would actually be inside one of the cabin's blocks.
+     * <p>
+     * Tested against the cabin's real collision boxes rather than which cells hold a block. Occupying
+     * a cell is not the same as filling it: a wall panel is a two-pixel plate on one face of a whole
+     * cell, and the place you stand to press it is inside that cell and perfectly solid ground. Asking
+     * the coarser question threw passengers out of a cabin they were riding quite happily, onto its
+     * roof, every time it stopped. The same reasoning covers torches, wires, buttons and slabs.
+     */
+    private boolean intersectsSolidBlock(BlockPos startPos, AxisAlignedBB box){
+        for(AxisAlignedBB solid : this.collisionBoxes)
+            if(solid.offset(startPos.getX(), startPos.getY(), startPos.getZ()).intersects(box))
+                return true;
         return false;
     }
 
