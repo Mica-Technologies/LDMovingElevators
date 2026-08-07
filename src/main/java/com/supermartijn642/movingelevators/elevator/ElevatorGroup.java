@@ -565,6 +565,18 @@ public class ElevatorGroup {
     }
 
     /**
+     * Destinations already booked by passengers waiting at a landing.
+     * <p>
+     * Worth asking before placing a call rather than after: the moment the cabin is standing at the
+     * floor these are moved into the ordinary queue, where they are indistinguishable from anywhere
+     * else the elevator has to be.
+     */
+    public Set<Integer> getBankedDestinationsFrom(int pickupY){
+        Set<Integer> destinations = this.bankedDestinations.get(pickupY);
+        return destinations == null ? Collections.emptySet() : Collections.unmodifiableSet(destinations);
+    }
+
+    /**
      * Whether a car is already booked to collect from {@code pickupY} and carry on {@code up}.
      * Dispatch uses it to put riders going the same way together rather than sending a second car.
      */

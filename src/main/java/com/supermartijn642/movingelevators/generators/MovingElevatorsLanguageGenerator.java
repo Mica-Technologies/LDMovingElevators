@@ -68,8 +68,12 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.bank_lobby.title", "Enter your destination floor");
         this.translation("movingelevators.bank_lobby.unbound", "This panel isn't linked to any elevators yet");
         this.translation("movingelevators.bank_lobby.no_car", "No linked elevator can reach that floor");
-        this.translation("movingelevators.bank_lobby.dispatched", "Elevator is on its way to %s");
-        this.translation("movingelevators.bank_lobby.dispatched_named", "Elevator %s is on its way to %s");
+        this.translation("movingelevators.bank_lobby.dispatched", "An elevator is on its way \u2014 going to %s");
+        this.translation("movingelevators.bank_lobby.dispatched_named", "Elevator %s is on its way \u2014 going to %s");
+        this.translation("movingelevators.bank_lobby.ready", "An elevator is ready to board \u2014 going to %s");
+        this.translation("movingelevators.bank_lobby.ready_named", "Elevator %s is ready to board \u2014 going to %s");
+        this.translation("movingelevators.bank_lobby.floors_more", "%s, %s");
+        this.translation("movingelevators.bank_lobby.floors_last", "%s and %s");
         this.translation("movingelevators.elevator_screen.elevator_name", "Elevator name");
 
         this.translation("movingelevators.bank_lobby_panel.status.header", "Bank lobby panel \u2014 landing %s");

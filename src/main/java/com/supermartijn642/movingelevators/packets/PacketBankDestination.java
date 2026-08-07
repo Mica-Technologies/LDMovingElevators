@@ -4,7 +4,7 @@ import com.supermartijn642.core.TextComponents;
 import com.supermartijn642.core.network.BlockEntityBasePacket;
 import com.supermartijn642.core.network.PacketContext;
 import com.supermartijn642.movingelevators.blocks.BankLobbyPanelBlockEntity;
-import com.supermartijn642.movingelevators.elevator.ElevatorBank;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;
@@ -51,33 +51,57 @@ public class PacketBankDestination extends BlockEntityBasePacket<BankLobbyPanelB
         if(!PacketReach.isInReach(context.getSendingPlayer(), blockEntity.getPos()))
             return;
         EntityPlayer player = context.getSendingPlayer();
-        ElevatorBank.Assignment assignment = blockEntity.dispatch(this.destinationY, player);
+        BankLobbyPanelBlockEntity.Dispatch dispatch = blockEntity.dispatch(this.destinationY, player);
         if(player == null)
             return;
 
-        if(assignment == null){
+        if(dispatch == null){
             // Every bound elevator was broken out, or none of them serves the floor asked for. Either
             // way nothing is coming, and silence would read as a car on its way.
             player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby.no_car").color(TextFormatting.RED).get(), true);
             return;
         }
 
-        // Named, not numbered. A world y level is meaningless to a passenger -- "on its way to 74"
-        // tells them nothing about the building they are standing in.
-        int floor = assignment.group.getFloorNumber(assignment.pickupY);
-        String name = floor == -1 ? null : assignment.group.getFloorDisplayName(floor);
-        // Naming the car is the entire point of a destination panel: it is what turns "a lift is
-        // coming somewhere" into "stand by that one".
-        String car = assignment.group.getName();
-        ITextComponent floorLabel = name != null && !name.isEmpty()
-            ? TextComponents.string(name).get()
-            : TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor + 1).get()).get();
-        if(car != null){
-            player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby.dispatched_named",
-                TextComponents.string(car).color(TextFormatting.GOLD).get(), floorLabel).get(), true);
-            return;
+        // Where it is going, not where it is collecting from -- the passenger is standing at the
+        // collection point and does not need telling. Listing every destination booked from this
+        // landing is also what makes a shared car legible: two people are told the same pair of
+        // floors and can see they are riding together rather than waiting for separate lifts.
+        ITextComponent floors = describeFloors(dispatch.group, dispatch.destinations);
+        String car = dispatch.group.getName();
+        String key = "movingelevators.bank_lobby."
+            + (dispatch.readyToBoard ? "ready" : "dispatched") + (car == null ? "" : "_named");
+        player.sendStatusMessage(car == null
+            ? TextComponents.translation(key, floors).get()
+            : TextComponents.translation(key, TextComponents.string(car).color(TextFormatting.GOLD).get(), floors).get(), true);
+    }
+
+    /**
+     * "Floor 3", or "Floor 3 and Floor 7", or "Floor 3, Floor 7 and Floor 9".
+     * <p>
+     * Built from two translated joiners rather than by pasting commas and the word "and" together,
+     * since neither the punctuation nor the word order survives translation.
+     */
+    private static ITextComponent describeFloors(ElevatorGroup group, java.util.List<Integer> destinations){
+        ITextComponent joined = null;
+        for(int index = 0; index < destinations.size(); index++){
+            ITextComponent floor = describeFloor(group, destinations.get(index));
+            if(joined == null){
+                joined = floor;
+                continue;
+            }
+            // The last one is joined differently from the rest: "a, b" but "b and c".
+            joined = TextComponents.translation(index == destinations.size() - 1
+                ? "movingelevators.bank_lobby.floors_last" : "movingelevators.bank_lobby.floors_more",
+                joined, floor).get();
         }
-        player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby.dispatched",
-            floorLabel).get(), true);
+        return joined;
+    }
+
+    private static ITextComponent describeFloor(ElevatorGroup group, int yLevel){
+        int floor = group.getFloorNumber(yLevel);
+        String name = floor == -1 ? null : group.getFloorDisplayName(floor);
+        return name != null && !name.isEmpty()
+            ? TextComponents.string(name).color(TextFormatting.GOLD).get()
+            : TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor + 1).get()).color(TextFormatting.GOLD).get();
     }
 }

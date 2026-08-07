@@ -2,15 +2,35 @@
   "replace": false,
   "values": [
     {
+      "id": "movingelevators:bank_car_panel_block",
+      "required": true
+    },
+    {
+      "id": "movingelevators:remote_display_block",
+      "required": true
+    },
+    {
+      "id": "movingelevators:remote_indicator_block",
+      "required": true
+    },
+    {
       "id": "movingelevators:button_block",
       "required": true
     },
     {
-      "id": "movingelevators:elevator_door_block",
+      "id": "movingelevators:elevator_car_panel_block",
+      "required": true
+    },
+    {
+      "id": "movingelevators:elevator_block",
       "required": true
     },
     {
       "id": "movingelevators:elevator_single_door_block",
+      "required": true
+    },
+    {
+      "id": "movingelevators:remote_call_panel_block",
       "required": true
     },
     {
@@ -22,27 +42,7 @@
       "required": true
     },
     {
-      "id": "movingelevators:remote_display_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:elevator_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:elevator_car_panel_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:remote_indicator_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:bank_car_panel_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:remote_call_panel_block",
+      "id": "movingelevators:elevator_door_block",
       "required": true
     }
   ]

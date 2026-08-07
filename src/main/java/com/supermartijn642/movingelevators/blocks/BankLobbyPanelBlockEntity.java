@@ -289,16 +289,38 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
         return this.pos.getY();
     }
 
+    /** What a lobby panel arranged, in the terms a waiting passenger cares about. */
+    public static final class Dispatch {
+
+        public final ElevatorGroup group;
+        /** True when the cabin is already standing here with its doors opening, rather than coming. */
+        public final boolean readyToBoard;
+        /** Every floor this car will serve for people boarding here, this request included. */
+        public final List<Integer> destinations;
+
+        private Dispatch(ElevatorGroup group, boolean readyToBoard, List<Integer> destinations){
+            this.group = group;
+            this.readyToBoard = readyToBoard;
+            this.destinations = destinations;
+        }
+    }
+
     /**
      * Sends a car. Server side.
      *
-     * @return the assignment made, or null when no bound elevator can make the trip
+     * @return what was arranged, or null when no bound elevator can make the trip
      */
-    public ElevatorBank.Assignment dispatch(int destinationY, EntityPlayer requester){
+    public Dispatch dispatch(int destinationY, EntityPlayer requester){
         ElevatorBank.Assignment assignment = ElevatorBank.pick(this.getGroups(), this.getPanelY(), destinationY);
-        if(assignment != null)
-            assignment.group.onBankedCall(assignment.pickupY, destinationY, requester);
-        return assignment;
+        if(assignment == null)
+            return null;
+        // Read before the call is placed. A cabin already standing here collects its bookings the
+        // instant the call arrives, and they stop being distinguishable from the rest of its queue.
+        Set<Integer> destinations = new TreeSet<>(assignment.group.getBankedDestinationsFrom(assignment.pickupY));
+        destinations.add(destinationY);
+        assignment.group.onBankedCall(assignment.pickupY, destinationY, requester);
+        boolean ready = !assignment.group.isMoving() && assignment.group.isCabinAt(assignment.pickupY);
+        return new Dispatch(assignment.group, ready, new ArrayList<>(destinations));
     }
 
     @Override
