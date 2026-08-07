@@ -198,13 +198,31 @@ final class FloorLabelRenderer {
      * that floor is a selected destination.
      */
     static void drawButton(float x, float centerY, float half, boolean lit){
-        fullBright(() -> drawButtonUnlit(x, centerY, half, lit));
+        drawButton(x, centerY, half, half, lit);
     }
 
-    private static void drawButtonUnlit(float x, float centerY, float half, boolean lit){
+    /**
+     * The same button sized independently on each axis, for the bar-shaped controls the car panels
+     * use for the doors and the alarm.
+     * <p>
+     * Wide rather than square because those are one control each rather than members of an
+     * interchangeable grid, and because the space left for them is shaped that way: on the ordinary
+     * car panel the strip left under the floor buttons is 1.3 pixels, which after a bezel and its
+     * margins leaves the alarm half a pixel of height, so the only axis left to spend area on is the
+     * horizontal one.
+     */
+    static void drawButton(float x, float centerY, float halfWidth, float halfHeight, boolean lit){
+        fullBright(() -> drawButtonUnlit(x, centerY, halfWidth, halfHeight, lit));
+    }
+
+    private static void drawButtonUnlit(float x, float centerY, float halfWidth, float halfHeight, boolean lit){
         float centerX = mirrorX(x);
-        drawScreen(centerX - half - ARROW_BEZEL, centerY - half - ARROW_BEZEL,
-            centerX + half + ARROW_BEZEL, centerY + half + ARROW_BEZEL);
+        // The bezel stays the same flat margin on both axes, exactly as the arrows and the square
+        // floor buttons take it. Scaling it with the button instead would make a wide control's
+        // surround grow sideways with it, so the bar would sit in a slab of socket rather than in
+        // the same hairline well every other control on the plate has.
+        drawScreen(centerX - halfWidth - ARROW_BEZEL, centerY - halfHeight - ARROW_BEZEL,
+            centerX + halfWidth + ARROW_BEZEL, centerY + halfHeight + ARROW_BEZEL);
 
         int r = lit ? LIT_R : UNLIT_R, g = lit ? LIT_G : UNLIT_G, b = lit ? LIT_B : UNLIT_B;
 
@@ -215,10 +233,10 @@ final class FloorLabelRenderer {
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        buffer.pos(centerX - half, centerY + half, -0.005).color(r, g, b, 255).endVertex();
-        buffer.pos(centerX + half, centerY + half, -0.005).color(r, g, b, 255).endVertex();
-        buffer.pos(centerX + half, centerY - half, -0.005).color(r, g, b, 255).endVertex();
-        buffer.pos(centerX - half, centerY - half, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX - halfWidth, centerY + halfHeight, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX + halfWidth, centerY + halfHeight, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX + halfWidth, centerY - halfHeight, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX - halfWidth, centerY - halfHeight, -0.005).color(r, g, b, 255).endVertex();
         Tessellator.getInstance().draw();
 
         GlStateManager.enableCull();

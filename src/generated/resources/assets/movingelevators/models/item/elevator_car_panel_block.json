@@ -1,22 +1,42 @@
 {
-  "parent": "movingelevators:block/elevator_car_panel_block",
-  "display": {
-    "gui": {
-      "rotation": [
-        30.0,
-        45.0,
-        0.0
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "movingelevators:blocks/metal_silver",
+    "metal": "movingelevators:blocks/metal_silver",
+    "screen": "movingelevators:blocks/display"
+  },
+  "elements": [
+    {
+      "from": [
+        2.0,
+        1.0,
+        14.0
       ],
-      "translation": [
-        0.0,
-        0.0,
-        0.0
+      "to": [
+        14.0,
+        15.0,
+        16.0
       ],
-      "scale": [
-        0.625,
-        0.625,
-        0.625
-      ]
+      "faces": {
+        "south": {
+          "texture": "#metal"
+        },
+        "down": {
+          "texture": "#metal"
+        },
+        "east": {
+          "texture": "#metal"
+        },
+        "north": {
+          "texture": "#screen"
+        },
+        "up": {
+          "texture": "#metal"
+        },
+        "west": {
+          "texture": "#metal"
+        }
+      }
     }
-  }
+  ]
 }

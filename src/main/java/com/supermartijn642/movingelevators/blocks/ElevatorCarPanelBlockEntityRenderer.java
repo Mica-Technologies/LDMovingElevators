@@ -18,10 +18,15 @@ import net.minecraft.util.math.Vec3d;
  * of floors around the cabin rather than all of them, because a shaft can have far more floors than
  * a block face has room for.
  * <p>
- * The same block entity backs {@link BankCarPanelBlock}, so this renderer draws that too: the same
- * readout and arrows on a plate half the height, and no button bank, because a car in a destination
- * dispatch bank is not told where to go from inside. Which face to draw comes from the block, since
- * that is the only thing that differs between the two.
+ * The same block entity backs {@link BankCarPanelBlock}, so this renderer draws that too. Both now
+ * sit on the identical plate, so the readout and arrows land in the same place on either and the
+ * only difference is which controls fill the space below: floor buttons on the ordinary panel, and
+ * on the bank panel none, because a car in a destination dispatch bank is not told where to go from
+ * inside. Which of the two this is comes from the block, since that is all that differs.
+ * <p>
+ * Both panels also carry the controls that are not about choosing a floor -- the doors and the
+ * alarm. Those are drawn because the panel opens a screen offering them: a plate showing only a
+ * readout gives a passenger no reason to suspect there is an alarm behind it at all.
  * <p>
  * Created for the Mica Technologies fork.
  */
@@ -77,28 +82,64 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
     private static final float BUTTON_LEFT_X = 5.4f / 16f, BUTTON_COLUMN_GAP = 5.2f / 16f;
     private static final float BUTTON_BOTTOM_Y = 3.033f / 16f, BUTTON_ROW_GAP = 2.867f / 16f;
 
-    // Bank car panel layout. Only the vertical positions differ: the plate is the same 2.0 to 14.0
-    // across, so the readout window, the arrows and their x positions carry over unchanged, and a
-    // passenger stepping between an ordinary car and a bank car sees the same fixtures.
+    // Bank car panel layout. The plate is now the ordinary panel's, 2.0 to 14.0 by 1.0 to 15.0, so
+    // the readout window and the arrows carry over verbatim and have no constants of their own --
+    // a passenger stepping between an ordinary car and a bank car sees the same fixtures in the
+    // same places. Only the name and the controls below it are stated separately.
     /**
-     * Readout row, unchanged in size and left with the same one pixel of metal above it as on the
-     * tall plate -- which on a plate topping out at the same 15.0 puts it at the same height. The
-     * row is 10.8 to 14.0 with the arrow bezels inside that, so everything below 10.8 is free.
-     */
-    private static final float BANK_SCREEN_Y = 12.4f / 16f, BANK_ARROW_Y = 12.4f / 16f;
-    /**
-     * The name sits at the midpoint of the empty band below the readout, 7.0 to 10.8, which leaves
-     * just over a pixel of clear metal above it and the same below it.
+     * The name hangs from the readout rather than floating in the middle of the plate: everything
+     * below it is controls now, so the empty space it used to be centred in is gone. At the scale
+     * below its inset is 8.04 to 9.76, which leaves 1.04 of clear metal between it and the readout
+     * bottom at 10.8 -- about the pixel of surround every other element on the plate gets.
      */
     private static final float BANK_NAME_Y = 8.9f / 16f;
     /**
-     * Bigger than the tall panel's name, because here it is not squeezed into the 1.3 pixel band
-     * between the readout and the top of the button bank -- with no buttons the band is 3.8 pixels
-     * and the constraint is gone. Per font unit, so a nine pixel line stands 0.1 of a block, i.e.
-     * 1.6 face pixels. The width cap is widened to match: 10 pixels centred on a 12 pixel plate,
-     * still a pixel of metal either side, so fewer names get scaled down to fit.
+     * Bigger than the ordinary panel's name, which is squeezed into the 1.3 pixel band between the
+     * readout and the top of the button bank. There is no button bank here, so the constraint is
+     * gone. Per font unit, so a nine pixel line stands 0.1 of a block, i.e. 1.6 face pixels. The
+     * width cap is widened to match: 10 pixels centred on a 12 pixel plate, still a pixel of metal
+     * either side, so fewer names get scaled down to fit.
      */
     private static final float BANK_NAME_SCALE = 1 / 90f, BANK_NAME_MAX_WIDTH = 10 / 16f;
+
+    /**
+     * Door open and door close, side by side in the band the floor buttons would occupy on the
+     * ordinary panel. Wide rather than square because there are only two of them across a twelve
+     * pixel plate, and two small squares in that much space read as a grid missing its other rows.
+     * <p>
+     * Widths come from the plate outwards: 2.15 to 13.85 is the full run with the same 0.15 of
+     * metal left at each edge that the alarm below takes, and the pair splits it with 0.5 of metal
+     * between them. That gives each socket (11.7 - 0.5) / 2 = 5.6 wide, so the lamps are 5.6 - 2 x
+     * 0.5 of bezel = 4.6 wide, i.e. a half width of 2.3, centred at 4.95 and 11.05.
+     */
+    private static final float DOOR_HALF_WIDTH = 2.3f / 16f, DOOR_HALF_HEIGHT = 1 / 16f;
+    private static final float DOOR_LEFT_X = 4.95f / 16f, DOOR_RIGHT_X = 11.05f / 16f;
+    /**
+     * Centred in what is left between the name inset above (bottom 8.04) and the alarm's socket
+     * below (top 2.65): the row's own socket is 2 x (1.0 + 0.5) = 3.0 tall, and (8.04 + 2.65) / 2 =
+     * 5.345 puts its centre there, rounded to 5.35. Socket 3.85 to 6.85, so 1.2 of clear metal below
+     * it and 1.19 above -- close enough to even that the row does not look hung from either.
+     */
+    private static final float DOOR_Y = 5.35f / 16f;
+
+    /**
+     * The alarm, in the same place on both panels -- one plate, one fixture, one muscle memory for
+     * where the alarm is whichever car you are in. That means it has to fit the ordinary panel's
+     * leftovers, which is the band between the plate's bottom edge at 1.0 and the bottom row of
+     * floor button lamps at 2.3.
+     * <p>
+     * 1.3 pixels of band, minus 0.15 of metal below the socket and 0.15 of clearance above the lamp,
+     * minus the bezel's 0.5: the lamp gets 1.3 - 0.15 - 0.15 - 0.5 = 0.5 tall, hence the 0.25 half
+     * height, and its centre lands at 1.0 + 0.15 + 0.5 + 0.25 = 1.9. Socket 1.15 to 2.65, lamp 1.65
+     * to 2.15.
+     * <p>
+     * A bar that thin is only legible because it is the width of the plate: 8.0 +/- 5.35 puts the
+     * socket at 2.15 to 13.85, the same 0.15 margin as below it. Its socket does run up behind the
+     * button bank's, but the two are the same colour and the lamps are drawn nearer the viewer, so
+     * what shows is one dark field with the bank's lamps in it and the alarm's bar beneath them.
+     */
+    private static final float ALARM_X = 8 / 16f, ALARM_Y = 1.9f / 16f;
+    private static final float ALARM_HALF_WIDTH = 5.35f / 16f, ALARM_HALF_HEIGHT = 0.25f / 16f;
 
     private static final double LABEL_DEPTH = 0.5 - WallPanelBlock.PLATE_DEPTH - 0.01;
 
@@ -118,8 +159,6 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
         // Which of the two panels this is. Read once: it cannot change part way through a frame, and
         // a block lookup per element would be a lookup per button as well.
         boolean bank = entity.getWorld().getBlockState(pos).getBlock() instanceof BankCarPanelBlock;
-        float screenY = bank ? BANK_SCREEN_Y : SCREEN_Y;
-        float arrowY = bank ? BANK_ARROW_Y : ARROW_Y;
         float nameY = bank ? BANK_NAME_Y : NAME_Y;
         float nameScale = bank ? BANK_NAME_SCALE : NAME_SCALE;
         float nameMaxWidth = bank ? BANK_NAME_MAX_WIDTH : NAME_MAX_WIDTH;
@@ -137,13 +176,13 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
                 MovingElevatorsClient.formatDisplayLabel(group, cabinFloor));
             if(label != null && !label.isEmpty())
                 FloorLabelRenderer.drawFittedLabel(label, group.getFloorDisplayColor(cabinFloor),
-                    SCREEN_X, screenY, SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT, SCREEN_PADDING);
+                    SCREEN_X, SCREEN_Y, SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT, SCREEN_PADDING);
         }
 
         // Direction of travel, lit only while actually moving that way.
         int direction = group.getTravelDirection();
-        FloorLabelRenderer.drawArrow(ARROW_UP_X, arrowY, ARROW_HALF, ARROW_HALF, true, direction > 0);
-        FloorLabelRenderer.drawArrow(ARROW_DOWN_X, arrowY, ARROW_HALF, ARROW_HALF, false, direction < 0);
+        FloorLabelRenderer.drawArrow(ARROW_UP_X, ARROW_Y, ARROW_HALF, ARROW_HALF, true, direction > 0);
+        FloorLabelRenderer.drawArrow(ARROW_DOWN_X, ARROW_Y, ARROW_HALF, ARROW_HALF, false, direction < 0);
 
         // Which car you are riding in, for buildings with more than one. Nothing at all is drawn when
         // the elevator has no name, rather than an empty screen, so a shaft nobody has named looks
@@ -154,9 +193,18 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
                 nameScale, nameMaxWidth, NAME_PADDING);
 
         // No floor buttons in a bank car: the destination was given at the lobby, so a bank of
-        // lit floors inside would show calls nobody in here can place or cancel.
-        if(!bank)
+        // lit floors inside would show calls nobody in here can place or cancel. The doors get that
+        // space instead. The ordinary panel has no room to show them -- the bank is sitting on it --
+        // but it does not need to: a face covered in floor buttons already reads as a car station,
+        // so a player opens it. The bare bank plate does not, which is why this one says so.
+        if(bank)
+            this.drawDoorButtons();
+        else
             this.drawButtonBank(group, cabinFloor);
+
+        // Both panels, in the same place: the alarm is the one control a passenger may need to find
+        // without having gone looking for it first.
+        FloorLabelRenderer.drawButton(ALARM_X, ALARM_Y, ALARM_HALF_WIDTH, ALARM_HALF_HEIGHT, false);
 
         GlStateManager.popMatrix();
     }
@@ -181,5 +229,18 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
             boolean lit = floor >= 0 && floor < floors && group.hasCallFor(group.getFloorYLevel(floor));
             FloorLabelRenderer.drawButton(x, y, BUTTON_HALF, lit);
         }
+    }
+
+    /**
+     * Door open and door close, both unlit.
+     * <p>
+     * Unlit like the bank lobby panel's keypad and for the same reason: clicking anywhere on the
+     * plate opens the controls screen, so neither of these is a control with a state of its own, and
+     * a lit one would be claiming something the block entity does not track. Which is which is left
+     * to their order -- open on the left, close on the right, as on the screen they open.
+     */
+    private void drawDoorButtons(){
+        FloorLabelRenderer.drawButton(DOOR_LEFT_X, DOOR_Y, DOOR_HALF_WIDTH, DOOR_HALF_HEIGHT, false);
+        FloorLabelRenderer.drawButton(DOOR_RIGHT_X, DOOR_Y, DOOR_HALF_WIDTH, DOOR_HALF_HEIGHT, false);
     }
 }
