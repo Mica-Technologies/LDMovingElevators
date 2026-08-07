@@ -18,6 +18,11 @@ import net.minecraft.util.math.Vec3d;
  * of floors around the cabin rather than all of them, because a shaft can have far more floors than
  * a block face has room for.
  * <p>
+ * The same block entity backs {@link BankCarPanelBlock}, so this renderer draws that too: the same
+ * readout and arrows on a plate half the height, and no button bank, because a car in a destination
+ * dispatch bank is not told where to go from inside. Which face to draw comes from the block, since
+ * that is the only thing that differs between the two.
+ * <p>
  * Created for the Mica Technologies fork.
  */
 public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRenderer<ElevatorCarPanelBlockEntity> {
@@ -72,6 +77,29 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
     private static final float BUTTON_LEFT_X = 5.4f / 16f, BUTTON_COLUMN_GAP = 5.2f / 16f;
     private static final float BUTTON_BOTTOM_Y = 3.033f / 16f, BUTTON_ROW_GAP = 2.867f / 16f;
 
+    // Bank car panel layout. Only the vertical positions differ: the plate is the same 2.0 to 14.0
+    // across, so the readout window, the arrows and their x positions carry over unchanged, and a
+    // passenger stepping between an ordinary car and a bank car sees the same fixtures.
+    /**
+     * Readout row, unchanged in size and left with the same one pixel of metal above it as on the
+     * tall plate -- which on a plate topping out at the same 15.0 puts it at the same height. The
+     * row is 10.8 to 14.0 with the arrow bezels inside that, so everything below 10.8 is free.
+     */
+    private static final float BANK_SCREEN_Y = 12.4f / 16f, BANK_ARROW_Y = 12.4f / 16f;
+    /**
+     * The name sits at the midpoint of the empty band below the readout, 7.0 to 10.8, which leaves
+     * just over a pixel of clear metal above it and the same below it.
+     */
+    private static final float BANK_NAME_Y = 8.9f / 16f;
+    /**
+     * Bigger than the tall panel's name, because here it is not squeezed into the 1.3 pixel band
+     * between the readout and the top of the button bank -- with no buttons the band is 3.8 pixels
+     * and the constraint is gone. Per font unit, so a nine pixel line stands 0.1 of a block, i.e.
+     * 1.6 face pixels. The width cap is widened to match: 10 pixels centred on a 12 pixel plate,
+     * still a pixel of metal either side, so fewer names get scaled down to fit.
+     */
+    private static final float BANK_NAME_SCALE = 1 / 90f, BANK_NAME_MAX_WIDTH = 10 / 16f;
+
     private static final double LABEL_DEPTH = 0.5 - WallPanelBlock.PLATE_DEPTH - 0.01;
 
     @Override
@@ -87,6 +115,15 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
 
         EnumFacing facing = entity.getFacing();
 
+        // Which of the two panels this is. Read once: it cannot change part way through a frame, and
+        // a block lookup per element would be a lookup per button as well.
+        boolean bank = entity.getWorld().getBlockState(pos).getBlock() instanceof BankCarPanelBlock;
+        float screenY = bank ? BANK_SCREEN_Y : SCREEN_Y;
+        float arrowY = bank ? BANK_ARROW_Y : ARROW_Y;
+        float nameY = bank ? BANK_NAME_Y : NAME_Y;
+        float nameScale = bank ? BANK_NAME_SCALE : NAME_SCALE;
+        float nameMaxWidth = bank ? BANK_NAME_MAX_WIDTH : NAME_MAX_WIDTH;
+
         GlStateManager.pushMatrix();
         GlStateManager.translate(0.5, 0.5, 0.5);
         GlStateManager.rotate(180 - facing.getHorizontalAngle(), 0, 1, 0);
@@ -100,23 +137,26 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
                 MovingElevatorsClient.formatDisplayLabel(group, cabinFloor));
             if(label != null && !label.isEmpty())
                 FloorLabelRenderer.drawFittedLabel(label, group.getFloorDisplayColor(cabinFloor),
-                    SCREEN_X, SCREEN_Y, SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT, SCREEN_PADDING);
+                    SCREEN_X, screenY, SCREEN_HALF_WIDTH, SCREEN_HALF_HEIGHT, SCREEN_PADDING);
         }
 
         // Direction of travel, lit only while actually moving that way.
         int direction = group.getTravelDirection();
-        FloorLabelRenderer.drawArrow(ARROW_UP_X, ARROW_Y, ARROW_HALF, ARROW_HALF, true, direction > 0);
-        FloorLabelRenderer.drawArrow(ARROW_DOWN_X, ARROW_Y, ARROW_HALF, ARROW_HALF, false, direction < 0);
+        FloorLabelRenderer.drawArrow(ARROW_UP_X, arrowY, ARROW_HALF, ARROW_HALF, true, direction > 0);
+        FloorLabelRenderer.drawArrow(ARROW_DOWN_X, arrowY, ARROW_HALF, ARROW_HALF, false, direction < 0);
 
         // Which car you are riding in, for buildings with more than one. Nothing at all is drawn when
         // the elevator has no name, rather than an empty screen, so a shaft nobody has named looks
         // exactly as it did before names existed.
         String name = group.getName();
         if(name != null && !name.isEmpty())
-            FloorLabelRenderer.drawCenteredLabel(name, NAME_COLOR, NAME_X, NAME_Y,
-                NAME_SCALE, NAME_MAX_WIDTH, NAME_PADDING);
+            FloorLabelRenderer.drawCenteredLabel(name, NAME_COLOR, NAME_X, nameY,
+                nameScale, nameMaxWidth, NAME_PADDING);
 
-        this.drawButtonBank(group, cabinFloor);
+        // No floor buttons in a bank car: the destination was given at the lobby, so a bank of
+        // lit floors inside would show calls nobody in here can place or cancel.
+        if(!bank)
+            this.drawButtonBank(group, cabinFloor);
 
         GlStateManager.popMatrix();
     }

@@ -1,5 +1,5 @@
 {
-  "parent": "movingelevators:block/remote_call_panel_block",
+  "parent": "movingelevators:block/bank_car_panel_block",
   "display": {
     "gui": {
       "rotation": [

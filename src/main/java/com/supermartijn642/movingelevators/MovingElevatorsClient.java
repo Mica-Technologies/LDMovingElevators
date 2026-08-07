@@ -18,6 +18,7 @@ import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
 import com.supermartijn642.movingelevators.gui.ElevatorScreen;
 import com.supermartijn642.movingelevators.gui.BankLobbyScreen;
+import com.supermartijn642.movingelevators.gui.CarControlsScreen;
 import com.supermartijn642.movingelevators.gui.FloorSelectScreen;
 import com.supermartijn642.movingelevators.model.CamoBakedModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -134,6 +135,10 @@ public class MovingElevatorsClient {
 
     public static void openFloorSelectScreen(BlockPos pos){
         ClientUtils.displayScreen(WidgetScreen.of(new FloorSelectScreen(pos)));
+    }
+
+    public static void openCarControlsScreen(BlockPos pos){
+        ClientUtils.displayScreen(WidgetScreen.of(new CarControlsScreen(pos)));
     }
 
     public static void openBankLobbyScreen(BlockPos pos){

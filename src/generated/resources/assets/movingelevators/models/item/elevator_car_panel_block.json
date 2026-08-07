@@ -1,3 +1,22 @@
 {
-  "parent": "movingelevators:block/elevator_car_panel_block"
+  "parent": "movingelevators:block/elevator_car_panel_block",
+  "display": {
+    "gui": {
+      "rotation": [
+        30.0,
+        45.0,
+        0.0
+      ],
+      "translation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.625,
+        0.625,
+        0.625
+      ]
+    }
+  }
 }

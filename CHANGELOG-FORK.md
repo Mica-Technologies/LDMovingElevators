@@ -25,6 +25,11 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Elevator Bank Car Panel** — the in-cabin panel for an elevator that belongs to a bank. It has the
+  floor readout, the direction arrows, the doors and the alarm, and deliberately no floor buttons:
+  destination dispatch takes floor selection away from the car, since you say where you are going at
+  the lobby before boarding. Bind it to a controller like the other panels.
+
 - **Elevators have names.** A bank lobby panel now says *which* car is coming — "Elevator B is on its
   way to Floor 3" — which is the half of destination dispatch that was missing, and the difference
   between "a lift is coming somewhere" and "stand by that one". Linking a shaft to a lobby panel
@@ -178,6 +183,9 @@ Based on upstream **Moving Elevators 1.4.12**.
   CI as a `Test Release Tooling` job on every pull request.
 
 ### Fixed
+
+- Wall panels showed their blank metal backs in the inventory. Every one of them hugs the far side of
+  its block, which is the side the standard block transform has the viewer looking from.
 
 - Passengers were thrown onto the roof of the cabin whenever it stopped. Arriving pushes anything
   standing where a block is about to appear, but it counted any contact at all as being inside a

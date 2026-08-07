@@ -2,6 +2,7 @@ package com.supermartijn642.movingelevators.generators;
 
 import com.supermartijn642.core.generator.ModelGenerator;
 import com.supermartijn642.core.generator.ResourceCache;
+import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 
@@ -76,18 +77,52 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
             .texture("metal", "blocks/metal_silver")
             .element(element -> element.shape(2, 1, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
         this.model("item/elevator_car_panel_block")
-            .parent("block/elevator_car_panel_block");
+            .parent("block/elevator_car_panel_block")
+            // Spun to face the viewer in the inventory. These plates hug the far side of their cell,
+            // and the vanilla block transform looks at the block from behind that -- so the item showed
+            // the blank metal back of every panel. Display only: the world orientation is the
+            // blockstate's business and is already right.
+            .transform(ItemCameraTransforms.TransformType.GUI, transform -> transform.rotation(30, 45, 0).scale(0.625f));
+        // Same plate as the car panel across, half the height: the bank car panel has no floor
+        // buttons, so the lower half of the metal would be blank.
+        this.model("block/bank_car_panel_block")
+            .parent("minecraft", "block/block")
+            .texture("particle", "blocks/metal_silver")
+            .texture("metal", "blocks/metal_silver")
+            .element(element -> element.shape(2, 7, 14, 14, 15, 16).allFaces(face -> face.texture("metal")));
+        this.model("item/bank_car_panel_block")
+            .parent("block/bank_car_panel_block")
+            // Spun to face the viewer in the inventory. These plates hug the far side of their cell,
+            // and the vanilla block transform looks at the block from behind that -- so the item showed
+            // the blank metal back of every panel. Display only: the world orientation is the
+            // blockstate's business and is already right.
+            .transform(ItemCameraTransforms.TransformType.GUI, transform -> transform.rotation(30, 45, 0).scale(0.625f));
         this.model("block/bank_lobby_panel_block")
             .parent("minecraft", "block/block")
             .texture("particle", "blocks/metal_silver")
             .texture("metal", "blocks/metal_silver")
             .element(element -> element.shape(4, 2, 14, 12, 15, 16).allFaces(face -> face.texture("metal")));
         this.model("item/bank_lobby_panel_block")
-            .parent("block/bank_lobby_panel_block");
+            .parent("block/bank_lobby_panel_block")
+            // Spun to face the viewer in the inventory. These plates hug the far side of their cell,
+            // and the vanilla block transform looks at the block from behind that -- so the item showed
+            // the blank metal back of every panel. Display only: the world orientation is the
+            // blockstate's business and is already right.
+            .transform(ItemCameraTransforms.TransformType.GUI, transform -> transform.rotation(30, 45, 0).scale(0.625f));
         this.model("item/remote_call_panel_block")
-            .parent("block/remote_call_panel_block");
+            .parent("block/remote_call_panel_block")
+            // Spun to face the viewer in the inventory. These plates hug the far side of their cell,
+            // and the vanilla block transform looks at the block from behind that -- so the item showed
+            // the blank metal back of every panel. Display only: the world orientation is the
+            // blockstate's business and is already right.
+            .transform(ItemCameraTransforms.TransformType.GUI, transform -> transform.rotation(30, 45, 0).scale(0.625f));
         this.model("item/remote_indicator_block")
-            .parent("block/remote_indicator_block");
+            .parent("block/remote_indicator_block")
+            // Spun to face the viewer in the inventory. These plates hug the far side of their cell,
+            // and the vanilla block transform looks at the block from behind that -- so the item showed
+            // the blank metal back of every panel. Display only: the world orientation is the
+            // blockstate's business and is already right.
+            .transform(ItemCameraTransforms.TransformType.GUI, transform -> transform.rotation(30, 45, 0).scale(0.625f));
         this.model("item/remote_display_block")
             .parent("block/remote_display_block")
             .texture("overlay", "blocks/display_overlay")

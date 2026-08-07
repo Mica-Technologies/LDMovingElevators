@@ -65,6 +65,16 @@ public class MovingElevatorsRecipeGenerator extends RecipeGenerator {
             .input('B', "dustRedstone")
             .input('C', Items.ENDER_PEARL)
             .unlockedBy(MovingElevators.elevator_block.asItem());
+        // Two rows rather than the car panel's three, matching a plate that is half the height and
+        // carries no floor buttons. Same parts, so it is the cheaper panel of the two and not a
+        // sidegrade.
+        this.shaped(MovingElevators.bank_car_panel_block.asItem())
+            .pattern("ABA")
+            .pattern("ACA")
+            .input('A', "ingotIron")
+            .input('B', "dustRedstone")
+            .input('C', Items.ENDER_PEARL)
+            .unlockedBy(MovingElevators.elevator_block.asItem());
         this.shaped(MovingElevators.bank_lobby_panel_block.asItem())
             .pattern("ABA")
             .pattern("CDC")

@@ -30,6 +30,8 @@ public class MovingElevatorsBlockStateGenerator extends BlockStateGenerator {
             builder.model("block/remote_call_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
         this.blockState(MovingElevators.elevator_car_panel_block).variantsForAll((state, builder) ->
             builder.model("block/elevator_car_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
+        this.blockState(MovingElevators.bank_car_panel_block).variantsForAll((state, builder) ->
+            builder.model("block/bank_car_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
         this.blockState(MovingElevators.bank_lobby_panel_block).variantsForAll((state, builder) ->
             builder.model("block/bank_lobby_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
         // Both doors always point at the hidden model: the visible leaf is drawn by the door's

@@ -54,6 +54,14 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.floor_select.title", "Select a floor");
         this.translation("movingelevators.floor_select.current", "Currently at %s");
 
+        // Bank car panel
+        this.block(MovingElevators.bank_car_panel_block, "Elevator Bank Car Panel");
+        this.translation("movingelevators.bank_car_panel.tooltip", "The panel you ride with in an elevator bank: shows the current floor and direction, and opens the doors or rings the alarm when clicked. It has no floor buttons, because in a bank you enter your destination at the lobby panel before you board. Bind it to an elevator controller by right-clicking on it");
+        // Titles for the controls the bank car panel does offer. Two keys rather than one with an
+        // optional argument, because an unnamed elevator should not leave a gap in the title.
+        this.translation("movingelevators.car_controls.title", "Elevator");
+        this.translation("movingelevators.car_controls.title_named", "Elevator %s");
+
         // Bank lobby panel
         this.block(MovingElevators.bank_lobby_panel_block, "Elevator Bank Lobby Panel");
         this.translation("movingelevators.bank_lobby_panel.tooltip", "Link it to ONE elevator controller in each shaft it should serve \u2014 right-click that controller with it. The panel finds the rest of the shaft's floors, and its own landing, by itself, so there is no need to link every floor. Right-click a controller again to unlink it. The item keeps its links after you place a panel, so one lobby panel per floor takes no extra work; sneak and right-click the air to empty it for a different bank. Sneak-click a placed panel to see what it is linked to");
