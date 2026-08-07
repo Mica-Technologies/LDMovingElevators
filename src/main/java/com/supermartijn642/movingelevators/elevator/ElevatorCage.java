@@ -332,6 +332,12 @@ public class ElevatorCage {
      * position exactly on the boundary resolves into the blocks about as readily as out of them, and
      * placement is a one-shot -- nothing runs afterwards to catch an entity that landed wrong.
      */
+    /**
+     * How deep an overlap has to be, in every axis, before it counts as being inside a block rather
+     * than standing against one. Comfortably more than an entity settles into a platform carrying it,
+     * and far less than the half-block or more of a body genuinely caught in masonry.
+     */
+    private static final double PENETRATION_TOLERANCE = 0.08;
     private static final double PUSH_CLEARANCE = 0.01;
     /**
      * Entity boxes are shrunk by this before being tested against the cabin's cells, as
@@ -339,7 +345,6 @@ public class ElevatorCage {
      * shares a plane with it without being inside it; counting that as engulfed would fling a passenger
      * off the top of a descending cabin all the way beneath it.
      */
-    private static final double FLUSH_CONTACT_MARGIN = 1E-7;
 
     /**
      * Shoves entities out of the cells the cabin is about to fill with blocks.
@@ -365,7 +370,7 @@ public class ElevatorCage {
         // One query over the whole cage rather than one per cell: a cabin runs to hundreds of cells and
         // the shaft is empty for almost all of them.
         for(Entity entity : level.getEntitiesInAABBexcluding(null, cage, ElevatorCage::canBePushedAside)){
-            if(!this.intersectsSolidBlock(startPos, entity.getEntityBoundingBox().shrink(FLUSH_CONTACT_MARGIN)))
+            if(!this.intersectsSolidBlock(startPos, entity.getEntityBoundingBox()))
                 continue;
             double y = pushUp ? clearAbove : clearBelow - entity.height;
             // setPositionAndUpdate rather than setPosition, because on a player the former goes out over
@@ -386,18 +391,26 @@ public class ElevatorCage {
      * costs the handful of cells it actually stands in no matter how big the cabin is.
      */
     /**
-     * Whether the entity would actually be inside one of the cabin's blocks.
+     * Whether the entity is genuinely buried in one of the cabin's blocks, as opposed to resting
+     * against one.
      * <p>
-     * Tested against the cabin's real collision boxes rather than which cells hold a block. Occupying
-     * a cell is not the same as filling it: a wall panel is a two-pixel plate on one face of a whole
-     * cell, and the place you stand to press it is inside that cell and perfectly solid ground. Asking
-     * the coarser question threw passengers out of a cabin they were riding quite happily, onto its
-     * roof, every time it stopped. The same reasoning covers torches, wires, buttons and slabs.
+     * Overlap has to be real in all three axes, not merely present. Standing on the cabin floor is an
+     * overlap of nothing at all in Y and the full width in X and Z; so is leaning on a wall, in its
+     * own axis. Treating contact as entombment evicted a cabin's own passengers onto its roof on
+     * every arrival, since standing on the floor is what passengers do.
+     * <p>
+     * The tolerance also absorbs the fraction of a block an entity carried by a moving platform can
+     * settle into it, which no exact test survives.
      */
     private boolean intersectsSolidBlock(BlockPos startPos, AxisAlignedBB box){
-        for(AxisAlignedBB solid : this.collisionBoxes)
-            if(solid.offset(startPos.getX(), startPos.getY(), startPos.getZ()).intersects(box))
+        for(AxisAlignedBB solid : this.collisionBoxes){
+            AxisAlignedBB other = solid.offset(startPos.getX(), startPos.getY(), startPos.getZ());
+            double overlapX = Math.min(box.maxX, other.maxX) - Math.max(box.minX, other.minX);
+            double overlapY = Math.min(box.maxY, other.maxY) - Math.max(box.minY, other.minY);
+            double overlapZ = Math.min(box.maxZ, other.maxZ) - Math.max(box.minZ, other.minZ);
+            if(overlapX > PENETRATION_TOLERANCE && overlapY > PENETRATION_TOLERANCE && overlapZ > PENETRATION_TOLERANCE)
                 return true;
+        }
         return false;
     }
 
