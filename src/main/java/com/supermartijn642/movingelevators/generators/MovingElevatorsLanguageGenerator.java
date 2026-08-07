@@ -61,9 +61,17 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.bank_lobby.unbound", "This panel isn't linked to any elevators yet");
         this.translation("movingelevators.bank_lobby.no_car", "No linked elevator can reach that floor");
         this.translation("movingelevators.bank_lobby.dispatched", "Elevator is on its way to %s");
-        this.translation("movingelevators.bank_lobby_panel.bound", "Bound to %s elevator controllers!");
-        this.translation("movingelevators.bank_lobby_panel.unbound_one", "Unbound from an elevator controller, %s remaining!");
-        this.translation("movingelevators.bank_lobby_panel.copied", "Copied bindings for %s elevator controllers!");
+
+        this.translation("movingelevators.bank_lobby_panel.status.header", "Bank lobby panel \u2014 landing %s");
+        this.translation("movingelevators.bank_lobby_panel.status.none", "  Not linked to any elevator. Right-click one controller in each shaft with a panel item, then place the panel.");
+        this.translation("movingelevators.bank_lobby_panel.status.elevator", "  Elevator %s: shaft at %s, serving %s floors");
+        this.translation("movingelevators.bank_lobby_panel.status.missing", "  Elevator %s: the controller at %s is gone");
+        this.translation("movingelevators.bank_lobby_panel.status.aligned", "  Linked elevators agree on every floor they share.");
+        this.translation("movingelevators.bank_lobby_panel.status.mismatch", "  These elevators disagree about a shared floor's name or height. Shafts may serve different floors, but the ones they share must line up.");
+        this.translation("movingelevators.bank_lobby_panel.misaligned", "Not linked: that elevator disagrees with one already linked about a floor \u2014 %s. Shafts in a bank may serve different floors, but a floor they share must have the same name and the same height.");
+        this.translation("movingelevators.bank_lobby_panel.bound", "Elevator linked. This panel now serves %s elevator(s)");
+        this.translation("movingelevators.bank_lobby_panel.unbound_one", "Elevator unlinked. This panel now serves %s elevator(s)");
+        this.translation("movingelevators.bank_lobby_panel.copied", "Copied. This panel item now serves %s elevator(s)");
 
         // Elevator doors
         this.block(MovingElevators.elevator_door_block, "Elevator Door");

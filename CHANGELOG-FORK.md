@@ -301,6 +301,20 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Changed
 
+- **Linking a bank lobby panel is now about elevators rather than controllers.** An elevator is its
+  shaft, so clicking any controller in a shaft links or unlinks that whole elevator; clicking a
+  second controller in the same shaft used to add a duplicate, after which the panel reported two
+  elevators while dispatching to one. One controller per shaft is all it ever needed — the panel
+  finds the rest of that shaft's floors, and its own landing, by itself.
+- **A bank refuses elevators whose floors do not line up with the ones already linked.** Shafts may
+  serve different floors — an express car skipping the lower half of a building is a real
+  arrangement — but a floor two shafts share must have the same name and the same height. Caught
+  when you link, since a misaligned bank does not look broken: it quietly turns a shared floor into
+  a one-car floor.
+- **Sneak-click a placed lobby panel to see what it is linked to**, floor counts and all, including
+  any elevator whose controller has since gone. Binding is the one thing about the block that cannot
+  be seen in the world.
+
 - **Elevators now wait ten seconds at a floor rather than one**, which is boarding time — one second
   was not long enough to walk in, so a lift could answer a call, open its doors and leave before
   anyone reached it. "Close doors" inside the cabin cuts it short. Configurable as

@@ -10,19 +10,7 @@
       "required": true
     },
     {
-      "id": "movingelevators:remote_display_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:elevator_door_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:display_block",
-      "required": true
-    },
-    {
-      "id": "movingelevators:bank_lobby_panel_block",
+      "id": "movingelevators:button_block",
       "required": true
     },
     {
@@ -30,15 +18,27 @@
       "required": true
     },
     {
+      "id": "movingelevators:remote_display_block",
+      "required": true
+    },
+    {
       "id": "movingelevators:elevator_block",
       "required": true
     },
     {
-      "id": "movingelevators:button_block",
+      "id": "movingelevators:display_block",
       "required": true
     },
     {
       "id": "movingelevators:elevator_single_door_block",
+      "required": true
+    },
+    {
+      "id": "movingelevators:elevator_door_block",
+      "required": true
+    },
+    {
+      "id": "movingelevators:bank_lobby_panel_block",
       "required": true
     }
   ]

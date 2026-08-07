@@ -42,7 +42,7 @@ public class ControllerBlock extends ElevatorInputBlock {
         // takes it back out of the bank.
         if(player != null && player.getHeldItem(hand).getItem() instanceof BankLobbyPanelBlockItem && blockEntity instanceof ControllerBlockEntity){
             if(!level.isRemote)
-                BankLobbyPanelBlockItem.toggleBinding(player, player.getHeldItem(hand), pos, ((ControllerBlockEntity)blockEntity).getFacing());
+                BankLobbyPanelBlockItem.toggleBinding(player, player.getHeldItem(hand), level, pos, ((ControllerBlockEntity)blockEntity).getFacing());
             return true;
         }
 

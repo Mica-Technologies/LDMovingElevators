@@ -53,6 +53,15 @@ public class BankLobbyPanelBlock extends WallPanelBlock {
             return InteractionFeedback.SUCCESS;
         BankLobbyPanelBlockEntity panel = (BankLobbyPanelBlockEntity)entity;
 
+        // Sneaking asks what it is linked to. Binding is the one thing about this block that cannot
+        // be seen in the world, and a wrong bank looks exactly like a right one until a car fails to
+        // arrive, so there has to be a way to ask rather than infer.
+        if(player != null && player.isSneaking() && player.getHeldItem(hand).isEmpty()){
+            if(!level.isRemote)
+                panel.reportStatus(player);
+            return InteractionFeedback.SUCCESS;
+        }
+
         // Clicking a configured panel with another panel copies its bank, so the second station in a
         // lobby costs one click instead of a repeat of the whole binding walk.
         if(player != null && player.getHeldItem(hand).getItem() instanceof BankLobbyPanelBlockItem){

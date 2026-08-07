@@ -15,6 +15,10 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 
 import java.util.List;
+import java.util.TreeSet;
+import java.util.Set;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 
 /**
  * Carries a bank's worth of bindings before the panel is placed.
@@ -60,11 +64,27 @@ public class BankLobbyPanelBlockItem extends BaseBlockItem {
      * <p>
      * Called from {@link ControllerBlock} when a player right-clicks a controller holding one of these.
      */
-    public static void toggleBinding(EntityPlayer player, ItemStack stack, BlockPos controllerPos, EnumFacing controllerFacing){
+    public static void toggleBinding(EntityPlayer player, ItemStack stack, World level, BlockPos controllerPos, EnumFacing controllerFacing){
         List<BankLobbyPanelBlockEntity.Binding> bindings = readBindings(stack);
-        boolean removed = bindings.removeIf(binding -> binding.matches(controllerPos, controllerFacing));
-        if(!removed)
+                // By shaft, not by controller: clicking any controller of an elevator already in the bank
+        // takes that elevator out again. Matching the exact controller meant a second controller in
+        // the same shaft added a duplicate binding, and the panel then reported two elevators while
+        // dispatching to one -- the single most misleading thing it could have said.
+        boolean removed = bindings.removeIf(binding -> binding.sameShaft(controllerPos, controllerFacing));
+        if(!removed){
+            // Every shaft in a bank must stop at the same heights. Refused here rather than tolerated,
+            // because a misaligned bank does not look broken: the panel simply offers every floor any
+            // of its elevators reaches, and a floor only one of them serves quietly becomes a
+            // one-car floor. That is invisible until a second passenger is sent to a different car
+            // for no apparent reason. Far better to be told at the moment the mistake is made.
+            String misaligned = describeMisalignment(level, bindings, controllerPos, controllerFacing);
+            if(misaligned != null){
+                player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby_panel.misaligned",
+                    TextComponents.string(misaligned).get()).get(), true);
+                return;
+            }
             bindings.add(new BankLobbyPanelBlockEntity.Binding(controllerPos, controllerFacing));
+        }
         setBindings(stack, bindings);
         player.sendStatusMessage(TextComponents.translation(
             removed ? "movingelevators.bank_lobby_panel.unbound_one" : "movingelevators.bank_lobby_panel.bound",
@@ -84,6 +104,31 @@ public class BankLobbyPanelBlockItem extends BaseBlockItem {
         setBindings(stack, bindings);
         player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby_panel.copied",
             TextComponents.number(bindings.size()).get()).get(), true);
+    }
+
+    /**
+     * @return how the candidate elevator disagrees with one already linked, or null when it does not
+     * -- or when its group has not formed yet, since an elevator that cannot be inspected should not
+     * be refused on suspicion.
+     */
+    private static String describeMisalignment(World level, List<BankLobbyPanelBlockEntity.Binding> bindings, BlockPos controllerPos, EnumFacing controllerFacing){
+        ElevatorGroupCapability capability = ElevatorGroupCapability.get(level);
+        if(capability == null)
+            return null;
+        ElevatorGroup candidate = capability.get(controllerPos.getX(), controllerPos.getZ(), controllerFacing);
+        if(candidate == null || candidate.getFloorCount() == 0)
+            return null;
+        for(BankLobbyPanelBlockEntity.Binding binding : bindings){
+            if(binding.facing == null)
+                continue;
+            ElevatorGroup existing = capability.get(binding.pos.getX(), binding.pos.getZ(), binding.facing);
+            if(existing == null)
+                continue;
+            String misaligned = BankLobbyPanelBlockEntity.describeMisalignment(existing, candidate);
+            if(misaligned != null)
+                return misaligned;
+        }
+        return null;
     }
 
     /** Empties the item's bank, so the next panel placed starts from nothing. */
