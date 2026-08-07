@@ -10,6 +10,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.item.EntityItem;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -170,6 +171,12 @@ public class ElevatorGroup {
 
     /** Ticks between shaft sweeps. Cheap enough at this rate to run on every moving elevator. */
     private static final int SHAFT_SCAN_INTERVAL = 100;
+    /**
+     * How far below the top of the cabin something must stand to count as being inside it rather than
+     * on its roof. Small: it only has to absorb floating-point drift, since a rider's feet sit exactly
+     * on the roof's top face.
+     */
+    private static final double ROOF_CLEARANCE = 0.05;
     /** How far above and below the cabin counts as being in its way. */
     private static final int SHAFT_SCAN_REACH = 10;
     /**
@@ -669,12 +676,12 @@ public class ElevatorGroup {
      * shaft is exactly the column the cabin sweeps, and somebody on a landing beside it is in no
      * danger and must not stop the lift.
      */
-    private boolean isShaftObstructedByPlayer(){
+    private boolean isShaftObstructed(){
         return this.isShaftObstructedSince(this.currentY);
     }
 
     /**
-     * As {@link #isShaftObstructedByPlayer()}, but covering everything the cabin has passed through
+     * As {@link #isShaftObstructed()}, but covering everything the cabin has passed through
      * since it was last at {@code previousY} as well as where it is now.
      * <p>
      * A fixed window around the current position is only safe if the cabin cannot outrun it, and it
@@ -692,16 +699,28 @@ public class ElevatorGroup {
         double sweptMaxY = Math.max(cabin.maxY, previousAnchor.y + this.cageSizeY);
         AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, sweptMinY - SHAFT_SCAN_REACH, cabin.minZ,
             cabin.maxX, sweptMaxY + SHAFT_SCAN_REACH, cabin.maxZ);
-        // Grown, because a passenger standing against the cabin wall pokes marginally outside it and
-        // must not be mistaken for somebody in the shaft -- that would stop the lift they are riding.
-        AxisAlignedBB passengers = cabin.grow(0.25);
-        for(EntityPlayer player : this.level.getEntitiesWithinAABB(EntityPlayer.class, shaft)){
-            if(player.isSpectator())
+        for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, shaft)){
+            if(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
                 continue;
-            if(!passengers.intersects(player.getEntityBoundingBox()))
+            if(!this.isRidingInside(cabin, entity))
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Whether something is riding inside the cabin rather than standing in the shaft with it.
+     * <p>
+     * Decided by where its feet are, not by whether its box touches the cabin. Touching was the wrong
+     * question and quietly defeated the whole feature: anything standing on the roof touches the
+     * cabin from above, and anything pressed against the outside of a wall touches it from the side,
+     * so the two cases most worth catching were the two being excluded. Feet within the cabin's own
+     * span is what actually separates a passenger from a hazard.
+     */
+    private boolean isRidingInside(AxisAlignedBB cabin, EntityLivingBase entity){
+        return entity.posX >= cabin.minX && entity.posX <= cabin.maxX
+            && entity.posZ >= cabin.minZ && entity.posZ <= cabin.maxZ
+            && entity.posY >= cabin.minY && entity.posY < cabin.maxY - ROOF_CLEARANCE;
     }
 
     /**
@@ -783,7 +802,7 @@ public class ElevatorGroup {
             this.emergencyHold--;
             return;
         }
-        if(this.isShaftObstructedByPlayer()){
+        if(this.isShaftObstructed()){
             this.emergencyHold = EMERGENCY_HOLD_TICKS;
             return;
         }
