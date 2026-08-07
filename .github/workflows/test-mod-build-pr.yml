@@ -45,3 +45,9 @@ jobs:
 
       - name: Run release tooling checks
         run: .github/scripts/test-release-tooling.sh
+
+      # City Super Mod is compile-only, so a stray import of it builds fine and then crashes at
+      # runtime for everyone who has not installed CSM. Neither the compiler nor a dev run catches
+      # that, because both have CSM on the classpath.
+      - name: Check CSM stays optional
+        run: .github/scripts/test-csm-containment.sh
