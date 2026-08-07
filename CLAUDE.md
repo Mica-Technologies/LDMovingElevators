@@ -82,14 +82,28 @@ merge a manual conflict. Do not rebrand the package.
 MovingElevators.java        @Mod entry point; registration
 MovingElevatorsClient.java  client-only setup
 MovingElevatorsConfig.java  config, via SuperMartijn642's Config Lib
-blocks/                     Controller / Display / RemoteController blocks + block entities,
-                            and the camo (disguise) block plumbing
-elevator/                   the actual simulation: ElevatorGroup drives a cage between floors,
-                            ElevatorCabinLevel presents the moving cage as a fake Level so blocks
-                            inside it render and tick, plus collision and fall-damage handlers
-gui/                        elevator config screen and its widgets
+blocks/                     every block and block entity. Upstream's Controller / Display /
+                            RemoteController families and the camo (disguise) plumbing, plus the
+                            fork's: the WallPanelBlock family (remote display, indicator, landing
+                            call panel, car panel, bank lobby panel), which mount on a wall face and
+                            pop off with it, and the ElevatorDoor blocks, which find their own
+                            landing rather than being bound to one by hand
+elevator/                   the actual simulation: ElevatorGroup drives a cage between floors and
+                            owns the call queue, dwell timers, door requests, alarm and
+                            emergency-stop state; ElevatorBank scores which car of a bank answers a
+                            destination request (stateless, and no elevator knows it is in a bank);
+                            ElevatorSoundScheme maps a "moment" to a sound so callers name the
+                            moment rather than the sample; ElevatorCabinLevel presents the moving
+                            cage as a fake Level so blocks inside it render and tick, plus collision
+                            and fall-damage handlers
+gui/                        elevator config screen, the car panel's floor-select screen, the bank
+                            lobby's destination screen, and their widgets
 model/                      CamoBakedModel — renders a block disguised as another block
-packets/                    client->server actions (one class per button, largely)
+packets/                    client->server actions (one class per button, largely). The elevator
+                            screen's all extend ControllerPacket / ElevatorGroupPacket, which do the
+                            reach and null-group checks — a new one must too. The car panel's
+                            deliberately don't: it rides inside the cabin, where its position is not
+                            a world position
 generators/                 data generators; output is committed under src/generated/resources
 core/CoreMod.java           FML coremod plugin — registers the mixin config
 mixin/                      LevelChunkMixin (common), LevelRendererMixin +
@@ -103,6 +117,12 @@ pinned by file ID in `gradle.properties`. They are hard requirements at runtime.
 **Mixins:** the config is `src/main/resources/modid.mixins.json`, renamed to
 `movingelevators.mixins.json` at resource-processing time. Client-only mixins must stay in the
 `client` array — putting one under `mixins` loads it on a dedicated server and crashes it.
+
+**Sounds:** no audio ships with the mod. Every entry in
+`src/main/resources/assets/movingelevators/sounds.json` points at a vanilla sample, and the schemes in
+`ElevatorSoundScheme` differ by volume and pitch rather than by file. `tools/generate-sounds.py` can
+synthesise purpose-built samples instead, but it needs a Vorbis *encoder* installed — Minecraft only
+registers the JOrbis codec, and macOS's `afconvert` decodes Vorbis without being able to encode it.
 
 ## Conventions & gotchas
 
