@@ -25,6 +25,14 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Elevators have names.** A bank lobby panel now says *which* car is coming — "Elevator B is on its
+  way to Floor 3" — which is the half of destination dispatch that was missing, and the difference
+  between "a lift is coming somewhere" and "stand by that one". Linking a shaft to a lobby panel
+  gives it the next free letter automatically, so this works without anyone naming anything, and a
+  name you set yourself is never overwritten. The name belongs to the elevator rather than to the
+  bank, so a car answers to it from its own car panel and from a second lobby panel that never did
+  the naming. Set it in the elevator controller's screen.
+
 - **Elevator sounds**, with an on/off toggle in the elevator controller's screen. A soft tick each
   time the cabin passes a landing, so a ride has some sense of progress, and a two-note chime on
   arrival alongside the existing arrival sound. The setting belongs to the elevator rather than to

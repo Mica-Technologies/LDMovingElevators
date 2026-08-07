@@ -146,6 +146,15 @@ public class ElevatorGroup {
 
     private boolean soundsEnabled = true;
     private ElevatorSoundScheme soundScheme = ElevatorSoundScheme.STANDARD;
+    /**
+     * What this elevator is called: "A", "Freight", or nothing.
+     * <p>
+     * Belongs to the elevator rather than to a bank, so a car keeps its name wherever it is referred
+     * to -- the lobby that dispatched it, its own car panel, a landing indicator. A bank is only one
+     * of the places a name is useful, and an elevator that is called "B" from the lobby and nothing
+     * from inside would be worse than one with no name at all.
+     */
+    private String name;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
     private int pendingDing;
     /** Which note the scheduled half of the arrival chime is. Decided on arrival, not when it plays,
@@ -870,6 +879,17 @@ public class ElevatorGroup {
         return this.emergencyState != EmergencyState.NONE;
     }
 
+    /** @return this elevator's name, or null if it has not been given one */
+    public String getName(){
+        return this.name;
+    }
+
+    public void setName(String name){
+        String trimmed = name == null ? null : name.trim();
+        this.name = trimmed == null || trimmed.isEmpty() ? null : trimmed;
+        this.shouldBeSynced = true;
+    }
+
     public ElevatorSoundScheme getSoundScheme(){
         return this.soundScheme;
     }
@@ -1574,6 +1594,9 @@ public class ElevatorGroup {
         compound.setIntArray("callDirections", directions);
         compound.setBoolean("soundsEnabled", this.soundsEnabled);
         compound.setString("soundScheme", this.soundScheme.name());
+    compound.setBoolean("hasElevatorName", this.name != null);
+    if(this.name != null)
+        compound.setString("elevatorName", this.name);
         compound.setString("emergencyState", this.emergencyState.name());
         compound.setInteger("emergencyHold", this.emergencyHold);
         compound.setInteger("lastDirection", this.lastDirection);
@@ -1649,6 +1672,7 @@ public class ElevatorGroup {
         // Absent in saves from before sounds existed, where the elevator should start out audible.
         this.soundsEnabled = !compound.hasKey("soundsEnabled") || compound.getBoolean("soundsEnabled");
         this.soundScheme = ElevatorSoundScheme.byName(compound.getString("soundScheme"));
+    this.name = compound.getBoolean("hasElevatorName") ? compound.getString("elevatorName") : null;
         this.emergencyState = EmergencyState.NONE;
         for(EmergencyState state : EmergencyState.values())
             if(state.name().equals(compound.getString("emergencyState")))

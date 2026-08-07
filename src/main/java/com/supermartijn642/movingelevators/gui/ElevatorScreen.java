@@ -7,6 +7,7 @@ import com.supermartijn642.core.gui.widget.BlockEntityBaseWidget;
 import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import com.supermartijn642.movingelevators.blocks.ControllerBlockEntity;
+import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import com.supermartijn642.movingelevators.packets.*;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -22,6 +23,30 @@ import java.util.function.Supplier;
 public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity> {
 
     public static final int MAX_NAME_LENGTH = 11;
+
+    /**
+     * The elevator name field, tucked into the void to the left of the two option checkboxes.
+     * <p>
+     * That is the only space left on this screen. The background texture draws a sunken slot behind
+     * the floor name field and behind the "hide controls" checkbox, so neither of those can move off
+     * y=31 and (42,60) without the panel showing an empty recess; the fork's own sounds checkbox and
+     * sound scheme button then fill the flat area below them down to y=104, against a panel that ends
+     * at y=110. What is left between rows is at most a six pixel gap -- too short for an eleven pixel
+     * field. The checkboxes are only 11px wide and centred in the 84px column, though, which leaves a
+     * 35x35 void down either side of them, and that is the largest free rectangle in the column.
+     * <p>
+     * Left-hand side, so the field lines up with the x=6 every other element in the column starts at,
+     * and 34px wide, which ends it two pixels clear of the checkbox. Far too narrow for a label line
+     * of its own, so the field's suggestion has to serve as the label.
+     */
+    /**
+     * The elevator name field takes the band the "Controls" heading used to occupy. That heading only
+     * repeated what the checkbox beneath it already says in full -- "Hide controls: True/False" --
+     * and it was the one full-width gap in this column, every other free band being four or five
+     * pixels tall. A short field squeezed beside a checkbox could not have shown its own placeholder,
+     * which is the only label it gets.
+     */
+    private static final int ELEVATOR_NAME_X = 6, ELEVATOR_NAME_Y = 45, ELEVATOR_NAME_WIDTH = 84;
 
     private static final ResourceLocation BACKGROUND = new ResourceLocation("movingelevators", "textures/gui/gui_background.png");
     private static final ResourceLocation SIZE_ICONS = new ResourceLocation("movingelevators", "textures/gui/size_icons2.png");
@@ -43,6 +68,19 @@ public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity>
                 return name == null ? "" : name;
             }, name -> MovingElevators.CHANNEL.sendToServer(new PacketSetFloorName(this.blockEntityPos, name))))
             .setSuggestion(MovingElevatorsClient.formatFloorDisplayName(null, blockEntity.getGroup().getFloorNumber(blockEntity.getFloorLevel())));
+        // Elevator name. On the group rather than on this controller, because it names the car: it is
+        // what a bank lobby panel announces and what the car panel displays, so it cannot differ from
+        // one floor's controller to the next.
+        //
+        // Unlike the floor name above, this reads through the group, which a controller does not have
+        // until its first tick and loses when the last floor goes -- and this supplier is polled every
+        // tick, not just while the screen is being built, so it has to survive that.
+        this.addWidget(new SynchingTextFieldWidget(ELEVATOR_NAME_X, ELEVATOR_NAME_Y, ELEVATOR_NAME_WIDTH, MAX_NAME_LENGTH, () -> {
+                ElevatorGroup group = blockEntity.getGroup();
+                String name = group == null ? null : group.getName();
+                return name == null ? "" : name;
+            }, name -> MovingElevators.CHANNEL.sendToServer(new PacketSetElevatorName(this.blockEntityPos, name))))
+            .setSuggestion(TextComponents.translation("movingelevators.elevator_screen.elevator_name").format());
         // Render buttons option
         this.addWidget(new CheckBoxWidget(42, 60,
             checked -> TextComponents.translation("movingelevators.elevator_screen.hide_controls", checked ? TextComponents.translation("movingelevators.elevator_screen.hide_controls.on").color(TextFormatting.GREEN).get() : TextComponents.translation("movingelevators.elevator_screen.hide_controls.off").color(TextFormatting.RED).get()).get(),
@@ -117,7 +155,6 @@ public class ElevatorScreen extends BlockEntityBaseWidget<ControllerBlockEntity>
         ScreenUtils.drawCenteredString(TextComponents.translation("movingelevators.elevator_screen.current_floor").get(), 47, 3, ScreenUtils.ACTIVE_TEXT_COLOR);
         ScreenUtils.drawCenteredString(TextComponents.translation("movingelevators.elevator_screen.elevator").get(), 232, 3, ScreenUtils.ACTIVE_TEXT_COLOR);
         ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.floor_name").get(), 6, 18);
-        ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.controls").get(), 6, 47);
         ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.cabin_size").get(), 190, 18);
         ScreenUtils.drawString(TextComponents.translation("movingelevators.elevator_screen.elevator_speed").get(), 190, 79);
 

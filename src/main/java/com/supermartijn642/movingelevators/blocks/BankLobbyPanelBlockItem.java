@@ -84,6 +84,7 @@ public class BankLobbyPanelBlockItem extends BaseBlockItem {
                 return;
             }
             bindings.add(new BankLobbyPanelBlockEntity.Binding(controllerPos, controllerFacing));
+            letterIfUnnamed(level, bindings, controllerPos, controllerFacing);
         }
         setBindings(stack, bindings);
         player.sendStatusMessage(TextComponents.translation(
@@ -104,6 +105,42 @@ public class BankLobbyPanelBlockItem extends BaseBlockItem {
         setBindings(stack, bindings);
         player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby_panel.copied",
             TextComponents.number(bindings.size()).get()).get(), true);
+    }
+
+    /**
+     * Gives a newly linked elevator a letter, if it has none and one is free.
+     * <p>
+     * A bank that cannot say which car is coming is only half a destination panel, and asking a
+     * builder to name every shaft before the feature works at all would mean it usually did not. The
+     * letter is written onto the elevator rather than held by the panel, so the car answers to the
+     * same name from its own controls and from a second lobby panel that never did the naming.
+     * <p>
+     * Only ever fills a blank. An elevator someone has called "Freight" keeps that, and a letter
+     * already used in this bank is skipped rather than duplicated.
+     */
+    private static void letterIfUnnamed(World level, List<BankLobbyPanelBlockEntity.Binding> bindings, BlockPos controllerPos, EnumFacing controllerFacing){
+        ElevatorGroupCapability capability = ElevatorGroupCapability.get(level);
+        if(capability == null)
+            return;
+        ElevatorGroup group = capability.get(controllerPos.getX(), controllerPos.getZ(), controllerFacing);
+        if(group == null || group.getName() != null)
+            return;
+
+        Set<String> taken = new TreeSet<>();
+        for(BankLobbyPanelBlockEntity.Binding binding : bindings){
+            if(binding.facing == null)
+                continue;
+            ElevatorGroup other = capability.get(binding.pos.getX(), binding.pos.getZ(), binding.facing);
+            if(other != null && other.getName() != null)
+                taken.add(other.getName());
+        }
+        for(char letter = 'A'; letter <= 'Z'; letter++){
+            String candidate = String.valueOf(letter);
+            if(!taken.contains(candidate)){
+                group.setName(candidate);
+                return;
+            }
+        }
     }
 
     /**

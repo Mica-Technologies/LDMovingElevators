@@ -115,6 +115,7 @@ public class MovingElevators {
         CHANNEL.registerMessage(PacketCycleElevatorSoundScheme.class, PacketCycleElevatorSoundScheme::new, true);
         CHANNEL.registerMessage(PacketRingAlarm.class, PacketRingAlarm::new, true);
         CHANNEL.registerMessage(PacketBankDestination.class, PacketBankDestination::new, true);
+        CHANNEL.registerMessage(PacketSetElevatorName.class, PacketSetElevatorName::new, true);
         CHANNEL.registerMessage(PacketSetFloorName.class, PacketSetFloorName::new, true);
         CHANNEL.registerMessage(PacketSyncElevatorMovement.class, PacketSyncElevatorMovement::new, true);
         CHANNEL.registerMessage(PacketToggleShowControllerButtons.class, PacketToggleShowControllerButtons::new, true);

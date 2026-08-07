@@ -5,6 +5,7 @@ import com.supermartijn642.core.render.RenderUtils;
 import com.supermartijn642.movingelevators.MovingElevatorsClient;
 import com.supermartijn642.movingelevators.elevator.ElevatorGroup;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.item.EnumDyeColor;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -39,6 +40,25 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
     /** Direction arrows, flanking the readout like the fixtures these are modelled on. */
     private static final float ARROW_UP_X = 3.7f / 16f, ARROW_DOWN_X = 12.3f / 16f;
     private static final float ARROW_Y = 12.4f / 16f, ARROW_HALF = 0.6f / 16f;
+
+    /**
+     * The elevator's name, in the band between the readout row and the top of the button bank.
+     * <p>
+     * That band runs from 10.0 to 10.8 of sixteen and is the only full-width gap left on the face:
+     * the plate stops at 15.0, one pixel above the readout, and at 1.0, less than a pixel below the
+     * bank, and both of those are edge margin rather than free space. A tenth of a pixel is kept
+     * clear at the top and bottom of the band, which is what makes the name as small as it is.
+     */
+    private static final float NAME_X = 8 / 16f, NAME_Y = 10.4f / 16f;
+    /**
+     * Scale here is per font unit rather than per line, so a nine-pixel line stands 9/300 of a block
+     * -- 0.48 of a face pixel -- which with the padding either side of it fills the 0.6 pixel budget
+     * above exactly. The width cap never binds at that scale, since an eleven character name comes
+     * out about 3.5 pixels wide on a 12 pixel plate; it is there so that no name can overhang.
+     */
+    private static final float NAME_SCALE = 1 / 300f, NAME_MAX_WIDTH = 8 / 16f, NAME_PADDING = 0.06f / 16f;
+    /** The name is not a floor, so it has no dye colour of its own; white reads on the inset screen. */
+    private static final EnumDyeColor NAME_COLOR = EnumDyeColor.WHITE;
 
     /** Button bank: two columns, three rows, filling upwards like a real car station. */
     private static final int BUTTON_COLUMNS = 2, BUTTON_ROWS = 3;
@@ -81,6 +101,14 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
         int direction = group.getTravelDirection();
         FloorLabelRenderer.drawArrow(ARROW_UP_X, ARROW_Y, ARROW_HALF, ARROW_HALF, true, direction > 0);
         FloorLabelRenderer.drawArrow(ARROW_DOWN_X, ARROW_Y, ARROW_HALF, ARROW_HALF, false, direction < 0);
+
+        // Which car you are riding in, for buildings with more than one. Nothing at all is drawn when
+        // the elevator has no name, rather than an empty screen, so a shaft nobody has named looks
+        // exactly as it did before names existed.
+        String name = group.getName();
+        if(name != null && !name.isEmpty())
+            FloorLabelRenderer.drawCenteredLabel(name, NAME_COLOR, NAME_X, NAME_Y,
+                NAME_SCALE, NAME_MAX_WIDTH, NAME_PADDING);
 
         this.drawButtonBank(group, cabinFloor);
 

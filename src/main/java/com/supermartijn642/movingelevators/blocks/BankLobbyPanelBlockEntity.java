@@ -250,7 +250,7 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
             else if(aligned && describeMisalignment(first, group) != null)
                 aligned = false;
             player.sendMessage(TextComponents.translation("movingelevators.bank_lobby_panel.status.elevator",
-                TextComponents.number(index).get(), TextComponents.string(where).color(TextFormatting.GOLD).get(),
+                TextComponents.string(group.getName() == null ? Integer.toString(index) : group.getName()).color(TextFormatting.GOLD).get(), TextComponents.string(where).color(TextFormatting.GOLD).get(),
                 TextComponents.number(floors.size()).color(TextFormatting.GOLD).get()).color(TextFormatting.GRAY).get());
         }
 

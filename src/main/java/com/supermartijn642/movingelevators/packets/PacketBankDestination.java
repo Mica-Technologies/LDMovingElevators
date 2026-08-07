@@ -8,6 +8,7 @@ import com.supermartijn642.movingelevators.elevator.ElevatorBank;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 
 /**
@@ -65,10 +66,18 @@ public class PacketBankDestination extends BlockEntityBasePacket<BankLobbyPanelB
         // tells them nothing about the building they are standing in.
         int floor = assignment.group.getFloorNumber(assignment.pickupY);
         String name = floor == -1 ? null : assignment.group.getFloorDisplayName(floor);
+        // Naming the car is the entire point of a destination panel: it is what turns "a lift is
+        // coming somewhere" into "stand by that one".
+        String car = assignment.group.getName();
+        ITextComponent floorLabel = name != null && !name.isEmpty()
+            ? TextComponents.string(name).get()
+            : TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor + 1).get()).get();
+        if(car != null){
+            player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby.dispatched_named",
+                TextComponents.string(car).color(TextFormatting.GOLD).get(), floorLabel).get(), true);
+            return;
+        }
         player.sendStatusMessage(TextComponents.translation("movingelevators.bank_lobby.dispatched",
-            name != null && !name.isEmpty()
-                ? TextComponents.string(name).get()
-                : TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor + 1).get()).get()
-        ).get(), true);
+            floorLabel).get(), true);
     }
 }
