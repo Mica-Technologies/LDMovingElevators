@@ -247,6 +247,10 @@ public class ElevatorGroupCapability {
             ElevatorGroupPosition pos = ElevatorGroupPosition.read(tag.getCompoundTag("pos"));
             ElevatorGroup group = new ElevatorGroup(this.level, pos.x, pos.z, pos.facing);
             group.read(tag.getCompoundTag("group"));
+            // An update that left the cabin out means "unchanged", not "gone". Since reading builds a
+            // new group rather than updating the one already here, carrying the cabin across is this
+            // method's job -- nothing inside read() can see what it is replacing.
+            group.inheritCage(this.groups.get(pos));
             this.groups.put(pos, group);
             this.groupsPerChunk.put(pos.chunkPos(), group);
         }

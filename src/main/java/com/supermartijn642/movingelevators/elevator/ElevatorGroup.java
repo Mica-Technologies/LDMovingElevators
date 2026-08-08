@@ -1944,6 +1944,24 @@ public class ElevatorGroup {
     /**
      * @return whether the next sync has to carry the cabin's contents, clearing the flag
      */
+    /**
+     * Takes the cabin from the group this one is replacing, for updates that left it out.
+     * <p>
+     * Reading a group builds a new one and swaps it in rather than updating the old in place, so
+     * "keep the cabin you already have" is not something the reader can do by itself -- there is no
+     * "already" on a fresh object. Without this a state-only update mid-trip produced a group that
+     * believed it was moving and had no cabin to move, which the renderer met once a frame.
+     */
+    public void inheritCage(ElevatorGroup previous){
+        if(this.cage == null && previous != null)
+            this.cage = previous.cage;
+        // Belt and braces. If the cabin is genuinely unknown -- a message arriving before any that
+        // carried one -- then not drawing a moving cabin is a disappointment, and drawing a null one
+        // is a client that stops responding. The next full sync puts it right.
+        if(this.isMoving && this.cage == null)
+            this.isMoving = false;
+    }
+
     public boolean takeCageChanged(){
         boolean changed = this.cageChanged;
         this.cageChanged = false;
@@ -2068,8 +2086,9 @@ public class ElevatorGroup {
             if(this.isMoving){
                 this.lastY = compound.getDouble("lastY");
                 this.currentY = compound.getDouble("currentY");
-                // Absent when this is a state-only update: the cabin's contents have not changed, so
-                // the copy already held is still right and re-reading it would only rebuild it.
+                // Absent when this is a state-only update. The cabin it describes has not changed, so
+                // the one the group being replaced was carrying is still right -- see inheritCage,
+                // which the reader calls straight afterwards to hand it over.
                 if(compound.hasKey("cage", Constants.NBT.TAG_COMPOUND))
                     this.cage = ElevatorCage.read(compound.getCompoundTag("cage"), this.level.isRemote);
             }
