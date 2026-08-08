@@ -190,6 +190,28 @@ public class MovingElevatorsModelGenerator extends ModelGenerator {
                 .allFaces(face -> face.texture("metal"))
                 .face(EnumFacing.NORTH, face -> face.texture("screen"))
                 .face(EnumFacing.SOUTH, face -> face.texture("screen")));
+        // Empty, for the same reason the doors' model is: the plate's width follows how many elevators
+        // are linked to it, and a baked model cannot vary with block entity data -- nor could 1.12's
+        // four bits of metadata carry a facing and six widths. BankIndicatorBlockEntityRenderer draws
+        // the metal as well as the readout. The particle texture is still needed for breaking particles.
+        this.model("block/bank_indicator_block")
+            .parent("minecraft", "block/block")
+            .texture("particle", "blocks/metal_silver");
+        // The item cannot grow: there is no block entity behind it to ask how many elevators it will
+        // show, so it is baked at two columns -- the width the renderer also falls back to when nothing
+        // is linked, which is exactly the state a freshly crafted one is in.
+        // Its own model, with the front face darkened, for the reason every other panel item has one:
+        // everything a panel shows is drawn by its block entity renderer, an item does not run one, and
+        // inheriting blank metal on every side makes the icon look like it is facing backwards.
+        this.model("item/bank_indicator_block")
+            .parent("minecraft", "block/block")
+            .texture("particle", "blocks/metal_silver")
+            .texture("metal", "blocks/metal_silver")
+            .texture("screen", "blocks/display")
+            .element(element -> element.shape(0.25f, 4, 14, 15.75f, 12, 16)
+                .allFaces(face -> face.texture("metal"))
+                .face(EnumFacing.NORTH, face -> face.texture("screen"))
+                .face(EnumFacing.SOUTH, face -> face.texture("screen")));
         this.model("item/remote_display_block")
             .parent("block/remote_display_block")
             .texture("overlay", "blocks/display_overlay")

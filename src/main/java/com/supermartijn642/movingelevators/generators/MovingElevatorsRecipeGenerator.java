@@ -108,6 +108,18 @@ public class MovingElevatorsRecipeGenerator extends RecipeGenerator {
             .input('B', "dustRedstone")
             .input('C', Items.ENDER_PEARL)
             .unlockedBy(MovingElevators.elevator_block.asItem());
+        // The single indicator's recipe with the bottom row filled in and an observer at its heart:
+        // this one watches a whole bank rather than one shaft, and it should cost more than the plate
+        // it replaces several of -- otherwise nobody would ever craft the single one.
+        this.shaped(MovingElevators.bank_indicator_block.asItem())
+            .pattern("AAA")
+            .pattern("BDB")
+            .pattern("ACA")
+            .input('A', "ingotIron")
+            .input('B', "dustRedstone")
+            .input('C', Items.ENDER_PEARL)
+            .input('D', Item.getItemFromBlock(Blocks.OBSERVER))
+            .unlockedBy(MovingElevators.elevator_block.asItem());
         this.shaped(MovingElevators.remote_display_block.asItem())
             .pattern("ABA")
             .pattern("ACA")

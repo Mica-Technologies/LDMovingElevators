@@ -44,6 +44,17 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.block(MovingElevators.remote_indicator_block, "Remote Elevator Indicator");
         this.translation("movingelevators.remote_indicator.tooltip", "A slim wall-mounted panel showing the floor an elevator is currently at. Bind it to an elevator controller by right-clicking on it");
 
+        // Elevator bank indicator
+        this.block(MovingElevators.bank_indicator_block, "Elevator Bank Indicator");
+        this.translation("movingelevators.bank_indicator.tooltip", "One wall-mounted readout for a whole bank: a column per elevator, each showing that elevator's name, the floor its cabin is at and which way it is going, so a landing needs one plate rather than one per shaft. Link it to ONE elevator controller in each shaft it should show \u2014 right-click that controller with it \u2014 exactly like the bank lobby panel. The plate widens itself to fit however many you link. Right-click the placed block to see what it is linked to");
+        // Same shape as the lobby panel's header -- fixture, dash, what it speaks for -- but naming no
+        // landing, because this fixture has none: it reports on the bank wherever it happens to hang.
+        // It is called through the same shared reporter, which passes a landing argument regardless, so
+        // this deliberately has no placeholder to spend it on. A "%s" here would print the word "null",
+        // whereas an argument a translation does not use is simply dropped.
+        this.translation("movingelevators.bank_indicator.status.header", "Bank indicator \u2014 linked elevators");
+        this.translation("movingelevators.bank_indicator.status.overflow", "  %s more are linked but not shown: the plate widens to %s elevators and no further.");
+
         // Remote elevator call panel
         this.block(MovingElevators.remote_call_panel_block, "Remote Elevator Call Panel");
         this.translation("movingelevators.remote_call_panel.tooltip", "A wall-mounted landing panel with a floor readout and up/down call buttons. Bind it to an elevator controller by right-clicking on it. Right-click a controller in each of several shafts to have one panel serve them all \u2014 a press then sends whichever of them is best placed to answer. Right-click a controller again to unlink it; sneak and right-click the air to empty the item. Sneak-click a placed panel to see what it is linked to");

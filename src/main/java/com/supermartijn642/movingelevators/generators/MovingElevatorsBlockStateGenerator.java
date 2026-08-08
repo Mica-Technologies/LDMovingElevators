@@ -34,6 +34,12 @@ public class MovingElevatorsBlockStateGenerator extends BlockStateGenerator {
             builder.model("block/bank_car_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
         this.blockState(MovingElevators.bank_lobby_panel_block).variantsForAll((state, builder) ->
             builder.model("block/bank_lobby_panel_block", 0, wallPanelRotation(state.get(WallPanelBlock.FACING))));
+        // No rotation, and no visible model to rotate: the bank indicator's plate is as wide as it has
+        // elevators to show, which a baked model cannot express, so its block entity renderer draws the
+        // metal too and turns it to face the right way itself. See the model generator for the empty
+        // model, and the doors below for the same arrangement.
+        this.blockState(MovingElevators.bank_indicator_block).variantsForAll((state, builder) ->
+            builder.model("block/bank_indicator_block"));
         // Both doors always point at the hidden model: the visible leaf is drawn by the door's
         // block entity renderer so it can slide, and a chunk-baked model would just draw a
         // stationary leaf behind the animated one. See the model generator for the hidden model.

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "movingelevators:blocks/metal_silver"
+  }
+}

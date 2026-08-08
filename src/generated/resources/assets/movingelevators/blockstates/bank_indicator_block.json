@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "movingelevators:bank_indicator_block"
+    },
+    "facing=south": {
+      "model": "movingelevators:bank_indicator_block"
+    },
+    "facing=west": {
+      "model": "movingelevators:bank_indicator_block"
+    },
+    "facing=east": {
+      "model": "movingelevators:bank_indicator_block"
+    }
+  }
+}

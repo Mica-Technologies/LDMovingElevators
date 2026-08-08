@@ -196,6 +196,16 @@ not strand a whole building.
 
 ---
 
+### Elevator Bank Indicator
+
+One readout for a whole bank instead of one per shaft: a column per elevator showing its name, the
+floor it is on and which way it is travelling. Link it to one controller in each shaft by
+right-clicking that controller with it, exactly as with the Bank Lobby Panel, and right-click the
+placed block to see what it is linked to.
+
+The plate widens itself to fit — two columns up to six, overhanging its own block at the wider end.
+Past six the extra elevators stay linked and working, but have no column of their own.
+
 ## Comparators
 
 Each block reports the thing it already shows, so a comparator says what the block says.

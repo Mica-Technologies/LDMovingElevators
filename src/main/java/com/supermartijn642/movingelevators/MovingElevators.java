@@ -71,6 +71,10 @@ public class MovingElevators {
     public static BaseBlockEntityType<ElevatorCarPanelBlockEntity> elevator_car_panel_tile;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "bank_car_panel_block", registry = RegistryEntryAcceptor.Registry.BLOCKS)
     public static BankCarPanelBlock bank_car_panel_block;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "bank_indicator_block", registry = RegistryEntryAcceptor.Registry.BLOCKS)
+    public static BankIndicatorBlock bank_indicator_block;
+    @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "bankindicatortile", registry = RegistryEntryAcceptor.Registry.BLOCK_ENTITY_TYPES)
+    public static BaseBlockEntityType<BankIndicatorBlockEntity> bank_indicator_tile;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "bank_lobby_panel_block", registry = RegistryEntryAcceptor.Registry.BLOCKS)
     public static BankLobbyPanelBlock bank_lobby_panel_block;
     @RegistryEntryAcceptor(namespace = "movingelevators", identifier = "banklobbypaneltile", registry = RegistryEntryAcceptor.Registry.BLOCK_ENTITY_TYPES)
@@ -169,6 +173,7 @@ public class MovingElevators {
         handler.registerBlock("remote_call_panel_block", () -> new RemoteCallPanelBlock(properties.get()));
         handler.registerBlock("elevator_car_panel_block", () -> new ElevatorCarPanelBlock(properties.get()));
         handler.registerBlock("bank_car_panel_block", () -> new BankCarPanelBlock(properties.get()));
+        handler.registerBlock("bank_indicator_block", () -> new BankIndicatorBlock(properties.get()));
         handler.registerBlock("bank_lobby_panel_block", () -> new BankLobbyPanelBlock(properties.get()));
         handler.registerBlock("elevator_door_block", () -> new ElevatorDoorBlock(properties.get()));
         handler.registerBlock("elevator_single_door_block", () -> new ElevatorSingleDoorBlock(properties.get()));
@@ -180,6 +185,7 @@ public class MovingElevators {
         handler.registerBlockEntityType("remoteindicatortile", () -> BaseBlockEntityType.create(RemoteIndicatorBlockEntity::new, remote_indicator_block));
         handler.registerBlockEntityType("remotecallpaneltile", () -> BaseBlockEntityType.create(RemoteCallPanelBlockEntity::new, remote_call_panel_block));
         handler.registerBlockEntityType("elevatorcarpaneltile", () -> BaseBlockEntityType.create(ElevatorCarPanelBlockEntity::new, elevator_car_panel_block, bank_car_panel_block));
+        handler.registerBlockEntityType("bankindicatortile", () -> BaseBlockEntityType.create(BankIndicatorBlockEntity::new, bank_indicator_block));
         handler.registerBlockEntityType("banklobbypaneltile", () -> BaseBlockEntityType.create(BankLobbyPanelBlockEntity::new, bank_lobby_panel_block));
         handler.registerBlockEntityType("elevatordoortile", () -> BaseBlockEntityType.create(ElevatorDoorBlockEntity::new, elevator_door_block, elevator_single_door_block));
         // Items
@@ -195,6 +201,7 @@ public class MovingElevators {
         // Its own item class rather than RemoteControllerBlockItem: this one collects a set of
         // controllers instead of remembering the last, and can copy a placed panel's whole bank.
         handler.registerItem("bank_car_panel_block", () -> new RemoteControllerBlockItem(bank_car_panel_block, ItemProperties.create().group(GROUP)));
+        handler.registerItem("bank_indicator_block", () -> new MultiControllerBlockItem(bank_indicator_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("bank_lobby_panel_block", () -> new MultiControllerBlockItem(bank_lobby_panel_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_door_block", () -> new BaseBlockItem(elevator_door_block, ItemProperties.create().group(GROUP)));
         handler.registerItem("elevator_single_door_block", () -> new BaseBlockItem(elevator_single_door_block, ItemProperties.create().group(GROUP)));

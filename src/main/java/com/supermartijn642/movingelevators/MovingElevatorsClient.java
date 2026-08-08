@@ -5,6 +5,7 @@ import com.supermartijn642.core.TextComponents;
 import com.supermartijn642.core.gui.WidgetScreen;
 import com.supermartijn642.core.registry.ClientRegistrationHandler;
 import com.supermartijn642.core.render.TextureAtlases;
+import com.supermartijn642.movingelevators.blocks.BankIndicatorBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.BankLobbyPanelBlockEntityRenderer;
 import com.supermartijn642.movingelevators.blocks.CamoBlockEntity;
 import com.supermartijn642.movingelevators.blocks.DisplayBlockEntityRenderer;
@@ -58,6 +59,7 @@ public class MovingElevatorsClient {
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.remote_call_panel_tile, RemoteCallPanelBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_car_panel_tile, ElevatorCarPanelBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.bank_lobby_panel_tile, BankLobbyPanelBlockEntityRenderer::new);
+        handler.registerCustomBlockEntityRenderer(() -> MovingElevators.bank_indicator_tile, BankIndicatorBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_door_tile, ElevatorDoorBlockEntityRenderer::new);
         // Register texture
         handler.registerAtlasSprite(TextureAtlases.getBlocks(), OVERLAY_TEXTURE_LOCATION.getResourcePath());

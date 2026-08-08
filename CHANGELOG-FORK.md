@@ -25,6 +25,14 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **Elevator Bank Indicator** — one wall readout for a whole bank, a column per elevator showing its
+  name, the floor it is on and which way it is going. A four-shaft lobby needed four separate
+  indicators and four separate glances; this answers in one. It is a new block rather than a change
+  to the existing indicator, so one readout per shaft remains just as valid a way to build.
+  The plate widens itself to fit, from two columns up to six, growing about a block past its own on
+  each side at full width. Beyond six the extra elevators stay linked and working but have no column,
+  and clicking the block says how many are missing.
+
 - **Cabin music.** Vanilla's shopping-mall record for the Standard scheme, which is already elevator
   music in everything but name, and something ambient for Modern. It plays only while somebody is
   actually aboard — an empty lift playing to itself would be every lift in a building playing at
