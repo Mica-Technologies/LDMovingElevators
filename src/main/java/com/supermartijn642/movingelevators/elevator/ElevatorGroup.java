@@ -312,6 +312,11 @@ public class ElevatorGroup {
         this.cageChecks = 0;
         if(!this.level.isRemote && this.pendingDing > 0 && --this.pendingDing == 0)
             this.playAtCabin(this.pendingChime);
+        // A wait at a floor expires on its own, whatever else the elevator is doing. Everything that
+        // reads it is asking "has the wait finished", and that must not depend on which state happens
+        // to be driving this tick.
+        if(!this.level.isRemote && this.dwellCounter > 0)
+            this.dwellCounter--;
         if(!this.level.isRemote)
             this.updateAlarm();
         if(!this.level.isRemote)
@@ -376,8 +381,10 @@ public class ElevatorGroup {
             this.syncCounter++;
         }else if(!this.level.isRemote){
             this.updateEmergencyHold();
-            // An elevator in emergency takes no calls. They keep their place in the queue and are
-            // served once it is back in service, so nobody has to press anything again.
+            // An elevator in any of these states takes no calls from the queue. Note that returning
+            // from an emergency clears the queue outright rather than resuming it -- see
+            // updateEmergencyHold, which explains why -- so this gate is about not dispatching, not
+            // about preserving anything.
             // An overloaded cabin takes no calls either. Letting the queue run would have it try to
             // depart, fail, and drop the call as undeliverable -- so the calls would quietly vanish
             // while it sat there buzzing.
@@ -393,14 +400,12 @@ public class ElevatorGroup {
      * on the server and reaches clients through {@link #write()}.
      */
     private void updateCallQueue(){
-        // Counted down before the queue is checked, not after. A dwell is a wait at a floor that has
-        // to expire on its own; gating it on there being something queued meant an idle cabin kept
-        // its unspent wait indefinitely and handed the whole of it to whoever called next -- fifteen
-        // seconds of nothing after a bank pickup, thirty after an emergency.
-        if(this.dwellCounter > 0){
-            this.dwellCounter--;
+        // Counted down in update(), not here. It lived here once, which was wrong twice over: it did
+        // not run while the queue was empty, and it did not run at all in the states that skip this
+        // method -- so a fire recall arriving within ten seconds of a stop waited on a dwell that had
+        // stopped ticking, and the car sat through the whole alarm taking no input.
+        if(this.dwellCounter > 0)
             return;
-        }
         if(this.callQueue.isEmpty())
             return;
 
@@ -555,7 +560,11 @@ public class ElevatorGroup {
             this.shouldBeSynced = true;
         }
 
-        if(this.isMoving){
+        // Queued rather than dispatched whenever the cabin cannot set off now. Attempting anyway meant
+        // startElevator refused, nothing was queued, and the arrow this method had just lit stayed lit
+        // for good -- with a bank then reading that phantom call as a car already on its way and
+        // pinning the whole landing to a lift that was never coming.
+        if(this.isMoving || this.overloaded || this.emergencyState != EmergencyState.NONE){
             this.queueCall(yLevel);
             return;
         }
@@ -582,7 +591,7 @@ public class ElevatorGroup {
         if(!this.floors.contains(yLevel) || !this.acceptsCarCalls())
             return;
         this.playAtCabin(ElevatorSoundScheme.Moment.CALL_ACCEPTED);
-        if(this.isMoving){
+        if(this.isMoving || this.overloaded || this.emergencyState != EmergencyState.NONE){
             this.queueCall(yLevel);
             return;
         }
@@ -1049,15 +1058,31 @@ public class ElevatorGroup {
      * only listened for changes would eventually believe a stale answer.
      */
     private void updateFireRecall(){
-        if(!MovingElevators.CSM_LOADED || this.alarmPanelPos == null || this.floors.isEmpty())
+        if(!MovingElevators.CSM_LOADED || this.alarmPanelPos == null){
+            // A recalled car saved and then reopened without City Super Mod installed, or with its
+            // panel forgotten, would otherwise never be released: the poll below is the only thing
+            // that clears the mode, and it is exactly what this branch is skipping. The car refuses
+            // every button, forever, for a fire in a world that no longer knows about fires.
+            if(this.serviceMode == ServiceMode.FIRE_RECALL){
+                this.recalling = false;
+                this.setServiceMode(ServiceMode.NORMAL);
+            }
+            return;
+        }
+        if(this.floors.isEmpty())
             return;
         if(this.tickCounter % ALARM_POLL_INTERVAL == 0){
             // Fire only. A storm warning tells the people in a building to go and shelter, which they
             // need working lifts to do -- taking the lifts away is the opposite of helping. Recall is
             // a fire measure specifically, and the alarm sounding for anything else is not its cue.
             this.recalling = CsmCompat.isFireAlarmActiveAt(this.level, this.alarmPanelPos);
+            // The alarm ending restores whatever the mode was before it, rather than assuming normal.
+            // An elevator somebody deliberately took out of service must not quietly come back just
+            // because a fire alarm ran and stopped.
+            if(this.recalling && this.serviceMode != ServiceMode.FIRE_RECALL)
+                this.preRecallMode = this.serviceMode;
             ServiceMode wanted = this.recalling ? ServiceMode.FIRE_RECALL
-                : this.serviceMode == ServiceMode.FIRE_RECALL ? ServiceMode.NORMAL : this.serviceMode;
+                : this.serviceMode == ServiceMode.FIRE_RECALL ? this.preRecallMode : this.serviceMode;
             if(wanted != this.serviceMode){
                 this.serviceMode = wanted;
                 // Whatever the building was asking for stopped mattering the moment the alarm sounded.
@@ -1085,7 +1110,8 @@ public class ElevatorGroup {
     private static final int COMPARATOR_FLOOR_INTERVAL = 5;
     private int lastComparatorFloor = Integer.MIN_VALUE;
     private boolean recalling;
-    private int recallTargetY;
+    /** What the building had asked for before the alarm, so the alarm ending gives it back. */
+    private ServiceMode preRecallMode = ServiceMode.NORMAL;
 
     /** Whether the building may call this elevator, as opposed to the people already inside it. */
     public boolean acceptsHallCalls(){
@@ -1955,10 +1981,12 @@ public class ElevatorGroup {
     public void inheritCage(ElevatorGroup previous){
         if(this.cage == null && previous != null)
             this.cage = previous.cage;
-        // Belt and braces. If the cabin is genuinely unknown -- a message arriving before any that
-        // carried one -- then not drawing a moving cabin is a disappointment, and drawing a null one
-        // is a client that stops responding. The next full sync puts it right.
-        if(this.isMoving && this.cage == null)
+        // Belt and braces, and only ever on the client. If the cabin is genuinely unknown -- a message
+        // arriving before any that carried one -- then not drawing a moving cabin is a disappointment,
+        // and drawing a null one is a client that stops responding. The next full sync puts it right.
+        // Never server-side: the cabin's blocks exist nowhere but that field while in flight, so
+        // quietly deciding the lift has stopped would destroy them with no way back.
+        if(this.level.isRemote && this.isMoving && this.cage == null)
             this.isMoving = false;
     }
 
@@ -2031,6 +2059,7 @@ public class ElevatorGroup {
     compound.setInteger("announcingFloor", this.announcingFloor);
     compound.setBoolean("overloaded", this.overloaded);
     compound.setString("serviceMode", this.serviceMode.name());
+    compound.setString("preRecallMode", this.preRecallMode.name());
     compound.setBoolean("hasAlarmPanel", this.alarmPanelPos != null);
     if(this.alarmPanelPos != null)
         compound.setLong("alarmPanelPos", this.alarmPanelPos.toLong());
@@ -2127,9 +2156,16 @@ public class ElevatorGroup {
     this.alarmPanelPos = compound.getBoolean("hasAlarmPanel") ? BlockPos.fromLong(compound.getLong("alarmPanelPos")) : null;
     this.recallFloorY = compound.getInteger("recallFloorY");
     this.serviceMode = ServiceMode.NORMAL;
-    for(ServiceMode mode : ServiceMode.values())
+    this.preRecallMode = ServiceMode.NORMAL;
+    for(ServiceMode mode : ServiceMode.values()){
         if(mode.name().equals(compound.getString("serviceMode")))
             this.serviceMode = mode;
+        if(mode.name().equals(compound.getString("preRecallMode")))
+            this.preRecallMode = mode;
+    }
+    // A recall is never what the building wanted back afterwards, whatever an older save says.
+    if(this.preRecallMode == ServiceMode.FIRE_RECALL)
+        this.preRecallMode = ServiceMode.NORMAL;
     this.name = compound.getBoolean("hasElevatorName") ? compound.getString("elevatorName") : null;
         this.emergencyState = EmergencyState.NONE;
         for(EmergencyState state : EmergencyState.values())
@@ -2138,6 +2174,11 @@ public class ElevatorGroup {
         this.emergencyHold = compound.getInteger("emergencyHold");
         this.lastDirection = compound.getInteger("lastDirection");
         this.dwellCounter = compound.getInteger("dwellCounter");
+    // currentY is only written while moving, so a reloaded idle group had zero -- and everything
+    // anchored to it followed: where sounds play, where the occupancy box sits, where the shaft sweep
+    // looks, how a bank scores this car's distance. A stopped cabin is at the floor it stopped at.
+    if(!this.isMoving)
+        this.currentY = this.targetY;
         this.floorData.clear();
         if(compound.hasKey("floorData", Constants.NBT.TAG_LIST)){
             NBTBase base = compound.getTag("floorData");

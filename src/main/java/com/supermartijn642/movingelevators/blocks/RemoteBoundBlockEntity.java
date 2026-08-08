@@ -24,7 +24,7 @@ import net.minecraftforge.common.util.Constants;
 public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
 
     protected BlockPos controllerPos = BlockPos.ORIGIN;
-    private boolean registeredComparator;
+    private ElevatorGroup comparatorRegisteredWith;
     private EnumFacing controllerFacing = null;
 
     protected RemoteBoundBlockEntity(BaseBlockEntityType<?> blockEntityType){
@@ -98,8 +98,12 @@ public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
         // block. These panels do not tick, so there is no other moment at which to do it, and by the
         // time something wants the value the elevator certainly exists -- which it may well not have
         // when the panel itself loaded.
-        if(!this.registeredComparator && this.world != null && !this.world.isRemote){
-            this.registeredComparator = true;
+        // Tracked by which elevator it registered with rather than by a flag, because the elevator
+        // can be replaced underneath it -- break the last controller of a shaft and rebuild it, and
+        // the group is a new object with no listeners, while a flag would still read "registered" and
+        // the comparator would sit on its last value until the chunk reloaded.
+        if(this.world != null && !this.world.isRemote && group != this.comparatorRegisteredWith){
+            this.comparatorRegisteredWith = group;
             group.addComparatorListener(this.getFloorLevel(), this.pos);
         }
         return group;
@@ -108,10 +112,11 @@ public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
     @Override
     public void invalidate(){
         super.invalidate();
-        if(this.registeredComparator && this.world != null && !this.world.isRemote){
-            ElevatorGroup group = this.getGroup();
-            if(group != null)
-                group.removeComparatorListener(this.pos);
+        if(this.comparatorRegisteredWith != null && this.world != null && !this.world.isRemote){
+            // Deregisters from the group it actually registered with, not from whatever getGroup()
+            // resolves to now -- which would re-register it on the way past.
+            this.comparatorRegisteredWith.removeComparatorListener(this.pos);
+            this.comparatorRegisteredWith = null;
         }
     }
 

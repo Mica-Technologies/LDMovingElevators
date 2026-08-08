@@ -104,18 +104,32 @@ public class ElevatorGroupCapability {
 
     @SubscribeEvent
     public static void onJoinWorld(PlayerEvent.PlayerChangedDimensionEvent e){
-        EntityPlayerMP player = (EntityPlayerMP)e.player;
-        ElevatorGroupCapability groups = player.world.getCapability(CAPABILITY, null);
-        if(groups != null)
-            MovingElevators.CHANNEL.sendToPlayer(player, new PacketUpdateElevatorGroups(groups.write()));
+        sendAllGroups(e.player);
     }
 
     @SubscribeEvent
     public static void onJoin(PlayerEvent.PlayerLoggedInEvent e){
-        EntityPlayerMP player = (EntityPlayerMP)e.player;
+        sendAllGroups(e.player);
+    }
+
+    /**
+     * Respawning across dimensions hands the client a brand new, empty world, exactly as logging in
+     * or walking through a portal does -- so it needs the same full resend. It was missing, and only
+     * stopped mattering because every routine update used to carry the cabin with it; now that they
+     * do not, a client arriving mid-trip would have waited out the whole journey with an invisible
+     * cabin, since the elevator had already spent its one chance to send that cabin at departure.
+     */
+    @SubscribeEvent
+    public static void onRespawn(PlayerEvent.PlayerRespawnEvent e){
+        sendAllGroups(e.player);
+    }
+
+    private static void sendAllGroups(net.minecraft.entity.player.EntityPlayer player){
+        if(!(player instanceof EntityPlayerMP))
+            return;
         ElevatorGroupCapability groups = player.world.getCapability(CAPABILITY, null);
         if(groups != null)
-            MovingElevators.CHANNEL.sendToPlayer(player, new PacketUpdateElevatorGroups(groups.write()));
+            MovingElevators.CHANNEL.sendToPlayer((EntityPlayerMP)player, new PacketUpdateElevatorGroups(groups.write()));
     }
 
     @SubscribeEvent
@@ -250,8 +264,15 @@ public class ElevatorGroupCapability {
             // An update that left the cabin out means "unchanged", not "gone". Since reading builds a
             // new group rather than updating the one already here, carrying the cabin across is this
             // method's job -- nothing inside read() can see what it is replacing.
-            group.inheritCage(this.groups.get(pos));
+            ElevatorGroup previous = this.groups.get(pos);
+            group.inheritCage(previous);
             this.groups.put(pos, group);
+            // The multimap has no idea it is holding a replaced group: ElevatorGroup does not define
+            // equality, so every read is a distinct object and putting one in is an addition, not an
+            // overwrite. Left alone, a client accumulated one dead group per sync packet for the life
+            // of the world, each pinning a cabin, and each walked again by every chunk validation.
+            if(previous != null)
+                this.groupsPerChunk.remove(pos.chunkPos(), previous);
             this.groupsPerChunk.put(pos.chunkPos(), group);
         }
     }
