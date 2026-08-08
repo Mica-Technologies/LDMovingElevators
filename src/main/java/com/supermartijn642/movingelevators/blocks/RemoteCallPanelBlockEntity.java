@@ -89,7 +89,16 @@ public class RemoteCallPanelBlockEntity extends RemoteBoundBlockEntity {
      * pressed button dark whenever a sibling was the car dispatched.
      */
     public ElevatorGroup getRespondingGroup(boolean up){
-        for(ElevatorGroup group : this.getGroups()){
+        return this.getRespondingGroup(this.getGroups(), up);
+    }
+
+    /**
+     * As {@link #getRespondingGroup(boolean)}, against a panel whose elevators have already been
+     * resolved. The renderer asks this once per arrow and once more for the readout, and resolving
+     * allocates a list and re-walks every binding each time.
+     */
+    public ElevatorGroup getRespondingGroup(List<ElevatorGroup> groups, boolean up){
+        for(ElevatorGroup group : groups){
             int landing = nearestFloorY(group, this.getFloorLevel());
             if(landing != Integer.MIN_VALUE && group.hasHallCall(landing, up))
                 return group;

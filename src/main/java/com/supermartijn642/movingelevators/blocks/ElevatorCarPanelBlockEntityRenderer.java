@@ -54,33 +54,40 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
     /**
      * The elevator's name, in the band between the readout row and the top of the button bank.
      * <p>
-     * That band runs from 10.0 to 10.8 of sixteen and is the only full-width gap left on the face:
-     * the plate stops at 15.0, one pixel above the readout, and at 1.0, less than a pixel below the
-     * bank, and both of those are edge margin rather than free space. A tenth of a pixel is kept
-     * clear at the top and bottom of the band, which is what makes the name as small as it is.
+     * The band is 9.0 to 10.8 of sixteen, and the name is centred in it. It used to be stated as 9.5
+     * to 10.8 and the name hung at 10.15, which was wrong on both counts: the top button socket
+     * reached 10.0 rather than 9.5, so the band was 0.8 tall and the 1.32 tall inset drawn in it
+     * overlapped the sockets by about half a pixel. The band was widened rather than the name shrunk
+     * -- see NAME_SCALE, which is already as small as a legible name gets -- by moving the button
+     * bank and the alarm down into the pixel and a quarter of unused plate below them.
      */
-    private static final float NAME_X = 8 / 16f, NAME_Y = 10.15f / 16f;
-    /**
-     * Scale here is per font unit rather than per line, so a nine-pixel line stands 9/300 of a block
-     * -- 0.48 of a face pixel -- which with the padding either side of it fills the 0.6 pixel budget
-     * above exactly. The width cap never binds at that scale, since an eleven character name comes
-     * out about 3.5 pixels wide on a 12 pixel plate; it is there so that no name can overhang.
-     */
+    private static final float NAME_X = 8 / 16f, NAME_Y = 9.9f / 16f;
     /**
      * Sized to nearly fill the gap between the readout and the top row of buttons rather than to be
-     * safely small. At 1/300 the glyph came out under half a pixel of the sixteen-pixel face -- present,
-     * unreadable, and worse than absent. The band runs from 9.5 to 10.8, and the inset this draws is
-     * about 1.19 of that, so it sits inside with a little air either side.
+     * safely small. At 1/300 the glyph came out under half a pixel of the sixteen-pixel face --
+     * present, unreadable, and worse than absent.
+     * <p>
+     * Scale is per font unit, so a nine-unit line stands 9/120 of a block, i.e. 1.2 face pixels; with
+     * the padding either side the inset is 1.32, which leaves 0.24 of clear metal above and below it
+     * in the 1.8 pixel band. The width cap never binds at that scale, since an eleven character name
+     * comes out about 3.5 pixels wide on a 12 pixel plate; it is there so that no name can overhang.
      */
     private static final float NAME_SCALE = 1 / 120f, NAME_MAX_WIDTH = 8 / 16f, NAME_PADDING = 0.06f / 16f;
     /** The name is not a floor, so it has no dye colour of its own; white reads on the inset screen. */
     private static final EnumDyeColor NAME_COLOR = EnumDyeColor.WHITE;
 
-    /** Button bank: two columns, three rows, filling upwards like a real car station. */
+    /**
+     * Button bank: two columns, three rows, filling upwards like a real car station.
+     * <p>
+     * Sockets are the button plus FloorLabelRenderer's half-pixel bezel, so each is 1.233 either side
+     * of its centre and the bank spans 0.8 to 9.0. It sits a pixel lower than it first did, which is
+     * what opens the band the elevator's name is drawn in; the pixel came from the unused plate below
+     * the alarm rather than from anything else on the face.
+     */
     private static final int BUTTON_COLUMNS = 2, BUTTON_ROWS = 3;
     private static final float BUTTON_HALF = 0.733f / 16f;
     private static final float BUTTON_LEFT_X = 5.4f / 16f, BUTTON_COLUMN_GAP = 5.2f / 16f;
-    private static final float BUTTON_BOTTOM_Y = 3.033f / 16f, BUTTON_ROW_GAP = 2.867f / 16f;
+    private static final float BUTTON_BOTTOM_Y = 2.033f / 16f, BUTTON_ROW_GAP = 2.867f / 16f;
 
     // Bank car panel layout. The plate is now the ordinary panel's, 2.0 to 14.0 by 1.0 to 15.0, so
     // the readout window and the arrows carry over verbatim and have no constants of their own --
@@ -116,38 +123,30 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
     private static final float DOOR_LEFT_X = 4.95f / 16f, DOOR_RIGHT_X = 11.05f / 16f;
     /**
      * Centred in what is left between the name inset above (bottom 8.04) and the alarm's socket
-     * below (top 2.65): the row's own socket is 2 x (1.0 + 0.5) = 3.0 tall, and (8.04 + 2.65) / 2 =
-     * 5.345 puts its centre there, rounded to 5.35. Socket 3.85 to 6.85, so 1.2 of clear metal below
-     * it and 1.19 above -- close enough to even that the row does not look hung from either.
+     * below (top 0.65): the row's own socket is 2 x (1.0 + 0.5) = 3.0 tall, and (8.04 + 0.65) / 2 =
+     * 4.345 puts its centre there, rounded to 4.35. Socket 2.85 to 5.85, so 2.2 of clear metal below
+     * it and 2.19 above -- close enough to even that the row does not look hung from either.
+     * <p>
+     * Followed the alarm down when that moved: the row is centred on the gap rather than pinned to a
+     * height, so leaving it where it was would have hung it from the name with a hole beneath.
      */
-    private static final float DOOR_Y = 5.35f / 16f;
+    private static final float DOOR_Y = 4.35f / 16f;
 
-    /**
-     * The alarm, in the same place on both panels -- one plate, one fixture, one muscle memory for
-     * where the alarm is whichever car you are in. That means it has to fit the ordinary panel's
-     * leftovers, which is the band between the plate's bottom edge at 1.0 and the bottom row of
-     * floor button lamps at 2.3.
-     * <p>
-     * 1.3 pixels of band, minus 0.15 of metal below the socket and 0.15 of clearance above the lamp,
-     * minus the bezel's 0.5: the lamp gets 1.3 - 0.15 - 0.15 - 0.5 = 0.5 tall, hence the 0.25 half
-     * height, and its centre lands at 1.0 + 0.15 + 0.5 + 0.25 = 1.9. Socket 1.15 to 2.65, lamp 1.65
-     * to 2.15.
-     * <p>
-     * A bar that thin is only legible because it is the width of the plate: 8.0 +/- 5.35 puts the
-     * socket at 2.15 to 13.85, the same 0.15 margin as below it. Its socket does run up behind the
-     * button bank's, but the two are the same colour and the lamps are drawn nearer the viewer, so
-     * what shows is one dark field with the bank's lamps in it and the alarm's bar beneath them.
-     */
-    /**
-     * The alarm bar sits in the three pixels the plate now hangs below its block. Under the button
-     * bank it had a pixel and a third to live in, bezel included, and came out overflowing the metal;
-     * below the block it has room to be a bar rather than a smear. Its socket runs -0.75 to 1.15,
-     * clear of the plate bottom at -2 and of the lowest button socket at 1.8.
-     */
     /** Red, because it is the one thing this screen ever says that is not simply where you are. */
     private static final EnumDyeColor OVERLOAD_COLOR = EnumDyeColor.RED;
 
-    private static final float ALARM_X = 8 / 16f, ALARM_Y = 0.2f / 16f;
+    /**
+     * The alarm bar sits in the three pixels the plate hangs below its block, in the same place on
+     * both panels -- one plate, one fixture, one muscle memory for where the alarm is whichever car
+     * you are in. Under the button bank it had a pixel and a third to live in, bezel included, and
+     * came out overflowing the metal; below the block it has room to be a bar rather than a smear.
+     * <p>
+     * Half a pixel lower than it first sat. That is not for its own sake: it is the room the button
+     * bank moved down into, which in turn is the room the elevator's name needed. Its socket runs
+     * -1.25 to 0.65, keeping the same 0.15 of clearance under the lowest button socket at 0.8 that
+     * every other element on this plate leaves, and 0.75 of plate below it.
+     */
+    private static final float ALARM_X = 8 / 16f, ALARM_Y = -0.3f / 16f;
     private static final float ALARM_HALF_WIDTH = 5f / 16f, ALARM_HALF_HEIGHT = 0.45f / 16f;
 
     private static final double LABEL_DEPTH = 0.5 - WallPanelBlock.PLATE_DEPTH - 0.01;

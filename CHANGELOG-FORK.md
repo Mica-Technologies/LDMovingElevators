@@ -258,6 +258,15 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- A block left loose in a shaft was carried around as though it were the cabin, with nothing said
+  about it. Any movable block in the cabin space at a landing counts as a cabin — the mod has no
+  other way to know what a cabin is — so the search that fetches one takes whichever is nearest the
+  floor asked for, which can be the stray rather than the car. Every readout then moves while the
+  car stays put, because the elevator really is carrying something. It now tells whoever pressed the
+  button which floors still look occupied once the car has left, naming them. The automatic paths —
+  fire recall, the call queue, bank dispatch — have nobody to tell, which is why this could take a
+  building apart in silence.
+
 - Pressing a button while an elevator was travelling broadcast the entire contents of its cabin —
   every block, plus the data of any block entity among them — to every player in the dimension. The
   cabin only changes when a trip begins, so it now rides along only then; a lamp lighting or a call
@@ -421,6 +430,21 @@ Based on upstream **Moving Elevators 1.4.12**.
   now declared as inputs.
 
 ### Changed
+
+- **The elevator's name is legible on the bank indicator and no longer crowds the car panel.** On the
+  indicator it stood 1.2 face pixels tall, which is present in the way a watermark is present; the
+  four gaps between elements gave up a tenth of a pixel each and it now stands 1.7, against the floor
+  line's 1.8, so the hierarchy between them survives. On the car panel its screen overlapped the top
+  row of button sockets by half a pixel. The name was already as small as a name usefully gets, so
+  the room came from the other direction: the button bank and the alarm bar moved down into plate
+  that was not being used.
+
+- **The lobby and landing call panels stopped re-resolving their elevators several times a frame.**
+  Each question a lobby panel's readout asked — is the bank halted, which landing is this, what is it
+  called — walked the panel's bindings and allocated a list of its own, five times over to put one
+  word on a screen; the call panel did the same once for its readout and once for each arrow, and
+  before the distance cutoff that exists precisely to skip work on panels nobody can read. Both now
+  resolve once, after the cutoff, and ask everything of that one answer.
 
 - **The elevator controller's two sound controls are now one.** Off is the first answer to "what does
   this elevator sound like", so a separate on/off checkbox beside the scheme button was two controls

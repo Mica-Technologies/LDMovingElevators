@@ -16,6 +16,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.opengl.GL11;
 
+import java.util.List;
+
 /**
  * Draws a {@link BankLobbyPanelBlockEntity}: one tall sheet of dark glass in the plate's metal
  * surround, with the landing's identifier across the top of it and a destination-dispatch keypad
@@ -134,7 +136,9 @@ public class BankLobbyPanelBlockEntityRenderer implements CustomBlockEntityRende
         // An unbound panel keeps its glass and its keys but shows no floor: it should look switched
         // off, which is a state a player can fix, rather than blank-plated, which looks like a bug.
         if(entity.isBound()){
-            String label = readout(entity);
+            // Resolved here rather than inside the readout, so every question the readout asks is
+            // asked of one answer. See BankLobbyPanelBlockEntity#getBankFloors(List).
+            String label = readout(entity, entity.getGroups());
             if(label != null && !label.isEmpty())
                 FloorLabelRenderer.drawFittedLabel(label, PROMPT_COLOR, PROMPT_X, PROMPT_Y,
                     PROMPT_HALF_WIDTH, PROMPT_HALF_HEIGHT, PROMPT_PADDING);
@@ -148,27 +152,31 @@ public class BankLobbyPanelBlockEntityRenderer implements CustomBlockEntityRende
     /**
      * What the landing calls itself, taken from the bank rather than from any one elevator.
      * <p>
-     * Resolving the bound elevators allocates, so this runs at most once a frame and only inside the
-     * distance cutoff above. The fallback costs a second pass, but only on landings nobody has named,
-     * and a lobby panel that cannot say which floor it is standing on is worth less than the pass.
+     * Resolving the bound elevators allocates, so the caller does it once, inside the distance cutoff
+     * above, and hands the result in. The fallback costs a second pass over that list, but only on
+     * landings nobody has named, and a lobby panel that cannot say which floor it is standing on is
+     * worth less than the pass.
      *
+     * @param groups this panel's bank, already resolved
      * @return null when no bound elevator serves this landing, which draws as a dark screen
      */
-    private static String readout(BankLobbyPanelBlockEntity entity){
+    private static String readout(BankLobbyPanelBlockEntity entity, List<ElevatorGroup> groups){
         // The one readout in the mod that was not saying anything during an emergency, and the one a
         // waiting passenger most needs to hear it from -- they are standing at the lobby deciding
         // whether to take the stairs.
-        if(entity.isBankOutOfService()){
-            ElevatorGroup group = entity.getAnyGroup();
+        if(BankLobbyPanelBlockEntity.isBankOutOfService(groups)){
+            // Any bound elevator will do: this only borrows the bank's flash beat, which is off world
+            // time and therefore the same answer from every car in the building.
+            ElevatorGroup group = groups.isEmpty() ? null : groups.get(0);
             return TextComponents.translation(group == null || group.isEmergencyFlashOn()
                 ? "movingelevators.emergency.flash_first" : "movingelevators.emergency.flash_second").format();
         }
-        int panelY = entity.getLandingY();
-        String name = entity.getFloorName(panelY);
+        int panelY = entity.getLandingY(groups);
+        String name = BankLobbyPanelBlockEntity.getFloorName(groups, panelY);
         if(name == null){
             // Unnamed: number it by where the landing sits in the bank's own floor list, so the panel
             // agrees with the dispatch screen rather than showing a raw world y.
-            int floor = entity.getBankFloors().indexOf(panelY);
+            int floor = BankLobbyPanelBlockEntity.getBankFloors(groups).indexOf(panelY);
             if(floor < 0)
                 return null;
             name = MovingElevatorsClient.formatFloorDisplayName(null, floor);

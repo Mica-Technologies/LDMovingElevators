@@ -161,12 +161,17 @@ public class BankIndicatorBlockEntityRenderer implements CustomBlockEntityRender
     private static final float CONTENT_HALF_WIDTH = COLUMN_WIDTH / 2 - COLUMN_GUTTER / 2;
 
     // Rows within a column, in sixteenths. The glass is 6.8 pixels tall and holds three things, so the
-    // budget is stated once here and adding to it means taking from something else: 1.5 for the name,
-    // 2.1 for the floor, 2.2 for the arrows and their bezels, and 0.25 of dark between each and at each
-    // end. The floor gets the most because it is the one line a passenger is actually reading.
-    private static final float NAME_CENTER_Y = 10.4f / 16, NAME_HALF_HEIGHT = 0.75f / 16;
-    private static final float FLOOR_CENTER_Y = 8.35f / 16, FLOOR_HALF_HEIGHT = 1.05f / 16;
-    private static final float ARROW_CENTER_Y = 5.95f / 16, ARROW_HALF_HEIGHT = 0.6f / 16;
+    // budget is stated once here and adding to it means taking from something else: 1.9 for the name,
+    // 2.1 for the floor, 2.2 for the arrows and their bezels, and 0.15 of dark between each and at each
+    // end. The floor still gets the most, because it is the one line a passenger is actually reading.
+    //
+    // The name used to have 1.5 and the gaps 0.25, which drew the name at 1.2 face pixels -- present in
+    // the way a watermark is present, and readable only with your nose against the plate. The 0.4 it
+    // needed came from the four gaps: 0.15 is the margin the car panel leaves around everything on its
+    // face and is plainly enough to keep two insets from reading as one.
+    private static final float NAME_CENTER_Y = 10.3f / 16, NAME_HALF_HEIGHT = 0.95f / 16;
+    private static final float FLOOR_CENTER_Y = 8.15f / 16, FLOOR_HALF_HEIGHT = 1.05f / 16;
+    private static final float ARROW_CENTER_Y = 5.85f / 16, ARROW_HALF_HEIGHT = 0.6f / 16;
 
     /**
      * Gap between the text and the edge of its window. Half the lobby panel's, because these windows are
@@ -174,6 +179,13 @@ public class BankIndicatorBlockEntityRenderer implements CustomBlockEntityRender
      * padding and shrink the glyph to nothing.
      */
     private static final float LABEL_PADDING = 0.15f / 16;
+    /**
+     * Tighter still for the name, which is the smallest window on the plate and the one where padding
+     * costs the most: 0.15 either side of it was a fifth of the whole window. At 0.1 the name stands 1.7
+     * pixels against the floor line's 1.8, so the hierarchy between them survives while the name becomes
+     * something you can read from where a lobby fixture is actually read from.
+     */
+    private static final float NAME_PADDING = 0.1f / 16;
 
     /**
      * The up and down arrows, offset either side of the column's centre.
@@ -257,7 +269,7 @@ public class BankIndicatorBlockEntityRenderer implements CustomBlockEntityRender
         String name = group.getName();
         if(name != null && !name.isEmpty())
             FloorLabelRenderer.drawFittedLabel(name, NAME_COLOR, centerX, NAME_CENTER_Y,
-                CONTENT_HALF_WIDTH, NAME_HALF_HEIGHT, LABEL_PADDING);
+                CONTENT_HALF_WIDTH, NAME_HALF_HEIGHT, NAME_PADDING);
 
         int floor = group.getCabinFloorNumber();
         if(floor >= 0 && floor < group.getFloorCount()){

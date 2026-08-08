@@ -40,20 +40,22 @@ public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRend
 
     @Override
     public void render(RemoteCallPanelBlockEntity entity, float partialTicks, int combinedOverlay, float alpha){
-        ElevatorGroup group = entity.getGroup();
-        if(group == null){
-            // A panel linked to several elevators outlives any one of them, so it falls back to a
-            // sibling rather than going dark when the primary binding's controller is pulled out.
-            List<ElevatorGroup> groups = entity.getGroups();
-            if(groups.isEmpty())
-                return;
-            group = groups.get(0);
-        }
-
+        // Before the elevators are resolved, not after. Resolving allocates and walks every binding,
+        // and a panel too far away to read does not need the answer -- which is the whole point of
+        // having a cutoff.
         BlockPos pos = entity.getPos();
         Vec3d cameraPos = RenderUtils.getCameraPosition();
         if(cameraPos.squareDistanceTo(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > TEXT_RENDER_DISTANCE)
             return;
+
+        // Once for the whole frame: the readout and both arrows all ask about the same set. The
+        // primary comes first in this list, so taking the head is the same fallback as before -- a
+        // panel linked to several elevators outlives any one of them, and drops to a sibling rather
+        // than going dark when the primary binding's controller is pulled out.
+        List<ElevatorGroup> groups = entity.getGroups();
+        if(groups.isEmpty())
+            return;
+        ElevatorGroup group = groups.get(0);
 
         EnumFacing facing = entity.getFacing();
 
@@ -75,9 +77,9 @@ public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRend
         // The arrows belong to the landing, not to one shaft: whichever linked elevator took the call
         // lights the button that was pressed.
         FloorLabelRenderer.drawArrow(0.5f, UP_CENTER_Y, ARROW_HALF_WIDTH, ARROW_HALF_HEIGHT,
-            true, entity.getRespondingGroup(true) != null);
+            true, entity.getRespondingGroup(groups, true) != null);
         FloorLabelRenderer.drawArrow(0.5f, DOWN_CENTER_Y, ARROW_HALF_WIDTH, ARROW_HALF_HEIGHT,
-            false, entity.getRespondingGroup(false) != null);
+            false, entity.getRespondingGroup(groups, false) != null);
 
         GlStateManager.popMatrix();
     }

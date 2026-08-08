@@ -136,8 +136,20 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
      * Dispatch filters to the cars that actually serve the floor you picked.
      */
     public List<Integer> getBankFloors(){
+        return getBankFloors(this.getGroups());
+    }
+
+    /**
+     * As {@link #getBankFloors()}, against a bank that has already been resolved.
+     * <p>
+     * Every one of these questions used to resolve the bank for itself, which is right for a one-off
+     * caller and wrong for the renderer: drawing one plate asked five of them, so a lobby panel walked
+     * its bindings and allocated a list five times per frame to put one word on a screen. The
+     * list-taking forms let a caller resolve once and ask everything of the same answer.
+     */
+    public static List<Integer> getBankFloors(List<ElevatorGroup> groups){
         TreeSet<Integer> floors = new TreeSet<>();
-        for(ElevatorGroup group : this.getGroups())
+        for(ElevatorGroup group : groups)
             for(int floor = 0; floor < group.getFloorCount(); floor++)
                 floors.add(group.getFloorYLevel(floor));
         return new ArrayList<>(floors);
@@ -148,7 +160,12 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
      * it, which the screen renders as a plain number.
      */
     public String getFloorName(int yLevel){
-        for(ElevatorGroup group : this.getGroups()){
+        return getFloorName(this.getGroups(), yLevel);
+    }
+
+    /** As {@link #getFloorName(int)}, against a bank that has already been resolved. */
+    public static String getFloorName(List<ElevatorGroup> groups, int yLevel){
+        for(ElevatorGroup group : groups){
             int floor = group.getFloorNumber(yLevel);
             if(floor != -1)
                 return group.getFloorDisplayName(floor);
@@ -165,19 +182,17 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
      * only worth showing when it is the whole answer.
      */
     public boolean isBankOutOfService(){
-        List<ElevatorGroup> groups = this.getGroups();
+        return isBankOutOfService(this.getGroups());
+    }
+
+    /** As {@link #isBankOutOfService()}, against a bank that has already been resolved. */
+    public static boolean isBankOutOfService(List<ElevatorGroup> groups){
         if(groups.isEmpty())
             return false;
         for(ElevatorGroup group : groups)
             if(!group.isEmergencyStopped())
                 return false;
         return true;
-    }
-
-    /** Any bound elevator, purely so the readout can share the bank's flash beat. */
-    public ElevatorGroup getAnyGroup(){
-        List<ElevatorGroup> groups = this.getGroups();
-        return groups.isEmpty() ? null : groups.get(0);
     }
 
     /**
@@ -308,8 +323,13 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
      * @return the y level of the nearest bank floor, or the panel's own y when nothing is linked
      */
     public int getLandingY(){
+        return this.getLandingY(this.getGroups());
+    }
+
+    /** As {@link #getLandingY()}, against a bank that has already been resolved. */
+    public int getLandingY(List<ElevatorGroup> groups){
         int best = this.getPanelY(), bestDistance = Integer.MAX_VALUE;
-        for(int y : this.getBankFloors()){
+        for(int y : getBankFloors(groups)){
             int distance = Math.abs(y - this.getPanelY());
             if(distance < bestDistance){
                 bestDistance = distance;

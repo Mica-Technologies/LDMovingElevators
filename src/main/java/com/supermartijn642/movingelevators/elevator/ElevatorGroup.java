@@ -1528,14 +1528,59 @@ public class ElevatorGroup {
                 if(floor == entityFloor)
                     continue;
                 if(this.isCageAvailableAt(floor, true, null)){
-                    if(this.canCageBePlacedAt(entity, this.getEntityForFloor(floor), requester))
+                    if(this.canCageBePlacedAt(entity, this.getEntityForFloor(floor), requester)){
                         this.startElevator(this.getFloorYLevel(floor), yLevel);
+                        // Departure empties the floor it left, so anything still standing in the
+                        // shaft's cabin volume elsewhere is a second cabin -- and there is only ever
+                        // one. Checked here because this is the branch that has just had to guess
+                        // which floor the cabin was on.
+                        if(this.isMoving)
+                            this.warnAboutStrayCabins(requester);
+                    }
                     return;
                 }
             }
             if(requester instanceof EntityPlayerMP && !this.isCageAvailableAt(entityFloor, true, null))
                 requester.sendStatusMessage(TextComponents.translation("movingelevators.elevator.no_cabins").color(TextFormatting.GRAY).get(), false);
         }
+    }
+
+    /**
+     * Points out any floor that still looks like it holds a cabin once this one has set off.
+     * <p>
+     * A shaft holds one cabin, and {@link ElevatorCage#canCreateCage} has no way to know that: it
+     * answers "are these blocks movable", so a block left loose in the cabin volume at a landing reads
+     * as a cabin like any other. The search above then takes whichever is nearest the floor asked for
+     * -- which can be the stray rather than the cab. Nothing about that is visible in game. The cab
+     * sits still while the readouts move, because the elevator really is carrying something, just not
+     * the thing the player is standing in.
+     * <p>
+     * Only ever addressed to a player who pressed something. Recall, the call queue and bank dispatch
+     * all pass a null requester, which is exactly why this failure had nobody to tell.
+     */
+    private void warnAboutStrayCabins(EntityPlayer requester){
+        if(!(requester instanceof EntityPlayerMP))
+            return;
+        ITextComponent floors = null;
+        for(int floor = 0; floor < this.floors.size(); floor++){
+            if(!this.isCageAvailableAt(floor, true, null))
+                continue;
+            ITextComponent name = this.describeFloor(floor);
+            floors = floors == null ? name
+                : TextComponents.translation("movingelevators.elevator.stray_cabin.more", floors, name).get();
+        }
+        if(floors != null)
+            requester.sendStatusMessage(TextComponents.translation("movingelevators.elevator.stray_cabin", floors)
+                .color(TextFormatting.GOLD).get(), false);
+    }
+
+    /** A floor as a player would name it: its own name where it has one, otherwise "Floor 3". */
+    private ITextComponent describeFloor(int floor){
+        String name = this.getFloorDisplayName(floor);
+        return name != null && !name.isEmpty()
+            ? TextComponents.string(name).color(TextFormatting.GOLD).get()
+            : TextComponents.translation("movingelevators.floor_name",
+                TextComponents.number(floor + 1).get()).color(TextFormatting.GOLD).get();
     }
 
     public void onDisplayPress(int yLevel, int floorOffset, EntityPlayer requester){

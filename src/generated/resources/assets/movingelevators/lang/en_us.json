@@ -143,5 +143,7 @@
   "movingelevators.elevator.invalid_block": "Invalid block '%s' in cabin at %s.",
   "movingelevators.elevator.empty": "No cabin at the current floor.",
   "movingelevators.elevator.obstructed": "Cabin space is obstructed by block '%s' at %s.",
-  "movingelevators.elevator.no_cabins": "There are no available cabins."
+  "movingelevators.elevator.no_cabins": "There are no available cabins.",
+  "movingelevators.elevator.stray_cabin": "This shaft still looks like it holds a cabin at %s. A shaft holds one cabin, and a loose block left in the cabin space at a landing is carried as though it were the cab. Clear the shaft.",
+  "movingelevators.elevator.stray_cabin.more": "%s and %s"
 }

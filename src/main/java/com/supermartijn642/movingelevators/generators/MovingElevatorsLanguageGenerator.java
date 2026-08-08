@@ -208,5 +208,7 @@ public class MovingElevatorsLanguageGenerator extends LanguageGenerator {
         this.translation("movingelevators.elevator.empty", "No cabin at the current floor.");
         this.translation("movingelevators.elevator.obstructed", "Cabin space is obstructed by block '%s' at %s.");
         this.translation("movingelevators.elevator.no_cabins", "There are no available cabins.");
+        this.translation("movingelevators.elevator.stray_cabin", "This shaft still looks like it holds a cabin at %s. A shaft holds one cabin, and a loose block left in the cabin space at a landing is carried as though it were the cab. Clear the shaft.");
+        this.translation("movingelevators.elevator.stray_cabin.more", "%s and %s");
     }
 }
