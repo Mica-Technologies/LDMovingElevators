@@ -39,14 +39,14 @@ public class CsmCompat {
     public static BlockPos getLinkerSelection(ItemStack stack){
         if(!(stack.getItem() instanceof ItemFireAlarmLinker))
             return null;
-        // Called reflectively only because the accessor is newer than the City Super Mod release this
-        // mod compiles against. Once a release ships with it, this becomes a direct call and the
-        // pinned version moves up. Until then reflection also buys graceful behaviour on an older CSM:
-        // the accessor is simply missing, this returns null, and this mod's own linker still works.
         try{
-            Object selected = stack.getItem().getClass().getMethod("getSelectedPanel").invoke(stack.getItem());
-            return selected instanceof BlockPos ? (BlockPos)selected : null;
-        }catch(ReflectiveOperationException e){
+            return ((ItemFireAlarmLinker)stack.getItem()).getSelectedPanel();
+        }catch(LinkageError e){
+            // Somebody is running an older City Super Mod than this was built against, one without the
+            // accessor. Nothing is wrong with their setup and nothing should break: they simply cannot
+            // link elevators with CSM's tool, and this mod's own linker still does the job. Caught
+            // rather than prevented by a version requirement, because refusing to load over an
+            // optional convenience would be a poor trade.
             return null;
         }
     }

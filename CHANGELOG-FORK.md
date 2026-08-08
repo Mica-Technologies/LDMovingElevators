@@ -52,8 +52,10 @@ Based on upstream **Moving Elevators 1.4.12**.
   Linker**, sneak-click a fire alarm panel with it and then right-click an elevator controller: the
   elevator returns to that controller's floor whenever that alarm sounds. The gesture is City Super
   Mod's own, since that is how its sounders are wired to a panel and there is no sense in inventing a
-  second way — and CSM's own linker can do the second step, so once you have wired a panel to its
-  sounders you can attach the lifts without changing tools. When the alarm sounds the elevator drops everything it was asked to do,
+  second way — and CSM's own linker can do the second step from City Super Mod 2026.08.07 onwards, so
+  once you have wired a panel to its sounders you can attach the lifts without changing tools. An
+  older City Super Mod is fine: only that convenience is missing, and this mod's own linker still
+  does the job. When the alarm sounds the elevator drops everything it was asked to do,
   returns to that floor and waits there with its doors open. Its readouts scroll FIRE
   RECALL throughout. Fire alarms only: a storm warning sends people to shelter, which they need
   working lifts to reach.
