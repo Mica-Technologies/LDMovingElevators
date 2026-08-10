@@ -428,6 +428,22 @@ Based on upstream **Moving Elevators 1.4.12**.
   as a task input — so editing any `mod_*` value in `gradle.properties` left Gradle considering the
   task up to date, and the change never reached the jar. The values that feed the substitution are
   now declared as inputs.
+- On a server, an elevator carrying a second player emergency-stopped for an obstruction that was not
+  there. A passenger's position on the server is the one their client last sent, worked out against
+  the client's own copy of the cabin, which is itself a little behind — so the shaft sweep compared a
+  round-trip-old passenger against where the cabin is now, found their feet below the floor they were
+  standing on, and read a passenger as somebody in the way. The sweep now allows for that delay,
+  reaching back only the way the cabin came so that nothing it is actually approaching is excused.
+  Singleplayer never showed this because there is no round trip to be late by.
+- Passengers were flung onto the cabin roof as it arrived, for the same reason. The cabin shoves
+  anything caught in the blocks it is about to place clear of the whole cage, and a passenger whose
+  stale position had them a few centimetres inside the floor they were riding on counted as caught.
+  Anything merely settled into a surface is now set down on top of it and left where it was, and only
+  something genuinely buried is evicted.
+- Anything the cabin's underside came down on was left with its head inside the cabin rather than
+  flush beneath it: the push subtracted the entity's width from its feet where it needed its height.
+  Nothing corrected it in flight, since the cabin's blocks are out of the world while it travels, so
+  the error was only cashed in on arrival — as an eviction down the shaft.
 
 ### Changed
 

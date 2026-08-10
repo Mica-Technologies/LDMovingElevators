@@ -81,7 +81,11 @@ public class ElevatorCollisionHandler {
 
         if(oldEntityBox.maxX > box.minX && oldEntityBox.minX < box.maxX && oldEntityBox.maxZ > box.minZ && oldEntityBox.minZ < box.maxZ){
             if(oldEntityBox.maxY < box.minY && entityBox.maxY > newBox.minY){
-                entity.setPosition(entityPos.x, newBox.minY - entity.width, entityPos.z);
+                // Mica: height, not width. setPosition takes the feet, so subtracting the width left
+                // anything taller than it was wide with its head inside the cabin's underside -- and
+                // the blocks are out of the world while it travels, so nothing pushed it back out
+                // until the cabin materialised around it on arrival and evicted it down the shaft.
+                entity.setPosition(entityPos.x, newBox.minY - entity.height, entityPos.z);
                 entity.motionY = 0;
             }else if(oldEntityBox.minY > box.maxY && (entityBox.minY < newBox.maxY || (!movingUp && canPullEntity(entity) && oldEntityBox.minY > box.maxY && oldEntityBox.minY < box.maxY + 0.1))){
                 entity.setPosition(entityPos.x, newBox.maxY, entityPos.z);

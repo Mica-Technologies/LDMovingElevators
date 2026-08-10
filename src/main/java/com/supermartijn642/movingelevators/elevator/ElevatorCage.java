@@ -328,23 +328,25 @@ public class ElevatorCage {
     }
 
     /**
-     * How far past the cabin's face a shoved entity is set down. Flush would do geometrically, but a
-     * position exactly on the boundary resolves into the blocks about as readily as out of them, and
-     * placement is a one-shot -- nothing runs afterwards to catch an entity that landed wrong.
-     */
-    /**
      * How deep an overlap has to be, in every axis, before it counts as being inside a block rather
      * than standing against one. Comfortably more than an entity settles into a platform carrying it,
      * and far less than the half-block or more of a body genuinely caught in masonry.
      */
     private static final double PENETRATION_TOLERANCE = 0.08;
+    /**
+     * How far past the cabin's face a shoved entity is set down. Flush would do geometrically, but a
+     * position exactly on the boundary resolves into the blocks about as readily as out of them, and
+     * placement is a one-shot -- nothing runs afterwards to catch an entity that landed wrong.
+     */
     private static final double PUSH_CLEARANCE = 0.01;
     /**
-     * Entity boxes are shrunk by this before being tested against the cabin's cells, as
-     * {@link ElevatorCollisionHandler} does for its own collisions. Somebody standing on the cabin roof
-     * shares a plane with it without being inside it; counting that as engulfed would fling a passenger
-     * off the top of a descending cabin all the way beneath it.
+     * How far something may have sunk into a surface and still count as standing on it rather than
+     * being inside it.
+     * <p>
+     * A block: that is "its feet are somewhere in the cell it is standing on". Anything deeper is not
+     * resting on the cabin, it is in the middle of it, and belongs to the eviction below.
      */
+    private static final double SETTLE_DEPTH = 1;
 
     /**
      * Shoves entities out of the cells the cabin is about to fill with blocks.
@@ -372,6 +374,21 @@ public class ElevatorCage {
         for(Entity entity : level.getEntitiesInAABBexcluding(null, cage, ElevatorCage::canBePushedAside)){
             if(!this.intersectsSolidBlock(startPos, entity.getEntityBoundingBox()))
                 continue;
+            // Standing on it, not buried in it: set it down on the surface it had sunk into and leave
+            // it where it was. Evicting these was the roof-teleport -- a passenger's position on the
+            // server is a network round trip stale, so on arrival their feet sit that much of a tick's
+            // travel inside the cabin floor they are riding on, and the eviction below then threw them
+            // out of their own lift onto its roof.
+            double surface = this.restingSurface(startPos, entity);
+            if(!Double.isNaN(surface)){
+                // setPosition, not setPositionAndUpdate: a passenger's client already has them standing
+                // on the floor and it is only this side's copy of them that is out of date, so a
+                // teleport here would yank somebody who is in exactly the right place.
+                entity.setPosition(entity.posX, surface, entity.posZ);
+                entity.motionY = 0;
+                entity.fallDistance = 0;
+                continue;
+            }
             double y = pushUp ? clearAbove : clearBelow - entity.height;
             // setPositionAndUpdate rather than setPosition, because on a player the former goes out over
             // the connection and actually tells the client it has been moved; a bare reposition leaves
@@ -385,11 +402,32 @@ public class ElevatorCage {
     }
 
     /**
-     * Whether the given box overlaps a cell that is about to be given a block.
+     * The height something caught in the cabin's blocks should be set down at to be standing on top of
+     * them, or {@link Double#NaN} if there is no such height and it has to be evicted instead.
      * <p>
-     * Worked out from the box's own index range rather than by walking the cage, so testing one entity
-     * costs the handful of cells it actually stands in no matter how big the cabin is.
+     * The top of the highest cell it is in -- clearing the highest clears the rest -- but only if it
+     * had sunk no further than {@link #SETTLE_DEPTH} into it and only if it would actually be free
+     * standing there. Both matter: something the cabin came down on top of is buried by much more than
+     * a settle and is not standing on anything, and a cabin whose interior is too low to hold the thing
+     * upright has nowhere to put it, so both fall through to the eviction.
      */
+    private double restingSurface(BlockPos startPos, Entity entity){
+        AxisAlignedBB box = entity.getEntityBoundingBox();
+        double surface = Double.NaN;
+        for(AxisAlignedBB solid : this.collisionBoxes){
+            AxisAlignedBB other = solid.offset(startPos.getX(), startPos.getY(), startPos.getZ());
+            if(box.maxX <= other.minX || box.minX >= other.maxX
+                || box.maxZ <= other.minZ || box.minZ >= other.maxZ
+                || box.maxY <= other.minY || box.minY >= other.maxY)
+                continue;
+            if(Double.isNaN(surface) || other.maxY > surface)
+                surface = other.maxY;
+        }
+        if(Double.isNaN(surface) || surface - box.minY > SETTLE_DEPTH)
+            return Double.NaN;
+        return this.intersectsSolidBlock(startPos, box.offset(0, surface - box.minY, 0)) ? Double.NaN : surface;
+    }
+
     /**
      * Whether the entity is genuinely buried in one of the cabin's blocks, as opposed to resting
      * against one.

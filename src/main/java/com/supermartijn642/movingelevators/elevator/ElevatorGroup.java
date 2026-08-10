@@ -276,6 +276,16 @@ public class ElevatorGroup {
      * on the roof's top face.
      */
     private static final double ROOF_CLEARANCE = 0.05;
+    /**
+     * How many ticks of cabin travel a passenger's reported position may trail the cabin by and still
+     * be taken for a passenger, on top of the ground the cabin has swept since the last check.
+     * <p>
+     * Half a second, which is a bad connection's round trip. A passenger's position on the server is
+     * the one their client last sent, worked out against the client's own copy of the cabin -- itself
+     * a little behind the server's, since {@code syncCurrentY} snaps it back a latency late. Both
+     * delays put a passenger where the cabin has been, never where it is going.
+     */
+    private static final int RIDER_LAG_TICKS = 10;
     /** How far above and below the cabin counts as being in its way. */
     private static int shaftScanReach(){
         return MovingElevatorsConfig.shaftScanReach.get();
@@ -865,17 +875,45 @@ public class ElevatorGroup {
         double above = travel > 0 ? lookAhead : shaftScanReach();
         AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, sweptMinY - below, cabin.minZ,
             cabin.maxX, sweptMaxY + above, cabin.maxZ);
+        AxisAlignedBB carried = this.carriedVolume(cabin, sweptMinY, travel);
         for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, shaft)){
             if(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
                 continue;
-            if(!this.isRidingInside(cabin, entity))
+            if(!this.isRidingInside(carried, entity))
                 return true;
         }
         return false;
     }
 
     /**
-     * Whether something is riding inside the cabin rather than standing in the shaft with it.
+     * The volume something has to be in to count as being carried by the cabin rather than standing in
+     * its way.
+     * <p>
+     * Not the cabin's live box. A passenger's position on the server is stale by a network round trip
+     * (see {@link #RIDER_LAG_TICKS}), so measuring them against where the cabin is <i>now</i> finds
+     * their feet below the floor they are standing on and calls a passenger an obstruction -- which is
+     * exactly what stopped lifts in multiplayer with nothing whatever in the shaft. Singleplayer never
+     * showed it because there is no round trip to be late by.
+     * <p>
+     * The allowance reaches back the way the cabin came and no further forward than the cabin itself:
+     * over everything swept since the last check, which the cabin has demonstrably already passed
+     * through, plus the round trip. Reaching forward as well would count somebody the cabin is about to
+     * arrive at as a passenger and drive into them, which is the one thing this must never do.
+     * <p>
+     * Only the ascending case needs it. Going down, a stale position sits <i>above</i> the true one, so
+     * a passenger drifts up into the cabin's own headroom -- a whole cabin's worth of slack that is
+     * already there -- and extending the top instead would make a passenger indistinguishable from
+     * somebody standing on the roof, who must keep being noticed.
+     */
+    private AxisAlignedBB carriedVolume(AxisAlignedBB cabin, double sweptMinY, double travel){
+        double trailing = travel < 0 ? 0 : Math.abs(this.speed) * RIDER_LAG_TICKS;
+        return new AxisAlignedBB(cabin.minX, sweptMinY - trailing, cabin.minZ,
+            cabin.maxX, cabin.maxY, cabin.maxZ);
+    }
+
+    /**
+     * Whether something is riding inside the given volume -- the cabin itself when it is standing
+     * still, {@link #carriedVolume} while it is moving -- rather than standing in the shaft with it.
      * <p>
      * Decided by where its feet are, not by whether its box touches the cabin. Touching was the wrong
      * question and quietly defeated the whole feature: anything standing on the roof touches the
