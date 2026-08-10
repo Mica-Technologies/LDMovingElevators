@@ -156,6 +156,59 @@ public class ElevatorCage {
         return this.cachedLightLevel;
     }
 
+    /** Lazily worked out from the cage's own blocks; null until asked for. */
+    private Boolean cachedHasInterior;
+
+    /**
+     * Whether the cage has anywhere inside it to stand -- a cell of its own that something could be
+     * in, holding it up.
+     * <p>
+     * This is the difference between a cabin and a platform, and it decides where this cage's
+     * passengers are. A cabin is ridden from inside, so anything on its top face is on its roof; a
+     * platform has no inside, so its top face is where its passengers stand and being there is what
+     * riding it means. Any rule about the top of a cage has to know which of the two it has.
+     * <p>
+     * A cage needs only one block to exist, so this cannot be asked as "is it solid": a platform is
+     * routinely a few blocks in a larger footprint, all of it empty cells. What makes an inside is an
+     * empty cell <i>resting on</i> a filled one -- somewhere the cage itself would hold a passenger
+     * up. The empty cells beside a platform are not that; you would fall straight through them.
+     */
+    public boolean hasInterior(){
+        if(this.cachedHasInterior == null){
+            boolean interior = false;
+            for(int x = 0; !interior && x < this.xSize; x++)
+                for(int y = 1; !interior && y < this.ySize; y++)
+                    for(int z = 0; !interior && z < this.zSize; z++)
+                        interior = !this.isCellFilled(x, y, z) && this.isCellOccupied(x, y - 1, z);
+            this.cachedHasInterior = interior;
+        }
+        return this.cachedHasInterior;
+    }
+
+    /**
+     * Whether a whole cell of the cage is taken up by collision -- so there is no standing in it.
+     * Partial coverage is not enough: a cell holding a slab or a carpet is still one a passenger
+     * occupies, standing a little higher.
+     */
+    private boolean isCellFilled(int x, int y, int z){
+        for(AxisAlignedBB box : this.collisionBoxes)
+            if(box.minX <= x && box.maxX >= x + 1
+                && box.minY <= y && box.maxY >= y + 1
+                && box.minZ <= z && box.maxZ >= z + 1)
+                return true;
+        return false;
+    }
+
+    /** Whether a cell of the cage has any collision in it at all -- enough to stand on. */
+    private boolean isCellOccupied(int x, int y, int z){
+        for(AxisAlignedBB box : this.collisionBoxes)
+            if(box.minX < x + 1 && box.maxX > x
+                && box.minY < y + 1 && box.maxY > y
+                && box.minZ < z + 1 && box.maxZ > z)
+                return true;
+        return false;
+    }
+
     public static boolean canCreateCage(World level, BlockPos startPos, int xSize, int ySize, int zSize, EntityPlayer requester){
         boolean hasBlocks = false;
         for(int x = 0; x < xSize; x++){

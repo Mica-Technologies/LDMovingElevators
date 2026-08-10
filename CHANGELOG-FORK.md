@@ -440,6 +440,14 @@ Based on upstream **Moving Elevators 1.4.12**.
   stale position had them a few centimetres inside the floor they were riding on counted as caught.
   Anything merely settled into a surface is now set down on top of it and left where it was, and only
   something genuinely buried is evicted.
+- A cabin one block tall emergency-stopped on every trip it carried anybody, and never counted a
+  passenger for the overload check or the cabin music. Both ask whether feet are inside the cabin and
+  treat the top face as its roof, which is right for a cabin and exactly wrong for a platform — where
+  the top face is the floor and standing on it is the only way to ride at all. A cage is now asked
+  whether it has an inside to be in, meaning a cell of its own that would hold somebody up, and a
+  cage without one is ridden from on top. This covers a platform of any height and any shape, which
+  matters because a cage needs only a single block to exist, so most platforms are mostly empty
+  cells.
 - Anything the cabin's underside came down on was left with its head inside the cabin rather than
   flush beneath it: the push subtracted the entity's width from its feet where it needed its height.
   Nothing corrected it in flight, since the cabin's blocks are out of the world while it travels, so

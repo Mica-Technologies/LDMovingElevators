@@ -272,8 +272,9 @@ public class ElevatorGroup {
     private static final int SHAFT_SCAN_INTERVAL = 10;
     /**
      * How far below the top of the cabin something must stand to count as being inside it rather than
-     * on its roof. Small: it only has to absorb floating-point drift, since a rider's feet sit exactly
-     * on the roof's top face.
+     * on its roof -- or, on a platform, how far above the top face still counts as standing on it.
+     * Small either way: it only has to absorb floating-point drift, since feet sit exactly on the face
+     * they are on.
      */
     private static final double ROOF_CLEARANCE = 0.05;
     /**
@@ -875,7 +876,7 @@ public class ElevatorGroup {
         double above = travel > 0 ? lookAhead : shaftScanReach();
         AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, sweptMinY - below, cabin.minZ,
             cabin.maxX, sweptMaxY + above, cabin.maxZ);
-        AxisAlignedBB carried = this.carriedVolume(cabin, sweptMinY, travel);
+        AxisAlignedBB carried = this.carriedVolume(cabin, sweptMinY, sweptMaxY, travel);
         for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, shaft)){
             if(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
                 continue;
@@ -900,15 +901,35 @@ public class ElevatorGroup {
      * through, plus the round trip. Reaching forward as well would count somebody the cabin is about to
      * arrive at as a passenger and drive into them, which is the one thing this must never do.
      * <p>
-     * Only the ascending case needs it. Going down, a stale position sits <i>above</i> the true one, so
-     * a passenger drifts up into the cabin's own headroom -- a whole cabin's worth of slack that is
-     * already there -- and extending the top instead would make a passenger indistinguishable from
-     * somebody standing on the roof, who must keep being noticed.
+     * Going down, a stale position sits <i>above</i> the true one instead, and extending the top is
+     * only safe where nothing stands on top to be confused with a passenger -- so a platform gets the
+     * same allowance the other way up, while a cabin makes do with its own headroom, which is a
+     * cabin's worth of slack already there. Widening a cabin's top would excuse anybody on its roof,
+     * who must keep being noticed.
      */
-    private AxisAlignedBB carriedVolume(AxisAlignedBB cabin, double sweptMinY, double travel){
-        double trailing = travel < 0 ? 0 : Math.abs(this.speed) * RIDER_LAG_TICKS;
-        return new AxisAlignedBB(cabin.minX, sweptMinY - trailing, cabin.minZ,
-            cabin.maxX, cabin.maxY, cabin.maxZ);
+    private AxisAlignedBB carriedVolume(AxisAlignedBB cabin, double sweptMinY, double sweptMaxY, double travel){
+        double trailing = Math.abs(this.speed) * RIDER_LAG_TICKS;
+        double minY = travel < 0 ? sweptMinY : sweptMinY - trailing;
+        double maxY = travel < 0 && this.isRiddenFromOnTop() ? sweptMaxY + trailing : cabin.maxY;
+        return new AxisAlignedBB(cabin.minX, minY, cabin.minZ, cabin.maxX, maxY, cabin.maxZ);
+    }
+
+    /**
+     * Whether the cabin is a platform, ridden by standing on its top face, rather than a cabin ridden
+     * from inside.
+     * <p>
+     * The roof rule below assumes there is an inside to be in. A platform has none: its passengers
+     * stand on the very face the rule calls a roof, so a cabin one block tall -- which is the whole of
+     * upstream's original elevator -- read every passenger it had as somebody standing on top of it,
+     * and stopped for them on every single trip.
+     * <p>
+     * Answered from the cage's own blocks while it is moving, which is when the shaft sweep runs and
+     * the answer matters. Parked, and before the first trip of all, there may be no cage object to ask
+     * and only the height is known -- enough for the case that actually needs catching, since a cage
+     * one cell tall cannot have an inside whatever it is built of.
+     */
+    private boolean isRiddenFromOnTop(){
+        return this.cage == null ? this.cageSizeY <= 1 : !this.cage.hasInterior();
     }
 
     /**
@@ -920,11 +941,15 @@ public class ElevatorGroup {
      * cabin from above, and anything pressed against the outside of a wall touches it from the side,
      * so the two cases most worth catching were the two being excluded. Feet within the cabin's own
      * span is what actually separates a passenger from a hazard.
+     * <p>
+     * Except on a platform, where the top face is the floor and standing on it is the only way to ride
+     * at all -- see {@link #isRiddenFromOnTop}.
      */
     private boolean isRidingInside(AxisAlignedBB cabin, EntityLivingBase entity){
+        double ceiling = this.isRiddenFromOnTop() ? cabin.maxY + ROOF_CLEARANCE : cabin.maxY - ROOF_CLEARANCE;
         return entity.posX >= cabin.minX && entity.posX <= cabin.maxX
             && entity.posZ >= cabin.minZ && entity.posZ <= cabin.maxZ
-            && entity.posY >= cabin.minY && entity.posY < cabin.maxY - ROOF_CLEARANCE;
+            && entity.posY >= cabin.minY && entity.posY < ceiling;
     }
 
     /**
@@ -1204,7 +1229,11 @@ public class ElevatorGroup {
         AxisAlignedBB cabin = new AxisAlignedBB(anchor.x, anchor.y, anchor.z,
             anchor.x + this.cageSizeX, anchor.y + this.cageSizeY, anchor.z + this.cageSizeZ);
         int aboard = 0;
-        for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, cabin)){
+        // Queried a shade taller than the cabin, because a platform's passengers stand exactly on its
+        // top face and a box sharing a plane with another does not intersect it -- so asking for the
+        // cabin's own volume would return nobody at all on a platform. isRidingInside still decides
+        // who counts, so this only widens the question, not the answer.
+        for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, cabin.expand(0, ROOF_CLEARANCE, 0))){
             if(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
                 continue;
             if(this.isRidingInside(cabin, entity))
