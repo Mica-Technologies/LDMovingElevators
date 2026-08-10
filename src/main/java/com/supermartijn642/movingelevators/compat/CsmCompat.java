@@ -40,7 +40,13 @@ public class CsmCompat {
         if(!(stack.getItem() instanceof ItemFireAlarmLinker))
             return null;
         try{
-            return ((ItemFireAlarmLinker)stack.getItem()).getSelectedPanel();
+            // The stack, not the item. CSM kept this selection on the item until the release pinned
+            // above, and an item is a singleton -- so on a server every linker in the world shared
+            // one selection, and the panel this answered with was whichever player had clicked one
+            // last. Reading it per stack is the whole of the fix, and it was CSM's to make; this
+            // only has to ask the right question. The catch below still covers an older CSM, which
+            // now means one without the stack-taking form.
+            return ItemFireAlarmLinker.getSelectedPanel(stack);
         }catch(LinkageError e){
             // Somebody is running an older City Super Mod than this was built against, one without the
             // accessor. Nothing is wrong with their setup and nothing should break: they simply cannot
