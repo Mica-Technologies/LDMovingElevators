@@ -117,7 +117,29 @@ dependencies {
     // Loader.isModLoaded("csm") check; that containment is the entire guarantee, and it fails at
     // runtime rather than at build time, so do not import CSM anywhere else. Matches how SUM consumes
     // the same API.
-    compileOnly "Mica-Technologies:minecraft-city-super-mod:${csm_version}"
+    //
+    // Mica: -PcsmLocalJar=<path> builds against a locally built City Super Mod instead of the pinned
+    // release, for the window where this mod needs an API CSM has written but not yet tagged. Without
+    // it the only way to develop across the two is to release CSM first and find out afterwards
+    // whether the API was right.
+    //
+    // Compile only, exactly like the pinned release it replaces. Do not also put it on the run tasks'
+    // classpath: the dev runtime gets its CSM from run/mods, and a second copy on the classpath is a
+    // second source of mod id "csm", which FML refuses to load with DuplicateModsFoundException. To
+    // run against an unreleased CSM, swap the jar in run/mods instead -- that is a reobfuscated jar,
+    // which is what belongs there, since FML remaps mods-folder jars into dev names on load.
+    //
+    // Opt-in, and never committed as the default: CI and a clean checkout always build against a real
+    // release, so a local experiment cannot silently become the build everyone else gets.
+    if(project.hasProperty("csmLocalJar")){
+        File csmLocalJar = file(project.property("csmLocalJar"))
+        if(!csmLocalJar.isFile())
+            throw new GradleException("csmLocalJar does not point at a file: ${csmLocalJar}")
+        logger.lifecycle("City Super Mod: compiling against local jar ${csmLocalJar.name} (pinned release ${csm_version} bypassed)")
+        compileOnly files(csmLocalJar)
+    }else{
+        compileOnly "Mica-Technologies:minecraft-city-super-mod:${csm_version}"
+    }
 
     // SpongePowered Mixin
     annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
