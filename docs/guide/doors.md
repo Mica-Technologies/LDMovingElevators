@@ -10,6 +10,19 @@ bind** — each doorway finds its own elevator from where it stands.
 
 Each is placed as a single item and removed as one unit.
 
+<div class="grid" markdown>
+
+![A closed 2x2 elevator door with an indicator above it and a call panel beside it](../assets/landing-closed.png){ loading=lazy }
+
+![The same doorway open, showing the cabin and its car panel](../assets/landing-open.png){ loading=lazy }
+
+</div>
+
+*A landing, closed and open. The readout above the doorway is a
+[Remote Elevator Indicator](../reference/blocks.md#remote-elevator-indicator) and the buttons beside
+it a [Call Panel](../reference/blocks.md#remote-elevator-call-panel) — neither is required, but this
+is what a finished landing looks like.*
+
 ## Placing them
 
 1. Craft an **Elevator Door** or **Elevator Door (Narrow)**.

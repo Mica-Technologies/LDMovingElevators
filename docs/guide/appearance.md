@@ -46,6 +46,11 @@ would otherwise go dark mid-trip.
 `movingCabinLight` (default `6`) sets a **minimum light level inside a moving cabin**. It lights the
 cabin, not the shaft. Set it to `0` for the old behaviour.
 
+![The elevator controller's screen, showing cabin size, speed and the sound scheme button](../assets/controller-screen.png){ loading=lazy }
+
+*The controller's screen: cabin size and offsets, speed, floor and elevator names, and the sound
+scheme button at the bottom left.*
+
 ## Sound
 
 Elevators make noise. The controller's screen has an on/off toggle and a button to pick one of two

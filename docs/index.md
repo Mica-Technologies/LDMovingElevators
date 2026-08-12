@@ -50,7 +50,14 @@ disguise system. Everything below is this fork's own work, and none of it exists
 | **[Service modes](guide/service.md)** | Out of service, independent service, emergency stop and fire recall |
 | **[Sound schemes](guide/appearance.md#sound)** | Two per-elevator schemes, plus cabin music |
 
+![A three-storey building with an elevator, seen from outside](assets/building-exterior.png){ loading=lazy }
+
 ## How an elevator is put together
+
+![The same building with its front wall removed, showing three floors and the shaft running up the left-hand side](assets/building-cutaway.png){ loading=lazy }
+
+*The same building with one wall taken off. The shaft runs up the left-hand side; each floor gets its
+own controller and its own doorway.*
 
 ```mermaid
 flowchart TD

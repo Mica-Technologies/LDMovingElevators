@@ -4,6 +4,11 @@ The whole mod rests on one idea: **a column of Elevator Controllers is a shaft, 
 in it is a floor.** The cabin is loose blocks that the elevator picks up and carries. Everything
 else — displays, panels, doors — is optional control and decoration on top.
 
+![Inside a lift shaft: the cabin at the bottom with a car panel on its back wall](../assets/shaft-interior.png){ loading=lazy }
+
+*Inside the shaft. The cabin is the block of quartz at the bottom, with a car panel mounted on its
+back wall — everything in that space travels together.*
+
 ## What you need
 
 - **At least 2 Elevator Controllers.** One is not an elevator; there is nowhere to go.

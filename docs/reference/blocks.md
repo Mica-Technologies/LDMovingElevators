@@ -25,6 +25,8 @@ Elevators** creative tab.
 
 ## Elevator Controller
 
+![An Elevator Controller set into a shaft wall, showing its three buttons](../assets/elevator-controller.png){ loading=lazy }
+
 **The elevator itself.** Place controllers above each other, all facing the same way, and each one
 becomes a floor of one shaft.
 
@@ -106,6 +108,8 @@ A comparator reads the calls waiting: `0` none, `7` down, `15` up, `11` both.
 
 ### Elevator Car Panel
 
+![The car panel's screen: a floor list, door controls, alarm and emergency stop](../assets/car-panel-screen.png){ loading=lazy }
+
 **The panel you ride with** — mount it inside the cabin.
 
 - Shows the current floor and direction of travel over a bank of buttons that light for the floors
@@ -145,8 +149,9 @@ floors, and its own landing, by itself. The item **keeps its links after you pla
 lobby panel per floor takes no extra work. Right-click a placed, configured panel with another panel
 item to **copy its whole bank** onto that item.
 
-Shafts may serve different floors, but a floor they **share** must have the same name and the same
-height in both, or the bind is refused.
+Shafts may serve different floors, but they may not disagree about one: two **named** floors at the
+same height with different names is refused, and so is the same name appearing at two heights.
+Unnamed floors are not compared at all.
 
 Full detail: [Elevator banks](../guide/banks.md).
 

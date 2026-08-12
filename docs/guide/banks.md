@@ -67,6 +67,11 @@ What they may not do is disagree about one. Two checks are made, and either refu
 The refusal names the floor and both values, so the message tells you what to fix. Sneak-click a
 placed panel to see what it is linked to and whether the linked elevators agree.
 
+![The bank lobby panel's destination screen, showing floor buttons and no up/down call](../assets/bank-lobby-screen.png){ loading=lazy }
+
+*The destination screen. Floors, and no up/down call — that is the whole point of destination
+dispatch.*
+
 ## Riding a banked elevator
 
 At the lobby panel, enter your destination floor. The panel tells you which car is coming:
