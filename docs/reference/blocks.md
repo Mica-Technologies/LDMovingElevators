@@ -56,6 +56,11 @@ Elevator Panel**; stack a second on top of the first for a taller board.
 
 ## Remote Elevator Panel
 
+![A Remote Elevator Panel with two Elevator Displays stacked on it, beside a Remote Elevator Display cube](../assets/remote-fixtures.png){ loading=lazy }
+
+*Left: a Remote Elevator Display, showing the floor and nothing else. Right: a Remote Elevator Panel
+with two Elevator Displays stacked on top of it — the green dot marks the floor the cabin is on.*
+
 The Elevator Controller's controls, placed anywhere. Bind by right-clicking a controller with it.
 
 - Elevator Displays can be put on top, just as with the controller.
@@ -157,6 +162,11 @@ Full detail: [Elevator banks](../guide/banks.md).
 
 ### Elevator Bank Indicator
 
+![A bank indicator above two lift doorways, with a column each for elevators A and B](../assets/bank-lobby-fixtures.png){ loading=lazy }
+
+*A two-car bank: the indicator gives each elevator a column with its name, its floor and its
+direction; the panel below it is where you enter a destination.*
+
 **One readout for a whole bank** instead of one per shaft: a column per elevator showing that
 elevator's name, the floor its cabin is at, and which way it is going. A landing needs one plate
 rather than one per shaft.
@@ -186,6 +196,8 @@ waiting for.
 Full detail: [Doors](../guide/doors.md).
 
 ## Elevator Door (Narrow)
+
+![A single-width sliding door in a 1x2 opening](../assets/door-narrow.png){ loading=lazy }
 
 The same block in **1x2** with a single leaf. Identical behaviour.
 

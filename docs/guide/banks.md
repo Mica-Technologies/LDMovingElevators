@@ -93,6 +93,10 @@ ordinary car panel. It shows the current floor and direction, and has **open doo
 and **alarm** — but **no floor buttons**, because in a bank you entered your destination at the lobby
 before you boarded.
 
+![A bank indicator reading A=2 and B=2 above two lift doorways](../assets/bank-indicator.png){ loading=lazy }
+
+*Both cars sent to floor 2; the indicator follows them.*
+
 ## Showing the whole bank
 
 The [Elevator Bank Indicator](../reference/blocks.md#elevator-bank-indicator) is one readout for the

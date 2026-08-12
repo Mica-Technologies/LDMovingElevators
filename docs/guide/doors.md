@@ -41,6 +41,11 @@ belongs to that landing.
     A 2x2 door needs a 2x2 opening and a 1x2 door needs a 1x2 one. The block refuses to place rather
     than partially appearing.
 
+![A single-width sliding door in a 1x2 opening](../assets/door-narrow.png){ loading=lazy }
+
+*The narrow door: one leaf, one block wide. Same behaviour as the 2x2, and the same lack of any
+binding step.*
+
 ## When they open and close
 
 | Event | Behaviour |
