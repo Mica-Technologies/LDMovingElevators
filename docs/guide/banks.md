@@ -48,10 +48,24 @@ three times.
 ## Floors must line up
 
 Shafts in a bank **may serve different floors** — a service lift that skips the mezzanine is fine.
-But a floor that two shafts *share* must have the **same name and the same height** in both.
+What they may not do is disagree about one. Two checks are made, and either refuses the bind:
 
-If it does not, the bind is refused with a message naming the floor. Sneak-click a placed panel to
-see what it is linked to and whether the linked elevators agree.
+| Conflict | Example |
+| --- | --- |
+| Two **named** floors at the same height with different names | y=4 is "Lobby" on one shaft and "Basement" on the other |
+| The **same name** at two different heights | "Lobby" is y=4 on one shaft and y=9 on the other |
+
+!!! note "Only named floors are compared"
+
+    Floors you have not given an explicit name are skipped entirely. A shaft whose ground floor is
+    named "Lobby" links happily to one whose ground floor is still unnamed — the check has nothing
+    to compare, so there is nothing to disagree about.
+
+    In practice that means an unnamed bank always links, and naming floors is what makes the check
+    useful. Name them.
+
+The refusal names the floor and both values, so the message tells you what to fix. Sneak-click a
+placed panel to see what it is linked to and whether the linked elevators agree.
 
 ## Riding a banked elevator
 

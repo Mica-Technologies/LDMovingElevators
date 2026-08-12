@@ -69,7 +69,13 @@ opening, doors closing, a button beep, overload, and the alarm.
 
 ### Cabin music
 
-Toggled from the car panel's screen. Off by default.
+Toggled from the car panel's screen, and **on by default**.
+
+It only plays while somebody is actually aboard. An empty lift playing to itself would mean every
+lift in a building playing at once, audible from every landing, and a track started for nobody cannot
+be switched off by whoever it eventually annoys.
+
+It also follows the sounds toggle: turning sounds off silences the music too.
 
 ### A note on the audio itself
 
