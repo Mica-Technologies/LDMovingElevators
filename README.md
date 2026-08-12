@@ -17,6 +17,8 @@ An **unofficial fork** of [Moving Elevators](https://github.com/SuperMartijn642/
 >   [upstream repository](https://github.com/SuperMartijn642/MovingElevators). For anything other
 >   than Forge 1.12, the official mod is what you want.
 
+📖 **[Documentation & block reference → mica-technologies.github.io/LDMovingElevators](https://mica-technologies.github.io/LDMovingElevators/)**
+
 ## Why this fork exists
 
 Moving Elevators is actively developed upstream across many Minecraft versions. Our servers and

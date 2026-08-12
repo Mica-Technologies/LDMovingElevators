@@ -1,0 +1,104 @@
+site_name: LDMovingElevators Wiki
+site_description: >-
+  LDMovingElevators — Mica Technologies' unofficial Forge 1.12 fork of SuperMartijn642's Moving
+  Elevators. Block reference, setup guides and configuration.
+site_url: https://mica-technologies.github.io/LDMovingElevators/
+repo_url: https://github.com/Mica-Technologies/LDMovingElevators
+repo_name: Mica-Technologies/LDMovingElevators
+edit_uri: edit/forge-1.12/docs/
+copyright: >-
+  An unofficial fork. Moving Elevators is by SuperMartijn642; this fork is not affiliated with or
+  endorsed by him.
+
+# Agent working notes and phased plans are gitignored working documents, not published material.
+# They are absent from a CI checkout anyway; this keeps a LOCAL `mkdocs serve` from picking them
+# up and quietly publishing them on the next deploy.
+exclude_docs: |
+  agent-plans/
+  AGENT-PLANS/
+
+theme:
+  name: material
+  language: en
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  palette:
+    # Blue-grey and amber, rather than MCMCP's indigo: this is a building-systems mod, and amber is
+    # the colour a real hall indicator lights. It also reads as visibly NOT the upstream mod's own
+    # branding, which is the honest signal for an unofficial fork.
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  # Renders :material-…: / :octicons-…: shortcodes as inline SVG icons. Without this they render
+  # as literal colon-wrapped text, which is what a missing icon looks like on a card.
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Guides:
+      - Installation: guide/installation.md
+      - Your first elevator: guide/first-elevator.md
+      - Calls and dispatch: guide/calls.md
+      - Doors: guide/doors.md
+      - Elevator banks: guide/banks.md
+      - Service modes and emergencies: guide/service.md
+      - Appearance and sound: guide/appearance.md
+  - Reference:
+      - Blocks and items: reference/blocks.md
+      - Configuration: reference/configuration.md
+      - Comparators: reference/comparators.md
+      - FAQ: reference/faq.md
+  - About:
+      - This is a fork: about/fork.md
+      - Credits and licence: about/credits.md

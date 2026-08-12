@@ -258,6 +258,25 @@ deltas):
   anything with 5+ downloads. Its `workflow_run` trigger matches the release workflow by name, so
   those two strings must stay in sync.
 
+## Documentation site
+
+`docs/` is an **MkDocs Material** site published to GitHub Pages at
+<https://mica-technologies.github.io/LDMovingElevators/> by `deploy-wiki-pages-main.yml`. It mirrors
+the sibling MCMCP setup deliberately — same theme, same nav shape, same pinned toolchain in
+`docs/requirements.txt` — so the two sites are one thing to maintain rather than two.
+
+- The workflow triggers on **`forge-1.12`**, not `main`; the `-main` filename suffix is the Mica
+  convention for "the default branch", the same as `build-mod-release-pre-release-main.yml`.
+- **One-time setup:** Settings → Pages → Source → "GitHub Actions". Until that is set, the build
+  succeeds and the deploy step 404s.
+- CI runs `mkdocs build --strict`, so a broken internal link or a nav entry pointing at a missing
+  file **fails the deploy**. Preview locally with `pip install -r docs/requirements.txt && mkdocs serve`.
+- The README and this site overlap on purpose: the README stays a complete standalone document for
+  people reading the repo, and the site is the same material split into per-block reference and
+  task-shaped guides. **Update both** when block behaviour changes.
+- The fork disclaimers are load-bearing. They appear on the site's home page *and* on
+  `docs/about/fork.md`; do not thin them out to avoid repetition.
+
 ## Planning docs
 
 `docs/agent-plans/` is **gitignored** — it holds implementation plans and agent working notes. It is

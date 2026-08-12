@@ -25,6 +25,14 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Added
 
+- **A documentation site**, published to GitHub Pages from `docs/` by
+  `deploy-wiki-pages-main.yml`. MkDocs Material, mirroring the sibling MCMCP setup so the two read
+  alike and the toolchain is one thing to learn rather than two. The README had grown into a wiki
+  that happened to live in one file; this splits it into per-block reference and task-shaped guides
+  without losing the fork disclaimers, which are repeated on the home page and given a page of their
+  own. `mkdocs build --strict` runs in CI, so a broken internal link fails the deploy rather than
+  shipping a 404.
+
 - **Elevator Bank Indicator** — one wall readout for a whole bank, a column per elevator showing its
   name, the floor it is on and which way it is going. A four-shaft lobby needed four separate
   indicators and four separate glances; this answers in one. It is a new block rather than a change
