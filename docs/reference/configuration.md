@@ -92,8 +92,12 @@ How long an elevator stays out of service after an [emergency stop](../guide/ser
 
 `integer` 1–32 · default `12`
 
-How far an elevator door looks for a landing to attach itself to when placed, in blocks. It looks at
-**its own height**, so a door a block off the landing finds nothing regardless of this value.
+How far an elevator door looks for a landing to attach itself to when placed, in blocks.
+
+Measured from the **edge of the cabin**, not from the controller behind it, so it means the same
+thing however large the cabin is and wherever its controller is mounted. The door must also stand
+within the cabin's own height at that landing, so a door well above or below the cabin floor finds
+nothing regardless of this value.
 
 ### `shaftScanReach`
 

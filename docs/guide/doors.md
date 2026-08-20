@@ -29,12 +29,22 @@ is what a finished landing looks like.*
 2. Place it in the landing's opening. It faces you as you place it.
 3. Optionally stack another doorway on top for a taller opening.
 
-On placement it looks for an elevator landing **within 12 blocks at its own height**
-(`doorLinkRange`, [configurable](../reference/configuration.md)). If it finds one, it is bound; if it
-does not, it says so.
+On placement it looks for a **cabin it is standing in the mouth of**: within 12 blocks of that
+cabin's edge (`doorLinkRange`, [configurable](../reference/configuration.md)), and within the cabin's
+own height at that landing. If it finds one, it is bound; if it does not, it says so.
+
+The search is measured against the cabin as you have configured it — its
+[size, side offset, depth offset and height offset](first-elevator.md#changing-an-elevator-later)
+all count — rather than against the controller. That matters whenever the controller is not
+directly behind the middle of its cabin: mount it to the side, or set a deep cabin, and its doors
+can be many blocks from it while still standing right in its doorway. In a bank it matters more,
+because the shaft next door can easily be the nearer *controller* while your own cabin is the
+nearer *cabin*.
 
 There is no bind step and no item to right-click a controller with. A door placed at a landing
-belongs to that landing.
+belongs to that landing, and it keeps checking: rebuild the landing's controller, or resize or move
+the cabin so the door is no longer in its mouth, and the door goes and finds the landing it is
+actually standing at.
 
 !!! failure "Not enough room for the doorway"
 

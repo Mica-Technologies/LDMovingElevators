@@ -96,19 +96,33 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
     public int getFloorLevel(){
         ElevatorGroup group = this.getGroup();
         if(group != null){
-            int best = Integer.MAX_VALUE, bestDistance = Integer.MAX_VALUE;
-            for(int floor = 0; floor < group.getFloorCount(); floor++){
-                int y = group.getFloorYLevel(floor);
-                int distance = landingDistance(group, y, this.pos.getY());
-                if(distance >= 0 && distance < bestDistance){
-                    bestDistance = distance;
-                    best = y;
-                }
-            }
-            if(best != Integer.MAX_VALUE)
-                return best;
+            int landing = this.landingWithin(group);
+            if(landing != -1)
+                return landing;
         }
         return super.getFloorLevel();
+    }
+
+    /**
+     * Which of an elevator's landings this doorway stands at, or -1 when it stands at none of them.
+     * <p>
+     * The whole question a door has to answer about an elevator, asked in one place so that the two
+     * things which depend on it -- which floor to watch, and whether this is even the right elevator
+     * to be watching -- can never come to different conclusions.
+     *
+     * @return the y-level of the landing's controller, or -1
+     */
+    private int landingWithin(ElevatorGroup group){
+        int best = -1, bestDistance = Integer.MAX_VALUE;
+        for(int floor = 0; floor < group.getFloorCount(); floor++){
+            int y = group.getFloorYLevel(floor);
+            int distance = landingDistance(group, y, this.pos.getY());
+            if(distance >= 0 && distance < bestDistance){
+                bestDistance = distance;
+                best = y;
+            }
+        }
+        return best;
     }
 
     /**
@@ -166,11 +180,16 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
             return;
         }
 
-        // Retried while a binding cannot be resolved as well as while there is none. A door whose
-        // landing controller has been broken and rebuilt keeps a binding that no longer names any
-        // elevator, and getGroup() then answers null for good -- so the door stood shut, deaf to its
-        // own cabin and to the car panel's door buttons, looking exactly like one that works.
-        if((!this.isBound() || this.getGroup() == null) && --this.adoptCounter <= 0){
+        // Retried whenever the binding does not describe where this door is actually standing, not
+        // only when there is no binding at all. Three ways it can stop describing it: the landing's
+        // controller is broken and rebuilt, so the binding names no elevator any more and getGroup()
+        // answers null for good; a door item was bound to one elevator by hand and then placed at
+        // another's landing, which the binding overrode on the way in; or the cabin was resized,
+        // offset or moved to the side of its controller afterwards, so the landing the door used to
+        // stand in is no longer where that cabin stops. All three left a door that looked exactly
+        // like one that works and was deaf to its own car and to the car panel's door buttons.
+        ElevatorGroup bound = this.getGroup();
+        if((bound == null || this.landingWithin(bound) == -1) && --this.adoptCounter <= 0){
             this.adoptCounter = ADOPT_INTERVAL;
             this.adoptNearestLanding();
         }
@@ -336,7 +355,12 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         }
 
         int floorLevel = this.getFloorLevel();
-        boolean matched = group.hasControllerAt(floorLevel);
+        // Whether the door stands in this elevator's cabin at that landing, not merely whether the
+        // elevator has a controller at that height. The weaker test could not fail: when no landing
+        // matches, getFloorLevel() falls back to the bound controller's own y, which the elevator
+        // has a controller at by definition -- so the line that exists to say "you are not at one of
+        // this lift's landings" was incapable of ever saying it.
+        boolean matched = this.landingWithin(group) != -1;
         player.sendMessage(TextComponents.translation("movingelevators.elevator_door.status.landing",
             TextComponents.number(this.pos.getY()).get(), TextComponents.number(floorLevel).get())
             .color(matched ? TextFormatting.GRAY : TextFormatting.RED).get());

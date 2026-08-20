@@ -277,6 +277,16 @@ Based on upstream **Moving Elevators 1.4.12**.
   anyway, on the reasoning that arrival would raise a fresh one, so any tick where the door and the
   elevator disagreed about the cabin being there swallowed the request in silence.
 
+  A door now finds its elevator by the **cabin it is standing in the mouth of**, sized and placed as
+  configured — cabin size, side offset, depth offset and height offset all count — rather than by
+  proximity to the controller, which need not sit behind its cabin at all. It also keeps checking
+  rather than deciding once: a binding that stops describing where the door stands, whether because
+  the landing was rebuilt, because the door item was bound to a different lift by hand, or because
+  the cabin was resized or moved afterwards, sends the door back to look for the landing it is
+  actually at. The door's status readout gained an honest answer to match: its "serves landing" line
+  tested only that the elevator had a controller at that height, which it does by construction, so
+  the one line that exists to report this failure could never report it.
+
 - The bank lobby panel's destination buttons showed one character of the floor's name, so floor 10
   read as "1" — and floors 1 to 9 were right only by luck. Core Lib's `format()` is
   `getFormattedText()`, which wraps every piece of a component in its style code and a trailing
