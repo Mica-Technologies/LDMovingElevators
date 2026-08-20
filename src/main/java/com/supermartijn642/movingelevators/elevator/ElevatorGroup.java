@@ -1999,6 +1999,35 @@ public class ElevatorGroup {
         return new BlockPos(x, y, z);
     }
 
+    /**
+     * The y level the cabin's floor sits at when the cabin is standing at a landing -- the block a
+     * passenger steps onto, and therefore the block that landing's doorway stands in.
+     *
+     * @param floorY y-level of the landing's controller
+     */
+    public int getCabinFloorY(int floorY){
+        return floorY + this.cageHeightOffset;
+    }
+
+    /**
+     * How far a column is from this elevator's cabin when the cabin is standing at a landing: zero
+     * inside the cabin's own footprint, one for the ring of blocks around it, and so on.
+     * <p>
+     * Doorways are measured against this rather than against the controller column. A controller
+     * sits behind its cabin, so the deeper the cabin the further its doors are from it -- past a
+     * certain depth, further than the link range allows at all, and in a bank far enough that the
+     * shaft next door can be the nearer of the two. The mouth of the cabin is what a doorway is
+     * actually attached to, so that is what it should be measured from.
+     *
+     * @param floorY y-level of the landing's controller
+     */
+    public int horizontalDistanceToCabin(int floorY, int x, int z){
+        BlockPos anchor = this.getCageAnchorBlockPos(floorY);
+        int dx = Math.max(Math.max(anchor.getX() - x, x - (anchor.getX() + this.cageSizeX - 1)), 0);
+        int dz = Math.max(Math.max(anchor.getZ() - z, z - (anchor.getZ() + this.cageSizeZ - 1)), 0);
+        return Math.max(dx, dz);
+    }
+
     public Vec3d getCageAnchorPos(double y){
         BlockPos pos = this.getCageAnchorBlockPos(0);
         return new Vec3d(pos.getX(), y + this.cageHeightOffset, pos.getZ());

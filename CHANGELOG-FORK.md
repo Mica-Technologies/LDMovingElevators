@@ -266,6 +266,26 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- Elevator doors could sit out a whole stop without opening, and the car panel's own door buttons
+  did nothing while every other button on it worked. Four faults, each enough on its own: a door
+  measured its landing as a flat two blocks either side of the controller, which a doorway standing
+  in the mouth of a taller or offset cabin falls outside of; it looked for its elevator by distance
+  to the controller column rather than to the cabin, so a deep cabin's doors were out of link range
+  entirely and a bank's doors could adopt the car next door; a binding that stopped resolving —
+  because that landing's controller had been broken and rebuilt — was never retried, leaving the
+  door bound to nothing for good; and an open request the door could not act on yet was spent
+  anyway, on the reasoning that arrival would raise a fresh one, so any tick where the door and the
+  elevator disagreed about the cabin being there swallowed the request in silence.
+
+- The bank lobby panel's destination buttons showed one character of the floor's name, so floor 10
+  read as "1" — and floors 1 to 9 were right only by luck. Core Lib's `format()` is
+  `getFormattedText()`, which wraps every piece of a component in its style code and a trailing
+  reset code, so the generated name of floor 10 was twelve characters rather than seven. Drawing it
+  hid that, since the font renderer eats the codes; keeping the first three characters for a button
+  face did not. Floor names and the scrolling readouts are now built as plain text, which is all
+  they ever were — what colour a readout draws in is decided at the draw call, from the floor's
+  dye.
+
 - A block left loose in a shaft was carried around as though it were the cabin, with nothing said
   about it. Any movable block in the cabin space at a landing counts as a cabin — the mod has no
   other way to know what a cabin is — so the search that fetches one takes whichever is nearest the

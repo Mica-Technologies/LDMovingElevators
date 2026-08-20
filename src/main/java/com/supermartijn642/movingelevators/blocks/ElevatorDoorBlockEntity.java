@@ -26,19 +26,22 @@ import net.minecraft.util.text.TextFormatting;
 public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements TickableBlockEntity {
 
     /**
-     * How far a landing's controller may sit from a door block, in either direction.
+     * Blocks of slack above and below a cabin within which a doorway still counts as standing in it.
      * <p>
-     * Searching only downwards was wrong: the cabin floor sits one block <em>below</em> its
-     * controller by default (see cageHeightOffset), so a doorway you actually walk through stands at
-     * controller y minus one, and looking down from there never reaches the controller above it.
-     * That is why the doors never opened by themselves -- every one of them failed to identify its
-     * own landing, so the cabin was never "here".
+     * The landing test used to be a flat two blocks either side of the controller. Searching only
+     * downwards was wrong first -- the cabin floor sits below its controller, so a doorway you walk
+     * through is not at controller height -- and a fixed window was wrong afterwards, because it was
+     * still measured from the controller rather than from the cabin. Raise a cabin's height offset,
+     * or make it taller, and the doorway standing in its mouth falls outside two blocks; at that
+     * point the door cannot identify its own landing at all, so the cabin is never "here", it never
+     * opens by itself, and the car panel's door buttons have nothing listening to them.
      */
-    private static final int FLOOR_SEARCH_RANGE = 2;
+    private static final int LANDING_SLACK = 1;
 
     /**
-     * How far from a landing's controller column a doorway may stand and still adopt it. A cabin can
-     * be up to fifteen blocks across, so its doors sit well off the controller's own column.
+     * How far outside a cabin a doorway may stand and still adopt the elevator it belongs to, in
+     * blocks. Measured from the cabin rather than from the controller behind it, so it means the same
+     * thing whatever size the cabin has been set to.
      */
     private static int adoptRange(){
         return MovingElevatorsConfig.doorLinkRange.get();
@@ -96,8 +99,8 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
             int best = Integer.MAX_VALUE, bestDistance = Integer.MAX_VALUE;
             for(int floor = 0; floor < group.getFloorCount(); floor++){
                 int y = group.getFloorYLevel(floor);
-                int distance = Math.abs(y - this.pos.getY());
-                if(distance <= FLOOR_SEARCH_RANGE && distance < bestDistance){
+                int distance = landingDistance(group, y, this.pos.getY());
+                if(distance >= 0 && distance < bestDistance){
                     bestDistance = distance;
                     best = y;
                 }
@@ -106,6 +109,24 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
                 return best;
         }
         return super.getFloorLevel();
+    }
+
+    /**
+     * How far a block stands from the cabin floor at a landing, or -1 when it is not in that
+     * landing's cabin at all.
+     * <p>
+     * Ranked by the cabin floor rather than merely accepted, so the two halves of a doorway can
+     * never pick different landings. With a flat window they could: two landings a cabin's height
+     * apart leave a doorway's lower block the same distance from each, and the tie went to whichever
+     * floor came first in the list -- so the bottom leaf watched one floor while the top leaf watched
+     * the other, and only ever half a door opened.
+     *
+     * @param floorY y-level of the landing's controller
+     */
+    private static int landingDistance(ElevatorGroup group, int floorY, int y){
+        int distance = y - group.getCabinFloorY(floorY);
+        return distance < -LANDING_SLACK || distance > group.getCageSizeY() - 1 + LANDING_SLACK
+            ? -1 : Math.abs(distance);
     }
 
     /** Ticks a leaf takes to travel its full width. */
@@ -145,7 +166,11 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
             return;
         }
 
-        if(!this.isBound() && --this.adoptCounter <= 0){
+        // Retried while a binding cannot be resolved as well as while there is none. A door whose
+        // landing controller has been broken and rebuilt keeps a binding that no longer names any
+        // elevator, and getGroup() then answers null for good -- so the door stood shut, deaf to its
+        // own cabin and to the car panel's door buttons, looking exactly like one that works.
+        if((!this.isBound() || this.getGroup() == null) && --this.adoptCounter <= 0){
             this.adoptCounter = ADOPT_INTERVAL;
             this.adoptNearestLanding();
         }
@@ -156,19 +181,27 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
 
         if(group != null){
             long openRequest = group.getDoorOpenRequest(floorLevel);
-            if(openRequest > this.lastOpenRequest){
-                this.lastOpenRequest = openRequest;
-                // Only honour it if the cabin is here; otherwise the request is simply spent, and the
-                // arrival will raise a fresh one.
-                if(cabinHere)
-                    // A bank dispatch asks for a longer hold than the configured default, since
-                    // whoever called the car is walking to it rather than standing at the doors.
-                    this.openTicks = Math.max(MovingElevatorsConfig.doorAutoCloseTicks.get(), group.getDoorHoldTicks(floorLevel));
-            }
             long closeRequest = group.getDoorCloseRequest(floorLevel);
+            // Closing is read first, and cancels any open request it is not older than, so a request
+            // still waiting for the cabin cannot re-open the doors on the tick after somebody inside
+            // the cabin closed them.
             if(closeRequest > this.lastCloseRequest){
                 this.lastCloseRequest = closeRequest;
                 this.openTicks = 0;
+                if(closeRequest >= openRequest)
+                    this.lastOpenRequest = openRequest;
+            }
+            // Spent only when it is acted on. Spending it regardless -- on the reasoning that the
+            // arrival would raise a fresh one -- meant any tick on which the door and the elevator
+            // disagreed about the cabin being here swallowed the arrival's request silently, and
+            // nothing ever raised another: the car stood out its whole wait with the doors shut and
+            // then left. Left pending, that same request opens the doors as soon as the cabin is
+            // agreed to be there.
+            if(openRequest > this.lastOpenRequest && cabinHere){
+                this.lastOpenRequest = openRequest;
+                // A bank dispatch asks for a longer hold than the configured default, since whoever
+                // called the car is walking to it rather than standing at the doors.
+                this.openTicks = Math.max(MovingElevatorsConfig.doorAutoCloseTicks.get(), group.getDoorHoldTicks(floorLevel));
             }
         }
 
@@ -223,26 +256,58 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
             return;
 
         ElevatorGroup best = null;
-        int bestY = 0;
-        double bestDistance = Double.MAX_VALUE;
+        int bestY = 0, bestDistance = Integer.MAX_VALUE, bestDrop = Integer.MAX_VALUE;
         for(ElevatorGroup group : capability.getGroups()){
-            double dx = group.x - this.pos.getX(), dz = group.z - this.pos.getZ();
-            double distance = dx * dx + dz * dz;
-            if(distance > adoptRange() * adoptRange() || distance >= bestDistance)
-                continue;
             for(int floor = 0; floor < group.getFloorCount(); floor++){
                 int y = group.getFloorYLevel(floor);
-                if(Math.abs(y - this.pos.getY()) <= FLOOR_SEARCH_RANGE){
-                    best = group;
-                    bestY = y;
-                    bestDistance = distance;
-                    break;
-                }
+                int drop = landingDistance(group, y, this.pos.getY());
+                if(drop < 0)
+                    continue;
+                // Measured from the cabin's mouth rather than from the controller behind it. A
+                // doorway is attached to the cabin it opens onto, and the deeper that cabin is the
+                // further its doors stand from their own controller -- far enough, in a bank, that
+                // the car next door is the nearer of the two, and far enough on its own that a deep
+                // cabin's doors fall outside the link range and never attach to anything. Adopting
+                // the wrong car of a bank is the worse of the two, because everything else goes on
+                // working: the elevator answers calls, the panels light, and only the doors never
+                // move.
+                int distance = group.horizontalDistanceToCabin(y, this.pos.getX(), this.pos.getZ());
+                if(distance > adoptRange())
+                    continue;
+                if(best != null && compareCandidates(distance, drop, group, bestDistance, bestDrop, best) >= 0)
+                    continue;
+                best = group;
+                bestY = y;
+                bestDistance = distance;
+                bestDrop = drop;
             }
         }
 
         if(best != null)
             this.setValues(new BlockPos(best.x, bestY, best.z), best.facing);
+    }
+
+    /**
+     * Nearest cabin wins, then the landing whose floor the door stands closest to, and failing both
+     * the elevator that comes first by position.
+     * <p>
+     * That last clause is the reason this is a comparison rather than a pair of ifs. The elevators
+     * come out of a hash map, so a tie used to be settled by iteration order; a bank's shafts are
+     * alike enough to tie regularly, and a door that adopts a different car depending on the order a
+     * map happened to hand them over is worse than one that is consistently wrong, because it cannot
+     * even be reproduced.
+     */
+    private static int compareCandidates(int distance, int drop, ElevatorGroup group,
+                                         int bestDistance, int bestDrop, ElevatorGroup best){
+        if(distance != bestDistance)
+            return Integer.compare(distance, bestDistance);
+        if(drop != bestDrop)
+            return Integer.compare(drop, bestDrop);
+        if(group.x != best.x)
+            return Integer.compare(group.x, best.x);
+        if(group.z != best.z)
+            return Integer.compare(group.z, best.z);
+        return Integer.compare(group.facing.ordinal(), best.facing.ordinal());
     }
 
     /**

@@ -158,7 +158,26 @@ public class MovingElevatorsClient {
      * @param floor zero-based floor index
      */
     public static String formatFloorDisplayName(String name, int floor){
-        return name == null ? TextComponents.translation("movingelevators.floor_name", TextComponents.number(floor + 1).get()).format() : name;
+        return name == null ? translate("movingelevators.floor_name", TextComponents.number(floor + 1).get()) : name;
+    }
+
+    /**
+     * A translated string with nothing in it but the words.
+     * <p>
+     * Core Lib's {@code format()} is {@code getFormattedText()}, which wraps every piece of a
+     * component in its style code <em>and a trailing reset code</em>, so "Floor %s" filled in with 10
+     * comes back as a section sign and an "r" on either side of the number -- twelve characters to
+     * say seven. Anything that only draws the result never notices, since the font renderer eats
+     * the codes. Anything that measures, truncates or scrolls it a character at a time counts
+     * them, and the panel screens keep the first three characters of a floor's identifier for the
+     * button face: those three were the reset code and the "1" of "10", so floor 10 drew as "1",
+     * and floors 1 to 9 were right only by luck.
+     * <p>
+     * These labels have no styling to lose. What colour a readout draws in is decided at the draw
+     * call, from the floor's dye, so the codes were never carrying anything to begin with.
+     */
+    private static String translate(String key, Object... args){
+        return TextComponents.translation(key, args).get().getUnformattedText();
     }
 
     /**
@@ -178,7 +197,7 @@ public class MovingElevatorsClient {
             return formatFloorDisplayName(null, floor);
         // A recalled car is the one thing on a readout worth interrupting anything else for.
         if(group.isFireRecalled()){
-            String scrolled = TextComponents.translation("movingelevators.fire_recall.marquee").format() + "  ";
+            String scrolled = translate("movingelevators.fire_recall.marquee") + "  ";
             int steps = scrolled.length() - 1;
             if(steps >= 1){
                 int step = group.marqueeStep(steps);
@@ -187,7 +206,7 @@ public class MovingElevatorsClient {
         }
         // An elevator nobody can call should say so where people would otherwise stand waiting for it.
         if(group.isOutOfService()){
-            String scrolled = TextComponents.translation("movingelevators.out_of_service.marquee").format() + "  ";
+            String scrolled = translate("movingelevators.out_of_service.marquee") + "  ";
             int steps = scrolled.length() - 1;
             if(steps >= 1){
                 int step = group.marqueeStep(steps);
@@ -198,10 +217,10 @@ public class MovingElevatorsClient {
         // pressed. Alternating with the floor says both things at once: it is alive, and it is not
         // yours. Two letters because that is what a floor readout has room for.
         if(group.getServiceMode() == ElevatorGroup.ServiceMode.INDEPENDENT && group.isAnnounceFlashOn())
-            return TextComponents.translation("movingelevators.independent_service.short").format();
+            return translate("movingelevators.independent_service.short");
         if(group.isEmergencyStopped())
-            return TextComponents.translation(group.isEmergencyFlashOn()
-                ? "movingelevators.emergency.flash_first" : "movingelevators.emergency.flash_second").format();
+            return translate(group.isEmergencyFlashOn()
+                ? "movingelevators.emergency.flash_first" : "movingelevators.emergency.flash_second");
         return formatFloorDisplayName(group.getFloorDisplayName(floor), floor);
     }
 
@@ -238,7 +257,7 @@ public class MovingElevatorsClient {
     public static String overloadMarquee(ElevatorGroup group){
         if(group == null || !group.isOverloaded())
             return null;
-        String scrolled = TextComponents.translation("movingelevators.overload.marquee").format() + "  ";
+        String scrolled = translate("movingelevators.overload.marquee") + "  ";
         int steps = scrolled.length() - 1;
         if(steps < 1)
             return null;
