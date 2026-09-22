@@ -44,7 +44,9 @@ nearer *cabin*.
 There is no bind step and no item to right-click a controller with. A door placed at a landing
 belongs to that landing, and it keeps checking: rebuild the landing's controller, or resize or move
 the cabin so the door is no longer in its mouth, and the door goes and finds the landing it is
-actually standing at.
+actually standing at. It also asks, every couple of seconds, whether a *nearer* cabin exists than
+the one it is bound to, and switches to it if so — which is what heals a bank built with an older
+version, where a doorway could end up bound to the car next door and open for the wrong one.
 
 !!! failure "Not enough room for the doorway"
 

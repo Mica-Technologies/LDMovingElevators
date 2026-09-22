@@ -188,10 +188,20 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         // offset or moved to the side of its controller afterwards, so the landing the door used to
         // stand in is no longer where that cabin stops. All three left a door that looked exactly
         // like one that works and was deaf to its own car and to the car panel's door buttons.
+        // And a fourth, which the three above never caught because the binding names a real landing
+        // at the right height: bound to the car next door. A bank's shafts stand side by side, so a
+        // doorway at one shaft's mouth is within link range of the other's cabin too, and an older
+        // adoption rule measured to the controller column rather than to the cabin and picked the
+        // neighbour. Such a door opened when the wrong car arrived and never for its own, and stayed
+        // that way for the life of the world, since nothing ever asked again. So the question is
+        // asked periodically of every bound door as well: is there a cabin strictly nearer than the
+        // one it is bound to? Strictly, so that two cabins at the same distance never make a door
+        // flap between them.
         ElevatorGroup bound = this.getGroup();
-        if((bound == null || this.landingWithin(bound) == -1) && --this.adoptCounter <= 0){
+        if(--this.adoptCounter <= 0){
             this.adoptCounter = ADOPT_INTERVAL;
-            this.adoptNearestLanding();
+            if(bound == null || this.boundToFartherCabin(bound))
+                this.adoptNearestLanding();
         }
 
         ElevatorGroup group = this.getGroup();
@@ -270,9 +280,41 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
      * rather than scanning blocks.
      */
     private void adoptNearestLanding(){
+        Candidate best = this.nearestLanding();
+        if(best != null)
+            this.setValues(new BlockPos(best.group.x, best.y, best.group.z), best.group.facing);
+    }
+
+    /**
+     * Whether this doorway is bound to an elevator whose cabin is not the nearest one to it, which is
+     * the one way a binding can be wrong while still naming a landing at the right height.
+     */
+    private boolean boundToFartherCabin(ElevatorGroup bound){
+        int landing = this.landingWithin(bound);
+        if(landing == -1)
+            return true;
+        Candidate best = this.nearestLanding();
+        if(best == null || best.group == bound)
+            return false;
+        return best.distance < bound.horizontalDistanceToCabin(landing, this.pos.getX(), this.pos.getZ());
+    }
+
+    /** The elevator and landing this doorway would adopt right now, or null when none is in range. */
+    private static final class Candidate {
+        final ElevatorGroup group;
+        final int y, distance;
+
+        Candidate(ElevatorGroup group, int y, int distance){
+            this.group = group;
+            this.y = y;
+            this.distance = distance;
+        }
+    }
+
+    private Candidate nearestLanding(){
         ElevatorGroupCapability capability = ElevatorGroupCapability.get(this.world);
         if(capability == null)
-            return;
+            return null;
 
         ElevatorGroup best = null;
         int bestY = 0, bestDistance = Integer.MAX_VALUE, bestDrop = Integer.MAX_VALUE;
@@ -302,8 +344,7 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
             }
         }
 
-        if(best != null)
-            this.setValues(new BlockPos(best.x, bestY, best.z), best.facing);
+        return best == null ? null : new Candidate(best, bestY, bestDistance);
     }
 
     /**

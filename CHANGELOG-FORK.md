@@ -266,6 +266,34 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **A rider no longer falls through the cabin floor when the server runs slow.** The report was
+  precise: about a floor into a descent, the passenger dropped through the floor to the bottom of
+  the shaft while the elevator above them made an emergency stop. Reproduced on a dedicated server
+  by freezing the server process for under a second as a car departed. The client simulates the
+  moving cabin on its own clock and holds its rider on the floor, so whenever the server stalls --
+  or merely ticks below twenty a second, which a busy modpack server does all evening -- the
+  position the rider's client sends is further along the trip than the server's cabin. Going down,
+  the server's shaft sweep forgave a passenger no further ahead than the cabin's own floor, so after
+  a floor or so of drift it read its own rider as somebody standing in the shaft below and stopped
+  for them; the stop then told the rider's client the cabin was a floor above where they were
+  standing on it, and they fell the rest of the way. The sweep now remembers who it accepted as a
+  passenger and lets them run up to three seconds of travel ahead while they stay in the cabin's
+  column, and a mid-trip update that replaces the client's cabin -- an emergency stop, a call
+  queued from another floor -- carries the rider to the cabin's new position instead of leaving
+  them standing on air where it used to be. A car that stops because somebody genuinely is in the
+  shaft still stops exactly as before.
+
+- **A bank's doors no longer stay bound to the car next door.** In a bank the shafts stand side by
+  side, so a doorway at one shaft's mouth is within link range of the other's cabin too, and an
+  earlier adoption rule, which measured to the controller column rather than to the cabin, could
+  pick the neighbour. That binding was then permanent: a door only went looking again when its
+  binding named no landing at all, and this one named a real landing at the right height. The
+  result was the pair of reports from the field -- a landing's doors that never open for the car
+  that arrives, and doors that open for a car in the other shaft -- and it was found in exactly
+  that state in the world the wiki screenshots were taken in. Every bound door now periodically
+  asks whether a strictly nearer cabin exists and moves to it, so worlds built before the fix heal
+  on their own instead of needing every doorway broken and replaced.
+
 - Elevator doors could sit out a whole stop without opening, and the car panel's own door buttons
   did nothing while every other button on it worked. Four faults, each enough on its own: a door
   measured its landing as a flat two blocks either side of the controller, which a doorway standing

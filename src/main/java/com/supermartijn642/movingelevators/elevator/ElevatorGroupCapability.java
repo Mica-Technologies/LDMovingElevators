@@ -266,6 +266,7 @@ public class ElevatorGroupCapability {
             // method's job -- nothing inside read() can see what it is replacing.
             ElevatorGroup previous = this.groups.get(pos);
             group.inheritCage(previous);
+            group.carryRidersFrom(previous);
             this.groups.put(pos, group);
             // The multimap has no idea it is holding a replaced group: ElevatorGroup does not define
             // equality, so every read is a distinct object and putting one in is an addition, not an

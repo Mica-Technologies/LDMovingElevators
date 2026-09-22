@@ -121,6 +121,23 @@ public class ElevatorGroup {
     private int syncCounter = 0;
     private int tickCounter = 0;
     private int cageChecks = 0;
+    /**
+     * Who the last shaft sweep accepted as a passenger, by entity id. Server-side, per trip.
+     * <p>
+     * A passenger's reported position can be ahead of the cabin as well as behind it. The client
+     * simulates the cabin on its own clock and holds its rider on the floor, and the position it
+     * sends is the one against that cabin -- so whenever this side runs slow, a stall or a tick
+     * rate under twenty, the rider's position is further along the trip than this side's cabin has
+     * got. Going down, {@link #carriedVolume} reaches no further ahead than the cabin's own floor,
+     * so after a floor or so of drift the rider read as somebody standing in the shaft below and
+     * the cabin stopped for them. The stop then told the rider's client the cabin was a floor above
+     * where they were standing on it, and they dropped the length of the shaft: "fell through the
+     * floor, and the elevator above me did an emergency stop". Somebody this sweep has already
+     * accepted as a passenger, and who is still in the cabin's column just ahead of it, is a
+     * passenger whose client has run ahead, not a hazard. Only ever players -- everything else is
+     * moved by this side and cannot get ahead of it.
+     */
+    private final Set<UUID> riders = new HashSet<>();
 
     /**
      * y-levels of floors with an outstanding call, in the order they were requested. Insertion
@@ -287,6 +304,17 @@ public class ElevatorGroup {
      * delays put a passenger where the cabin has been, never where it is going.
      */
     private static final int RIDER_LAG_TICKS = 10;
+    /**
+     * How many ticks of cabin travel a passenger already known to be riding may be <i>ahead</i> of
+     * the cabin by and still be taken for a passenger. See {@link #riders}.
+     * <p>
+     * Three seconds of travel. A stall is transient -- the server catches its ticks up afterwards
+     * and the lead shrinks again -- but a tick rate that stays low lets the lead grow for the whole
+     * trip, by a fifth of the distance travelled at fifteen ticks a second, so this has to be a
+     * good deal more than a round trip. Beyond it the old rule applies and the cabin stops, which is
+     * the conservative outcome; this only widens what is forgiven, never what is seen.
+     */
+    private static final int RIDER_LEAD_TICKS = 60;
     /** How far above and below the cabin counts as being in its way. */
     private static int shaftScanReach(){
         return MovingElevatorsConfig.shaftScanReach.get();
@@ -877,13 +905,55 @@ public class ElevatorGroup {
         AxisAlignedBB shaft = new AxisAlignedBB(cabin.minX, sweptMinY - below, cabin.minZ,
             cabin.maxX, sweptMaxY + above, cabin.maxZ);
         AxisAlignedBB carried = this.carriedVolume(cabin, sweptMinY, sweptMaxY, travel);
+        // Walked to the end rather than returning at the first obstruction, so the riders seen this
+        // time are known at the next sweep whatever else was in the shaft.
+        Set<UUID> stillRiding = new HashSet<>();
+        boolean obstructed = false;
         for(EntityLivingBase entity : this.level.getEntitiesWithinAABB(EntityLivingBase.class, shaft)){
             if(entity instanceof EntityPlayer && ((EntityPlayer)entity).isSpectator())
                 continue;
-            if(!this.isRidingInside(carried, entity))
-                return true;
+            if(this.isRidingInside(carried, entity) || this.isRidingAhead(cabin, travel, entity))
+                stillRiding.add(entity.getUniqueID());
+            else
+                obstructed = true;
         }
-        return false;
+        this.riders.clear();
+        this.riders.addAll(stillRiding);
+        return obstructed;
+    }
+
+    /**
+     * Records who is standing in the cabin as it departs, so the first sweep already knows its
+     * passengers. Needed because the first sweep can already find them ahead: a stall that lands on
+     * the departure itself leaves the client a cabin's worth of travel in front before this side
+     * has swept once.
+     */
+    private void seedRiders(double y){
+        this.riders.clear();
+        Vec3d anchor = this.getCageAnchorPos(y);
+        // The trailing block is the same allowance the sweep gives a stale position.
+        AxisAlignedBB carried = new AxisAlignedBB(anchor.x, anchor.y - 1, anchor.z,
+            anchor.x + this.cageSizeX, anchor.y + this.cageSizeY, anchor.z + this.cageSizeZ);
+        for(EntityPlayer player : this.level.getEntitiesWithinAABB(EntityPlayer.class, carried))
+            if(!player.isSpectator() && this.isRidingInside(carried, player))
+                this.riders.add(player.getUniqueID());
+    }
+
+    /**
+     * Whether a player the previous sweep accepted as a passenger has merely run ahead of the cabin
+     * -- their client is further into the trip than this side is -- rather than left it. Ahead means
+     * in the direction of travel, within the cabin's own column, and by no more than
+     * {@link #RIDER_LEAD_TICKS} of travel; anything else is judged as before. See {@link #riders}.
+     */
+    private boolean isRidingAhead(AxisAlignedBB cabin, double travel, EntityLivingBase entity){
+        if(!(entity instanceof EntityPlayer) || !this.riders.contains(entity.getUniqueID()))
+            return false;
+        if(entity.posX < cabin.minX || entity.posX > cabin.maxX || entity.posZ < cabin.minZ || entity.posZ > cabin.maxZ)
+            return false;
+        // Measured from the cabin floor. Going up a passenger inside the cabin is already ahead of
+        // the floor by their height above it, so the cabin's own height is part of the allowance.
+        double lead = travel < 0 ? cabin.minY - entity.posY : entity.posY - cabin.minY;
+        return lead >= 0 && lead <= Math.abs(this.speed) * RIDER_LEAD_TICKS + this.cageSizeY;
     }
 
     /**
@@ -1420,6 +1490,7 @@ public class ElevatorGroup {
 
     private void stopElevator(){
         this.isMoving = false;
+        this.riders.clear();
 
         // Arriving satisfies any call for this floor, and starts the dwell before the next one.
         this.callQueue.remove(this.targetY);
@@ -1524,6 +1595,8 @@ public class ElevatorGroup {
 
         this.cage = cage;
         this.isMoving = true;
+        if(!this.level.isRemote)
+            this.seedRiders(currentY);
         this.cageChanged = true;
         this.playAtCabin(ElevatorSoundScheme.Moment.DEPARTING);
         this.targetY = targetY;
@@ -2129,6 +2202,25 @@ public class ElevatorGroup {
         // quietly deciding the lift has stopped would destroy them with no way back.
         if(this.level.isRemote && this.isMoving && this.cage == null)
             this.isMoving = false;
+    }
+
+    /**
+     * Client only. Carries whatever is riding the cabin from where the group this one replaced had
+     * it to where this one has it.
+     * <p>
+     * A state-only update mid-trip -- an emergency stop, a call queued by somebody on another floor,
+     * a retarget -- replaces the client's group with one built from the server's numbers, and the
+     * server's cabin is never quite where the client's was: a latency behind in the ordinary case,
+     * and a long way behind when the server has stalled and the client has kept simulating. The new
+     * group then moved on from the server's position and the rider was left standing in the air
+     * where the old cabin had been, to fall the length of the shaft. Moving the cabin from the old
+     * position to the new one, exactly as a tick of travel would, takes the rider along with it.
+     */
+    public void carryRidersFrom(ElevatorGroup previous){
+        if(!this.level.isRemote || previous == null || !previous.isMoving || !this.isMoving || this.cage == null)
+            return;
+        if(previous.currentY != this.currentY)
+            this.moveElevator(previous.currentY, this.currentY);
     }
 
     public boolean takeCageChanged(){
