@@ -493,6 +493,27 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Changed
 
+- **The dev client and the dev dedicated server run from separate directories**, `run/client` and
+  `run/server`, so both can be up at once from one checkout and the client can join the server.
+  The problems people report -- bank doors that do not open, doors that open for the wrong car, a
+  rider falling through the cabin floor -- come from dedicated servers, and an integrated server
+  does not walk the same packet and chunk-loading paths, so a singleplayer world was never going to
+  reproduce them. Each side carries its own MCMCP config, so both can be driven at once.
+
+- **Every pull request now boots a dedicated server** from the build it just made
+  (`.github/scripts/server-smoke-test.sh`), because a client-only class reached from common code
+  or a mixin listed in the wrong array compiles cleanly and only fails at server startup, which is
+  precisely where this mod's players are.
+
+- **The release workflow states the version instead of inferring it, and checks the release it
+  made.** A dispatched release and the pushed pre-release of the same commit leave both tags on it;
+  the build is now told which one it is building (`-PmodVersionOverride`), the other local tags are
+  removed for good measure, and the run refuses to publish unless the built version is the tag.
+  The release entry is created as an empty draft, the jar is uploaded separately with retries, the
+  release is read back from the API to confirm the asset is there, and only then is it published.
+  The publish action's own uploader lost assets on a sibling mod's release on 2026-09-17 and left
+  it an invisible draft; this repo had the same action.
+
 - **The elevator's name is legible on the bank indicator and no longer crowds the car panel.** On the
   indicator it stood 1.2 face pixels tall, which is present in the way a watermark is present; the
   four gaps between elements gave up a tenth of a pixel each and it now stands 1.7, against the floor

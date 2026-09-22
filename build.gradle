@@ -13,8 +13,11 @@ plugins {
 // version that ends up in the jar name, mcmod.info and the release entry all come from
 // that tag. Resolution order:
 //
-//   1. -PmodVersionOverride=... or the MOD_VERSION environment variable -- escape hatch
-//      for one-off builds; nothing in CI sets it today.
+//   1. -PmodVersionOverride=... or the MOD_VERSION environment variable. The release
+//      workflow passes the property, so a CI build never has to choose between the release
+//      tag and the pre-release tag that a dispatched release leaves on the same commit (the
+//      rule in step 2 gets that right, but a stated version beats an inferred one). It is
+//      also the escape hatch for one-off local builds.
 //   2. The newest release-shaped git tag on HEAD: 'YYYY.MM.DD' for a release,
 //      'YYYY.MM.DD-pre.HHMM.<tz>+<sha>' for a pre-release. Matching is restricted to that
 //      shape so upstream's 'archive/1.16.1'-style tags can never be picked up.
@@ -124,9 +127,10 @@ dependencies {
     // whether the API was right.
     //
     // Compile only, exactly like the pinned release it replaces. Do not also put it on the run tasks'
-    // classpath: the dev runtime gets its CSM from run/mods, and a second copy on the classpath is a
-    // second source of mod id "csm", which FML refuses to load with DuplicateModsFoundException. To
-    // run against an unreleased CSM, swap the jar in run/mods instead -- that is a reobfuscated jar,
+    // classpath: the dev runtime gets its CSM from run/client/mods (and run/server/mods), and a second
+    // copy on the classpath is a second source of mod id "csm", which FML refuses to load with
+    // DuplicateModsFoundException. To run against an unreleased CSM, swap the jar in the mods folder
+    // of the run directory you are launching instead -- that is a reobfuscated jar,
     // which is what belongs there, since FML remaps mods-folder jars into dev names on load.
     //
     // Opt-in, and never committed as the default: CI and a clean checkout always build against a real
@@ -210,6 +214,12 @@ minecraft {
     String core_lib_core_mod = "com.supermartijn642.core.coremod.CoreModPlugin"
 
     runs {
+        // NOTE (Mica fork): the client and the dedicated server run from separate directories,
+        // run/client and run/server, so both can be up at once from one checkout -- each with
+        // its own world, mods/ and config/, including its own mcmcp.cfg so the two sides are
+        // separately addressable through the MCMCP orchestrator. Upstream runs everything from
+        // run/, which the configureEach below still says for any run not overridden. The
+        // server smoke test in .github/scripts/ assumes run/server.
         configureEach {
             workingDirectory file("run")
 
@@ -225,14 +235,19 @@ minecraft {
         }
 
         client {
+            workingDirectory file("run/client")
         }
 
         server {
+            workingDirectory file("run/server")
+            // No display on the CI runners, and no use for the Swing console locally either.
+            args "nogui"
         }
 
         data {
             //noinspection GroovyAssignabilityCheck
             parent runs.client
+            workingDirectory file("run/client")
             property "--generatorModid", mod_id
             property "--output", file("src/generated/resources/")
             //noinspection GroovyAssignabilityCheck

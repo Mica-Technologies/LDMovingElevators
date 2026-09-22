@@ -337,9 +337,13 @@ compiles against a **Java 8** toolchain, which Gradle will locate or provision a
 # Build the mod (jar lands in build/libs/)
 JAVA_HOME="/path/to/jdk-17" ./gradlew build
 
-# Run the dev client / server
+# Run the dev client (from run/client) and the dev dedicated server (from run/server).
+# They use separate directories so both can be up at once and the client can join the server.
 JAVA_HOME="/path/to/jdk-17" ./gradlew runClient
 JAVA_HOME="/path/to/jdk-17" ./gradlew runServer
+
+# Boot a dedicated server and assert it starts -- what the PR workflow runs
+JAVA_HOME="/path/to/jdk-17" bash .github/scripts/server-smoke-test.sh
 
 # Regenerate data-generator output
 JAVA_HOME="/path/to/jdk-17" ./gradlew runData
@@ -362,7 +366,8 @@ workflow parses it and prints it in each GitHub release body.
 Release builds take their version from the git tag that CI creates immediately before building
 (`YYYY.MM.DD`, or `YYYY.MM.DD-pre.HHMM.<tz>+<sha>` for a pre-release). Local builds with no such tag
 fall back to `mod_version` in `gradle.properties`, which records the upstream release this fork
-currently sits on. To force a version, pass `-PmodVersionOverride=...`.
+currently sits on. To force a version, pass `-PmodVersionOverride=...`; the release workflow does
+exactly that with the tag it just created, so the build never has to guess.
 
 See [CLAUDE.md](CLAUDE.md) for the fuller developer notes.
 

@@ -168,6 +168,30 @@ else
   check_not_contains "pre-release body does NOT quote them"     "env.UPSTREAM_RELEASE_NOTES" "$PRERELEASE_BODY"
   check_contains "both bodies carry the unofficial-fork notice" "unofficial fork" "$RELEASE_BODY"
   check_contains "  (pre-release too)"                          "unofficial fork" "$PRERELEASE_BODY"
+
+  # The version-pinning and publish-verification steps (see GITHUB_WORKFLOWS_FIXES, bugs 1 and
+  # 3). Each of these is a step somebody could "simplify" away without anything else noticing.
+  STEP_NAMES=$(printf '%s\n' "$BODIES" | sed -n '/^===== STEP NAMES$/,$p')
+  check_contains "the version is pinned to the published tag"   "Pin the mod version to the tag being published" "$STEP_NAMES"
+  check_contains "the built version is asserted against the tag" "Fail if the built version is not the tag being published" "$STEP_NAMES"
+  check_contains "the asset is uploaded by a step of our own"    "Upload the release asset" "$STEP_NAMES"
+  check_contains "the release is read back before publishing"   "Verify the release has the jar" "$STEP_NAMES"
+  check_contains "the draft is published last"                  "Publish the release" "$STEP_NAMES"
+
+  RELEASE_STEPS=$(python3 - "$WORKFLOW" <<'PY2'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+for s in d['jobs']['assemble_release']['steps']:
+    if s.get('name', '') in ('Create Release Entry', 'Create Pre-Release Entry'):
+        w = s.get('with', {})
+        print(f"{s['name']}: uses={s.get('uses','')} draft={w.get('draft')} files={'yes' if 'files' in w else 'no'}")
+PY2
+)
+  check_not_contains "the publish action is not the v2 that drops assets" "action-gh-release@v2" "$RELEASE_STEPS"
+  check_not_contains "the release entries attach no files themselves"     "files=yes" "$RELEASE_STEPS"
+  check_not_contains "the release entries are created as drafts"          "draft=False" "$RELEASE_STEPS"
+  check_contains     "  (release)"                                         "Create Release Entry: uses=softprops/action-gh-release@v3 draft=True" "$RELEASE_STEPS"
+  check_contains     "  (pre-release)"                                     "Create Pre-Release Entry: uses=softprops/action-gh-release@v3 draft=True" "$RELEASE_STEPS"
 fi
 
 # --- Summary -----------------------------------------------------------------------------------

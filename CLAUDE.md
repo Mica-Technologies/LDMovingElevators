@@ -34,16 +34,43 @@ Gradle locates or auto-provisions the Java 8 toolchain via the foojay resolver i
 
 ```bash
 JAVA_HOME="/path/to/jdk-17" ./gradlew build       # compile + jar -> build/libs/
-JAVA_HOME="/path/to/jdk-17" ./gradlew runClient    # dev client
-JAVA_HOME="/path/to/jdk-17" ./gradlew runServer    # dev dedicated server
+JAVA_HOME="/path/to/jdk-17" ./gradlew runClient    # dev client, from run/client
+JAVA_HOME="/path/to/jdk-17" ./gradlew runServer    # dev dedicated server, from run/server
 JAVA_HOME="/path/to/jdk-17" ./gradlew runData      # regenerate src/generated/resources
 JAVA_HOME="/path/to/jdk-17" ./gradlew clean       # NOT `clean build` -- see gotchas below
+
+JAVA_HOME="/path/to/jdk-17" bash .github/scripts/server-smoke-test.sh   # boot a server, assert "Done"
 ```
 
 There are no unit tests (`:test` is `NO-SOURCE`). Verification means building and launching.
 
-On this machine, JDK 17 is at
-`/Users/ahawk/Library/Java/JavaVirtualMachines/azul-17.0.19/Contents/Home`.
+### The client and the server run side by side
+
+`runClient` works from `run/client` and `runServer` from `run/server`, so a dedicated server and a
+client can be up at the same time from one checkout, and the client can join the server at
+`localhost` (its `server.properties` is `online-mode=false` for the unauthenticated dev account).
+This is deliberate: the reports that are hard to reproduce -- bank doors not opening, doors opening
+for the wrong car, a rider falling through the cabin floor -- all come from dedicated servers, and
+an integrated server does not exercise the same packet and chunk paths. Each run directory has its
+own `mods/`, `config/` and world:
+
+- **`run/client/config/mcmcp.cfg`** and **`run/server/config/mcmcp.cfg`** give each side its own
+  MCMCP identity, so both are separately addressable through the orchestrator. The client enables
+  only the client endpoint (port 25592) and the server only the server endpoint (port 25593, with
+  direct world edits allowed). Their `instanceId` / `instanceSecret` are generated on first launch;
+  never copy a populated identity between the two.
+- **`run/server/world`** started life as a copy of the client's "New World" save, which holds the
+  building and elevator bank the wiki screenshots were taken in.
+- The MCMCP jar has to be in **both** `mods/` folders. The `mcmcp-deploy` skill's target table
+  lists both.
+
+`.github/scripts/server-smoke-test.sh` boots the server from `run/server` and reads the verdict
+from both Gradle's stdout and `run/server/logs/latest.log`. The PR workflow runs it as a separate
+job, because the class of bug it catches -- client-only code reached from common code, a mixin in
+the wrong array -- compiles cleanly and only fails at server startup.
+
+Local JDK 17 locations: `C:/Users/ahawk/.jdks/azul-17.0.19` on the Windows machine,
+`/Users/ahawk/Library/Java/JavaVirtualMachines/azul-17.0.19/Contents/Home` on the Mac.
 
 ## IntelliJ run configurations
 
@@ -130,9 +157,15 @@ registers the JOrbis codec, and macOS's `afconvert` decodes Vorbis without being
 
 `build.gradle` resolves the mod version in this order:
 
-1. `-PmodVersionOverride=...` or the `MOD_VERSION` environment variable
+1. `-PmodVersionOverride=...` or the `MOD_VERSION` environment variable. **The release workflow
+   passes the property** to the build and to `printModVersion`, so CI states the version rather
+   than inferring it: a dispatched release and the pushed pre-release of the same commit leave
+   both tags on it, and MCMCP shipped a release stamped as a pre-release that way on 2026-09-09.
+   The workflow also deletes the other local tags on the commit and refuses to publish unless the
+   built version equals `<tag>-forge-<minecraft_suffix>`.
 2. the release-shaped git tag on HEAD (`YYYY.MM.DD`, or `YYYY.MM.DD-pre.HHMM.<tz>+<sha>`), which CI
-   creates immediately before building
+   creates immediately before building. A release tag outranks a pre-release tag on the same
+   commit, so a local build off a release commit still names itself correctly.
 3. `mod_version` in `gradle.properties` — the upstream release this fork sits on; bump it when
    merging upstream
 
@@ -149,7 +182,13 @@ up. The resolved value is written back onto the `mod_version` property, so `proc
   why the workflow reads those tasks with `| tail -n 1 | xargs` rather than the plain `| xargs` the
   sibling mods use. Don't "simplify" it.
 - **`gradlew` must stay mode `100755`.** It was committed as `100644`, which fails every
-  `run: ./gradlew` step on the Ubuntu runners with "permission denied".
+  `run: ./gradlew` step on the Ubuntu runners with "permission denied". The same goes for every
+  script under `.github/scripts/`.
+- **The release workflow's step names are checked by `test-release-tooling.sh`.** "Pin the mod
+  version to the tag being published", "Fail if the built version is not the tag being
+  published", "Upload the release asset", "Verify the release has the jar" and "Publish the
+  release" are each a step somebody could tidy away without anything else noticing; the test
+  exists so that tidying fails the PR instead.
 - **Build-directory paths must stay relative.** Upstream writes
   `layout.buildDirectory.dir("/sources")`; the leading slash makes Gradle resolve it absolutely, so
   off Windows the build tries to create `/sources` at the filesystem root and dies. An upstream
@@ -248,12 +287,19 @@ and CI only ever runs `build`.
 Three workflows, matching the sibling Mica mods (see the header comment in each for the fork-specific
 deltas):
 
-- `test-mod-build-pr.yml` — builds every pull request, plus a separate `Test Release Tooling` job
-  running `.github/scripts/test-release-tooling.sh`. That job needs no JDK and finishes in seconds,
-  so it reports independently rather than queueing behind a full Minecraft decompile.
+- `test-mod-build-pr.yml` — builds every pull request, then boots a dedicated server from that
+  build (`Dedicated Server Smoke Test`, via `.github/scripts/server-smoke-test.sh`), plus a separate
+  `Test Release Tooling` job running `.github/scripts/test-release-tooling.sh` and
+  `test-csm-containment.sh`. That last job needs no JDK and finishes in seconds, so it reports
+  independently rather than queueing behind a full Minecraft decompile.
 - `build-mod-release-pre-release-main.yml` — on push to `forge-1.12`, tags the commit and publishes a
   pre-release with checksums. `workflow_dispatch` with `release=true` cuts a full release. The tag is
-  created *before* the build, because the version resolution above reads it.
+  created *before* the build, and the build is told which tag it is (see Versioning). The release
+  entry is created as an empty draft by `softprops/action-gh-release@v3`; the jar is then uploaded
+  by `gh release upload` with retries, the release is read back from the API to confirm the asset
+  is in state `uploaded`, and only then is the draft published. The action's own uploader lost
+  assets on CSM's 2026-09-17 release and left it a draft that looked like a build failure, which
+  is why none of this is left to it.
 - `cleanup-mod-pre-releases.yml` — prunes pre-releases past 90 days, keeping the newest 3 and
   anything with 5+ downloads. Its `workflow_run` trigger matches the release workflow by name, so
   those two strings must stay in sync.
