@@ -25,7 +25,7 @@ public class RemoteIndicatorBlockEntityRenderer implements CustomBlockEntityRend
      * alone would do nothing anyway: block entities stop being rendered at that range unless they
      * ask for more.
      */
-    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
+    private static final double TEXT_RENDER_DISTANCE = TextRenderCutoff.squared(TextRenderCutoff.PANEL);
     /**
      * The plate is only 5 pixels tall, so the label has to be far smaller than the full-cube
      * display's -- these keep the screen inside the metal rather than overhanging it.

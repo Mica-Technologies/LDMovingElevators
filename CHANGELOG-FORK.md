@@ -266,6 +266,14 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **Open doors and wall panels no longer throw an exception on every frame.** Forge works out
+  where a block entity is drawn from its block's collision box, and in 1.12 a block without one --
+  every wall panel, and every door while it stands open -- hands it a null box, so the default
+  threw and caught an exception for each of them on every frame. They now give their own block as
+  the render box. The text-only fixtures (indicators, call panels, remote displays, lobby panels and
+  car panels) also stop being dispatched beyond the distance at which their renderers already drew
+  nothing, instead of Forge setting each of them up out to 64 blocks. Nothing looks different.
+
 - **Elevator doors no longer cost the server time while nothing is happening to them.** Every
   door block re-read the redstone power of its whole doorway on every tick -- a walk of the doorway
   and six redstone reads per block, repeated by each of the doorway's blocks -- although power can

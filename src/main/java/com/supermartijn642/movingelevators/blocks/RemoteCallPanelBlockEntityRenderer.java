@@ -28,7 +28,7 @@ public class RemoteCallPanelBlockEntityRenderer implements CustomBlockEntityRend
      * alone would do nothing anyway: block entities stop being rendered at that range unless they
      * ask for more.
      */
-    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
+    private static final double TEXT_RENDER_DISTANCE = TextRenderCutoff.squared(TextRenderCutoff.PANEL);
     /** The plate is narrow, so the readout has to be small. */
     private static final float MAX_SCALE = 1 / 46f, MAX_WIDTH = 0.28f, PADDING = 0.02f;
     /** Centres of the three zones, matching RemoteCallPanelBlock's hit regions. */

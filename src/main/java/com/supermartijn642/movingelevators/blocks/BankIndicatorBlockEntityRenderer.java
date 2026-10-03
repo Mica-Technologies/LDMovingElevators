@@ -52,7 +52,7 @@ public class BankIndicatorBlockEntityRenderer implements CustomBlockEntityRender
      * nothing else draws one. That is deliberate: a bare metal slab with no readout on it would be a
      * worse thing to see at forty blocks than nothing at all.
      */
-    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
+    private static final double TEXT_RENDER_DISTANCE = TextRenderCutoff.squared(TextRenderCutoff.PANEL);
 
     /**
      * Gap left between the plate's front face and the contents drawn on it, so nothing z-fights the

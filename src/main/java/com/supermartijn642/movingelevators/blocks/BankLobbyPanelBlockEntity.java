@@ -416,4 +416,21 @@ public class BankLobbyPanelBlockEntity extends BaseBlockEntity {
         }
         return bindings;
     }
+
+    /** Not dispatched past where the lobby panel's renderer stops drawing; see {@link TextRenderCutoff}. */
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public double getMaxRenderDistanceSquared(){
+        return TextRenderCutoff.dispatchRangeSquared(TextRenderCutoff.PANEL);
+    }
+
+    /**
+     * The block the panel sits in. Forge's default derives this from the collision box, which a wall
+     * panel does not have, and threw and caught an exception on every frame to find that out.
+     */
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public net.minecraft.util.math.AxisAlignedBB getRenderBoundingBox(){
+        return new net.minecraft.util.math.AxisAlignedBB(this.pos).grow(1 / 16d);
+    }
 }

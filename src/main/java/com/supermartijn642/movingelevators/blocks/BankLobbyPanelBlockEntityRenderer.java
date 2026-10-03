@@ -41,7 +41,7 @@ public class BankLobbyPanelBlockEntityRenderer implements CustomBlockEntityRende
      * alone would do nothing anyway: block entities stop being rendered at that range unless they ask
      * for more.
      */
-    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
+    private static final double TEXT_RENDER_DISTANCE = TextRenderCutoff.squared(TextRenderCutoff.PANEL);
 
     /**
      * Matches the plate's own depth, so the contents sit just proud of the metal rather than hanging

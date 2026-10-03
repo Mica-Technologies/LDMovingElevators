@@ -110,4 +110,11 @@ public class BankIndicatorBlockEntity extends BaseBlockEntity {
         this.bindings.addAll(BankLobbyPanelBlockEntity.readBindings(
             compound.getTagList("bindings", Constants.NBT.TAG_COMPOUND)));
     }
+
+    /** Not dispatched past where the indicator's renderer stops drawing; see {@link TextRenderCutoff}. */
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public double getMaxRenderDistanceSquared(){
+        return TextRenderCutoff.dispatchRangeSquared(TextRenderCutoff.PANEL);
+    }
 }

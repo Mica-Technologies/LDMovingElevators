@@ -28,7 +28,7 @@ public class RemoteDisplayBlockEntityRenderer implements CustomBlockEntityRender
      * alone would do nothing anyway: block entities stop being rendered at that range unless they
      * ask for more.
      */
-    private static final double TEXT_RENDER_DISTANCE = 30 * 30;
+    private static final double TEXT_RENDER_DISTANCE = TextRenderCutoff.squared(TextRenderCutoff.PANEL);
     /** Full-block face, so the label can be large. */
     private static final float MAX_SCALE = 1 / 12f, MAX_WIDTH = 0.7f, PADDING = 0.06f;
 

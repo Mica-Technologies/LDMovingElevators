@@ -8,8 +8,11 @@ import com.supermartijn642.movingelevators.elevator.ElevatorGroupCapability;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.Constants;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 /**
  * Shared plumbing for the wall panels: remember which elevator controller this fixture was bound to,
@@ -26,6 +29,9 @@ public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
     protected BlockPos controllerPos = BlockPos.ORIGIN;
     private ElevatorGroup comparatorRegisteredWith;
     private EnumFacing controllerFacing = null;
+    /** Client only: {@link #getRenderBoundingBox()}, kept until the block entity is moved. */
+    private AxisAlignedBB renderBox;
+    private BlockPos renderBoxPos;
 
     protected RemoteBoundBlockEntity(BaseBlockEntityType<?> blockEntityType){
         super(blockEntityType);
@@ -107,6 +113,24 @@ public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
             group.addComparatorListener(this.getFloorLevel(), this.pos);
         }
         return group;
+    }
+
+    /**
+     * The single block the fixture sits in. Every fixture draws inside its own block, apart from the
+     * labels standing a hair proud of the plate, which the small margin covers.
+     * <p>
+     * Overridden because Forge's default builds the box from the collision box, and these have none
+     * -- a wall panel never, a door whenever it stands open. In 1.12 that is a null box, so the
+     * default threw and caught an exception for each of them on every frame before falling back.
+     */
+    @Override
+    @SideOnly(Side.CLIENT)
+    public AxisAlignedBB getRenderBoundingBox(){
+        if(this.renderBox == null || this.renderBoxPos != this.pos){
+            this.renderBoxPos = this.pos;
+            this.renderBox = new AxisAlignedBB(this.pos).grow(1 / 16d);
+        }
+        return this.renderBox;
     }
 
     @Override

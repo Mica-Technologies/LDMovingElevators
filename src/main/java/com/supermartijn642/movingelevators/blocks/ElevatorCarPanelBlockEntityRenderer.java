@@ -37,7 +37,7 @@ public class ElevatorCarPanelBlockEntityRenderer implements CustomBlockEntityRen
      * length inside the cabin, never across a room like the landing fixtures, so the shorter reach
      * is deliberate rather than a value nobody got around to raising.
      */
-    private static final double TEXT_RENDER_DISTANCE = 15 * 15;
+    private static final double TEXT_RENDER_DISTANCE = TextRenderCutoff.squared(TextRenderCutoff.CAR_PANEL);
 
     // Face layout, in sixteenths, stated as the player sees it. Each of these is checked against
     // the plate bounds, against a half-pixel edge margin, and against every other element before

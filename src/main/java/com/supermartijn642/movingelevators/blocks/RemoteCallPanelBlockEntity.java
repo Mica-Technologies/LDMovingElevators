@@ -157,4 +157,11 @@ public class RemoteCallPanelBlockEntity extends RemoteBoundBlockEntity {
         if(compound.hasKey(EXTRA_BINDINGS_KEY, Constants.NBT.TAG_LIST))
             this.extraBindings.addAll(BankLobbyPanelBlockEntity.readBindings(compound.getTagList(EXTRA_BINDINGS_KEY, Constants.NBT.TAG_COMPOUND)));
     }
+
+    /** Not dispatched past where the call panel's renderer stops drawing; see {@link TextRenderCutoff}. */
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public double getMaxRenderDistanceSquared(){
+        return TextRenderCutoff.dispatchRangeSquared(TextRenderCutoff.PANEL);
+    }
 }

@@ -12,4 +12,11 @@ public class ElevatorCarPanelBlockEntity extends RemoteBoundBlockEntity {
     public ElevatorCarPanelBlockEntity(){
         super(MovingElevators.elevator_car_panel_tile);
     }
+
+    /** Not dispatched past where the car panel's renderer stops drawing; see {@link TextRenderCutoff}. */
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public double getMaxRenderDistanceSquared(){
+        return TextRenderCutoff.dispatchRangeSquared(TextRenderCutoff.CAR_PANEL);
+    }
 }

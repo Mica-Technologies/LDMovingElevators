@@ -12,4 +12,11 @@ public class RemoteIndicatorBlockEntity extends RemoteBoundBlockEntity {
     public RemoteIndicatorBlockEntity(){
         super(MovingElevators.remote_indicator_tile);
     }
+
+    /** Not dispatched past where the indicator's renderer stops drawing; see {@link TextRenderCutoff}. */
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public double getMaxRenderDistanceSquared(){
+        return TextRenderCutoff.dispatchRangeSquared(TextRenderCutoff.PANEL);
+    }
 }
