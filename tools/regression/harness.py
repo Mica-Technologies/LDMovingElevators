@@ -140,7 +140,10 @@ class Game:
     # --- screenshots ---------------------------------------------------------------------------
 
     def screenshot(self, name, eye, look_at, fov=None):
-        args = {"name": name, "from": list(eye), "look_at": list(look_at), "settle_ms": 8000}
+        # Full-bright: the site is rebuilt for every run, and vanilla updates sky light under a new
+        # overhang lazily, so how shaded a landing looks depends on timing rather than on anything
+        # the mod draws. Face shading -- what a renderer change can actually alter -- still shows.
+        args = {"name": name, "from": list(eye), "look_at": list(look_at), "settle_ms": 8000, "fullbright": True}
         if fov:
             args["fov"] = fov
         reply = self.client.call("client_screenshot", **args)
