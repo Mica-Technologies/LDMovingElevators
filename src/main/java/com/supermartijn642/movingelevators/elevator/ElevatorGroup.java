@@ -358,6 +358,11 @@ public class ElevatorGroup {
         this.x = x;
         this.z = z;
         this.facing = facing;
+        // Mica: started at a per-elevator phase rather than 0. Every periodic check here runs on
+        // tickCounter % interval, and all of a world's elevators are created on the same tick, so
+        // starting them together put every elevator's occupancy scan, alarm poll and comparator check
+        // on the same tick. Only the phase moves; every interval stays as it was.
+        this.tickCounter = Math.floorMod((x * 31 + z) * 31 + facing.getHorizontalIndex(), 840);
     }
 
     public void update(){
@@ -1316,6 +1321,18 @@ public class ElevatorGroup {
     public int getCabinOccupancy(){
         if(this.level == null)
             return 0;
+        // Mica: once per tick. The overload check and the cabin music both ask on the same tick
+        // whenever their intervals coincide, and each answer is an entity search.
+        if(this.occupancyTick == this.tickCounter)
+            return this.cachedOccupancy;
+        this.occupancyTick = this.tickCounter;
+        this.cachedOccupancy = this.countCabinOccupancy();
+        return this.cachedOccupancy;
+    }
+
+    private int occupancyTick = Integer.MIN_VALUE, cachedOccupancy;
+
+    private int countCabinOccupancy(){
         Vec3d anchor = this.getCageAnchorPos(this.currentY);
         AxisAlignedBB cabin = new AxisAlignedBB(anchor.x, anchor.y, anchor.z,
             anchor.x + this.cageSizeX, anchor.y + this.cageSizeY, anchor.z + this.cageSizeZ);

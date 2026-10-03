@@ -266,6 +266,13 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **Elevators no longer all run their periodic checks on the same tick, and a fire recall stops
+  causing a tick spike.** Every elevator counted ticks from zero, and all of a world's elevators
+  are created together, so every occupancy count, alarm poll and comparator check in the world
+  landed on the same tick. Each elevator now starts at its own phase, and the overload check and
+  cabin music share one occupancy count when they coincide. With a recall blocked on the
+  regression site, the worst tick fell from 22.7 ms to 2.2 ms.
+
 - **Doors work out their landing only when something it depends on changes.** Once a door's
   redstone power was cached, most of what it still cost every tick was finding its elevator again
   and scanning that elevator's floors for its own landing. Doors now keep the answer until their
