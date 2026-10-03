@@ -71,7 +71,8 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
      * block entity has no such limit.
      */
     private boolean top;
-    private int adoptCounter;
+    /** Whether this door has looked for a landing yet since it was loaded. */
+    private boolean adoptTried;
 
     /**
      * Ticks between safety re-reads of the doorway's redstone power.
@@ -223,9 +224,14 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         // asked periodically of every bound door as well: is there a cabin strictly nearer than the
         // one it is bound to? Strictly, so that two cabins at the same distance never make a door
         // flap between them.
+        // Mica: on a per-position phase of the world clock rather than a counter started at load, so
+        // a district of doors loaded together does not run the whole check on one tick in forty. An
+        // unbound door still looks on its very first tick, since that is a door somebody has just
+        // placed and is waiting to see work.
         ElevatorGroup group = this.getGroup();
-        if(--this.adoptCounter <= 0){
-            this.adoptCounter = ADOPT_INTERVAL;
+        boolean firstLook = group == null && !this.adoptTried;
+        if(firstLook || (this.world.getTotalWorldTime() + this.phase(ADOPT_INTERVAL)) % ADOPT_INTERVAL == 0){
+            this.adoptTried = true;
             if(group == null || this.boundToFartherCabin(group)){
                 this.adoptNearestLanding();
                 group = this.getGroup();
@@ -328,13 +334,26 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         // The first read after loading is backdated by a per-position amount, so a district of doors
         // loaded on the same tick spreads its safety refreshes over the interval instead of all
         // re-reading together every two seconds.
-        long stamp = this.powerEverRead ? now
-            : now - Math.floorMod(Long.hashCode(this.pos.toLong() * 0x9E3779B97F4A7C15L), POWER_REFRESH_INTERVAL);
+        long stamp = this.powerEverRead ? now : now - this.phase(POWER_REFRESH_INTERVAL);
         for(BlockPos cell : cells){
             TileEntity entity = cell.equals(this.pos) ? this : this.world.getTileEntity(cell);
             if(entity instanceof ElevatorDoorBlockEntity)
                 ((ElevatorDoorBlockEntity)entity).acceptDoorwayPower(powered, stamp);
         }
+    }
+
+    /**
+     * A fixed offset in {@code [0, interval)} derived from this block's position, for spreading
+     * periodic work over the interval instead of every door doing it on the same tick.
+     */
+    private int phase(int interval){
+        return Math.floorMod(Long.hashCode(this.pos.toLong() * 0x9E3779B97F4A7C15L), interval);
+    }
+
+    /** Doors give no comparator signal; see {@link RemoteBoundBlockEntity#drivesComparator()}. */
+    @Override
+    protected boolean drivesComparator(){
+        return false;
     }
 
     private void acceptDoorwayPower(boolean powered, long readAt){
@@ -394,22 +413,27 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
 
         ElevatorGroup best = null;
         int bestY = 0, bestDistance = Integer.MAX_VALUE, bestDrop = Integer.MAX_VALUE;
+        int range = adoptRange();
         for(ElevatorGroup group : capability.getGroups()){
+            if(group.getFloorCount() == 0)
+                continue;
+            // Measured from the cabin's mouth rather than from the controller behind it. A doorway
+            // is attached to the cabin it opens onto, and the deeper that cabin is the further its
+            // doors stand from their own controller -- far enough, in a bank, that the car next
+            // door is the nearer of the two, and far enough on its own that a deep cabin's doors
+            // fall outside the link range and never attach to anything. Adopting the wrong car of a
+            // bank is the worse of the two, because everything else goes on working: the elevator
+            // answers calls, the panels light, and only the doors never move.
+            // Mica: asked once per elevator rather than once per landing. The cabin stops in the
+            // same column at every landing, so the answer cannot differ between them, and an
+            // elevator out of range is skipped without looking at its floors at all.
+            int distance = group.horizontalDistanceToCabin(group.getFloorYLevel(0), this.pos.getX(), this.pos.getZ());
+            if(distance > range)
+                continue;
             for(int floor = 0; floor < group.getFloorCount(); floor++){
                 int y = group.getFloorYLevel(floor);
                 int drop = landingDistance(group, y, this.pos.getY());
                 if(drop < 0)
-                    continue;
-                // Measured from the cabin's mouth rather than from the controller behind it. A
-                // doorway is attached to the cabin it opens onto, and the deeper that cabin is the
-                // further its doors stand from their own controller -- far enough, in a bank, that
-                // the car next door is the nearer of the two, and far enough on its own that a deep
-                // cabin's doors fall outside the link range and never attach to anything. Adopting
-                // the wrong car of a bank is the worse of the two, because everything else goes on
-                // working: the elevator answers calls, the panels light, and only the doors never
-                // move.
-                int distance = group.horizontalDistanceToCabin(y, this.pos.getX(), this.pos.getZ());
-                if(distance > adoptRange())
                     continue;
                 if(best != null && compareCandidates(distance, drop, group, bestDistance, bestDrop, best) >= 0)
                     continue;

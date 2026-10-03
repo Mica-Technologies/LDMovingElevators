@@ -152,16 +152,6 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
     }
 
     /**
-     * @return whether any block of this doorway is receiving redstone power
-     */
-    public boolean isDoorwayPowered(World level, BlockPos pos, IBlockState state){
-        for(BlockPos cell : this.connectedCells(level, pos, state))
-            if(level.isBlockPowered(cell))
-                return true;
-        return false;
-    }
-
-    /**
      * Tells every block of the doorway that its power may have changed.
      * <p>
      * Mica: the doorway's power used to be polled by every block, every tick -- a flood of the

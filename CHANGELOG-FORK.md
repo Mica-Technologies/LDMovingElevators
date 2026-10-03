@@ -274,6 +274,15 @@ Based on upstream **Moving Elevators 1.4.12**.
   car panels) also stop being dispatched beyond the distance at which their renderers already drew
   nothing, instead of Forge setting each of them up out to 64 blocks. Nothing looks different.
 
+- **Door elevator re-checks no longer all land on the same tick.** Every door re-checks every
+  two seconds that it is bound to the nearest cabin, and every door loaded together did it on the
+  same tick, scanning every landing of every elevator in the dimension. The re-checks are now spread
+  over the interval by position, each elevator is measured once rather than once per landing, and
+  elevators out of link range are skipped outright. A newly placed door still binds on its first
+  tick. Doors and car panels, which give no comparator signal, also no longer register for
+  comparator updates, so an arriving car stops refreshing comparators around each of its doors; and
+  a fixture that moves to a different elevator now deregisters from the old one.
+
 - **Elevator doors no longer cost the server time while nothing is happening to them.** Every
   door block re-read the redstone power of its whole doorway on every tick -- a walk of the doorway
   and six redstone reads per block, repeated by each of the doorway's blocks -- although power can

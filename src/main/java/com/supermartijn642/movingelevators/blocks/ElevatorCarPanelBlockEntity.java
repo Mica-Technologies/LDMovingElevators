@@ -19,4 +19,10 @@ public class ElevatorCarPanelBlockEntity extends RemoteBoundBlockEntity {
     public double getMaxRenderDistanceSquared(){
         return TextRenderCutoff.dispatchRangeSquared(TextRenderCutoff.CAR_PANEL);
     }
+
+    /** Gives no comparator signal; see {@link RemoteBoundBlockEntity#drivesComparator()}. */
+    @Override
+    protected boolean drivesComparator(){
+        return false;
+    }
 }

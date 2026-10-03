@@ -108,11 +108,25 @@ public abstract class RemoteBoundBlockEntity extends BaseBlockEntity {
         // can be replaced underneath it -- break the last controller of a shaft and rebuild it, and
         // the group is a new object with no listeners, while a flag would still read "registered" and
         // the comparator would sit on its last value until the chunk reloaded.
-        if(this.world != null && !this.world.isRemote && group != this.comparatorRegisteredWith){
+        // Moving to a different elevator also deregisters from the old one, which otherwise kept
+        // poking comparators at this position for as long as it existed.
+        if(this.world != null && !this.world.isRemote && this.drivesComparator() && group != this.comparatorRegisteredWith){
+            if(this.comparatorRegisteredWith != null)
+                this.comparatorRegisteredWith.removeComparatorListener(this.pos);
             this.comparatorRegisteredWith = group;
             group.addComparatorListener(this.getFloorLevel(), this.pos);
         }
         return group;
+    }
+
+    /**
+     * Whether this fixture's block gives a comparator signal, and so needs telling when the cabin
+     * arrives or leaves. Fixtures that give none opt out, so the elevator does not refresh comparators
+     * around every one of them on each arrival -- a district's doors alone are over a thousand
+     * positions.
+     */
+    protected boolean drivesComparator(){
+        return true;
     }
 
     /**
