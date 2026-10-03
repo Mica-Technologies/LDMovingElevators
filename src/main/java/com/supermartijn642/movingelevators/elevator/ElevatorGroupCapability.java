@@ -143,6 +143,16 @@ public class ElevatorGroupCapability {
 
     private final World level;
     private final Map<ElevatorGroupPosition,ElevatorGroup> groups = new HashMap<>();
+    /**
+     * Bumped whenever a group is added, removed or replaced, or a controller joins one. Lets a door
+     * keep the group it resolved without looking it up again every tick. See {@link #getVersion()}.
+     */
+    private int version;
+
+    /** @see #version */
+    public int getVersion(){
+        return this.version;
+    }
     @SuppressWarnings("UnstableApiUsage")
     private final Multimap<ChunkPos,ElevatorGroup> groupsPerChunk = MultimapBuilder.hashKeys().hashSetValues(1).build();
 
@@ -157,6 +167,7 @@ public class ElevatorGroupCapability {
     public void add(ControllerBlockEntity controller){
         ElevatorGroupPosition pos = new ElevatorGroupPosition(controller.getPos(), controller.getFacing());
         ElevatorGroup group = this.groups.computeIfAbsent(pos, p -> new ElevatorGroup(this.level, p.x, p.z, p.facing));
+        this.version++;
         this.groupsPerChunk.put(pos.chunkPos(), group);
         group.add(controller);
     }
@@ -189,6 +200,7 @@ public class ElevatorGroupCapability {
 
     private void removeGroup(ElevatorGroupPosition pos){
         ElevatorGroup group = this.groups.remove(pos);
+        this.version++;
         if(group != null){
             this.groupsPerChunk.remove(pos.chunkPos(), group);
             if(!this.level.isRemote)
@@ -235,6 +247,7 @@ public class ElevatorGroupCapability {
 
     public void read(NBTTagCompound compound){
         this.groups.clear();
+        this.version++;
         // groupsPerChunk is an index over groups, and readGroup() repopulates both -- so it has to
         // be cleared alongside. Leaving it would strand the old ElevatorGroup objects in the index
         // (they are deduped by identity, so the new instances do not displace them). A stranded
@@ -268,6 +281,7 @@ public class ElevatorGroupCapability {
             group.inheritCage(previous);
             group.carryRidersFrom(previous);
             this.groups.put(pos, group);
+            this.version++;
             // The multimap has no idea it is holding a replaced group: ElevatorGroup does not define
             // equality, so every read is a distinct object and putting one in is an addition, not an
             // overwrite. Left alone, a client accumulated one dead group per sync packet for the life

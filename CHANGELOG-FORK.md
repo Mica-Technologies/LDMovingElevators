@@ -266,6 +266,13 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **Doors work out their landing only when something it depends on changes.** Once a door's
+  redstone power was cached, most of what it still cost every tick was finding its elevator again
+  and scanning that elevator's floors for its own landing. Doors now keep the answer until their
+  binding changes, an elevator is added, removed or rebuilt, or the elevator's floors or cabin height
+  change. The elevator's per-landing door bookkeeping also stops allocating a number object per
+  lookup.
+
 - **A rider no longer bobs up and down when the cabin stops, or falls out when it next leaves.**
   The cabin's height is advanced by adding its speed each tick, so it reaches a landing a fraction
   of a nanometre short -- 169.9999999999995 rather than 170 -- and the rider was set down on that.

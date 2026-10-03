@@ -6,6 +6,8 @@ import com.supermartijn642.movingelevators.MovingElevators;
 import com.supermartijn642.movingelevators.MovingElevatorsConfig;
 import com.supermartijn642.movingelevators.blocks.ControllerBlockEntity;
 import com.supermartijn642.movingelevators.packets.PacketSyncElevatorMovement;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -83,7 +85,9 @@ public class ElevatorGroup {
      */
     private final Map<Integer,Set<Integer>> bankedDestinations = new HashMap<>();
     /** How long the doors at a floor should be held open, when longer than the configured default. */
-    private final Map<Integer,Integer> doorHoldTicks = new HashMap<>();
+    // Mica: primitive-keyed, because every door block reads these every tick, and a boxed key above
+    // y=127 is a fresh Integer each time.
+    private final Int2IntOpenHashMap doorHoldTicks = new Int2IntOpenHashMap();
     /** Hall call direction flags, stored as a mask per floor. */
     private static final int CALL_UP = 1, CALL_DOWN = 2;
 
@@ -120,6 +124,12 @@ public class ElevatorGroup {
 
     private int syncCounter = 0;
     private int tickCounter = 0;
+    /**
+     * Bumped whenever something a landing door's answer depends on changes: the floors, or the
+     * cabin's height and its offset from the controllers. Doors cache which landing they stand at
+     * against this rather than re-deriving it every tick. See {@link #getLayoutVersion()}.
+     */
+    private int layoutVersion;
     private int cageChecks = 0;
     /**
      * Who the last shaft sweep accepted as a passenger, by entity id. Server-side, per trip.
@@ -163,8 +173,8 @@ public class ElevatorGroup {
      * them has to see the same request. Each door remembers the last stamp it acted on. Not
      * persisted -- a request is a momentary thing, and doors close on their own anyway.
      */
-    private final Map<Integer,Long> doorOpenRequests = new HashMap<>();
-    private final Map<Integer,Long> doorCloseRequests = new HashMap<>();
+    private final Int2LongOpenHashMap doorOpenRequests = new Int2LongOpenHashMap();
+    private final Int2LongOpenHashMap doorCloseRequests = new Int2LongOpenHashMap();
 
     /**
      * The "Standard" sound scheme, and the only one so far.
@@ -732,7 +742,7 @@ public class ElevatorGroup {
 
     /** How long the doors at a floor should stay open, in ticks. */
     public int getDoorHoldTicks(int yLevel){
-        return this.doorHoldTicks.getOrDefault(yLevel, 0);
+        return this.doorHoldTicks.get(yLevel);
     }
 
     public void requestDoorClose(int yLevel){
@@ -753,14 +763,14 @@ public class ElevatorGroup {
      * @return world time of the last open request for this floor, or 0 if there has never been one
      */
     public long getDoorOpenRequest(int yLevel){
-        return this.doorOpenRequests.getOrDefault(yLevel, 0L);
+        return this.doorOpenRequests.get(yLevel);
     }
 
     /**
      * @return world time of the last close request for this floor, or 0 if there has never been one
      */
     public long getDoorCloseRequest(int yLevel){
-        return this.doorCloseRequests.getOrDefault(yLevel, 0L);
+        return this.doorCloseRequests.get(yLevel);
     }
 
     /**
@@ -1781,6 +1791,7 @@ public class ElevatorGroup {
         this.callDirections.remove(this.floors.get(floor));
         int removedY = this.floors.get(floor);
         this.floors.remove(floor);
+        this.layoutVersion++;
         this.floorData.remove(floor);
         // The cabin was on its way here. stopElevator looks the floor up by y and indexes floorData
         // with the result, so leaving targetY pointing at a floor that no longer exists crashes the
@@ -1820,6 +1831,7 @@ public class ElevatorGroup {
             this.floors.add(y);
             this.floorData.add(floorData);
         }
+        this.layoutVersion++;
         this.shouldBeSynced = true;
     }
 
@@ -1930,6 +1942,7 @@ public class ElevatorGroup {
     public void increaseCageHeightOffset(){
         if(this.canIncreaseCageHeightOffset()){
             this.cageHeightOffset++;
+            this.layoutVersion++;
             this.shouldBeSynced = true;
         }
     }
@@ -1941,6 +1954,7 @@ public class ElevatorGroup {
     public void decreaseCageHeightOffset(){
         if(this.canDecreaseCageHeightOffset()){
             this.cageHeightOffset--;
+            this.layoutVersion++;
             this.shouldBeSynced = true;
         }
     }
@@ -2024,6 +2038,7 @@ public class ElevatorGroup {
     public void increaseCageHeight(){
         if(!this.isMoving && this.canIncreaseCageHeight()){
             this.cageSizeY++;
+            this.layoutVersion++;
             this.shouldBeSynced = true;
         }
     }
@@ -2037,6 +2052,7 @@ public class ElevatorGroup {
             this.cageSizeY--;
             if(this.cageHeightOffset < -this.cageSizeY)
                 this.cageHeightOffset = -this.cageSizeY;
+            this.layoutVersion++;
             this.shouldBeSynced = true;
         }
     }
@@ -2377,6 +2393,7 @@ public class ElevatorGroup {
         this.floors.clear();
         for(int y : compound.getIntArray("floors"))
             this.floors.add(y);
+        this.layoutVersion++;
         // Absent in saves written before the call queue existed, in which case getIntArray returns an
         // empty array and the elevator simply starts with nothing queued.
         this.callQueue.clear();
@@ -2458,7 +2475,12 @@ public class ElevatorGroup {
     }
 
     public int getFloorNumber(int y){
-        return this.floors.indexOf(y);
+        // Mica: compared unboxed. indexOf(Object) boxes y, which above y=127 allocates, and every door
+        // block asks this every tick.
+        for(int i = 0; i < this.floors.size(); i++)
+            if(this.floors.get(i) == y)
+                return i;
+        return -1;
     }
 
     public int getClosestFloorNumber(int y){
@@ -2480,6 +2502,11 @@ public class ElevatorGroup {
      *
      * @return a floor index, or -1 if it cannot be determined
      */
+    /** @see #layoutVersion */
+    public int getLayoutVersion(){
+        return this.layoutVersion;
+    }
+
     public int getCabinFloorNumber(){
         // Cached for the tick it was computed in. Every door block entity asks once a tick, a doorway
         // has up to four of them, and every landing renderer asks once a frame -- and the answer can
@@ -2518,7 +2545,7 @@ public class ElevatorGroup {
     }
 
     public boolean hasControllerAt(int yLevel){
-        return this.floors.contains(yLevel);
+        return this.getFloorNumber(yLevel) != -1;
     }
 
     private void updateGroup(){

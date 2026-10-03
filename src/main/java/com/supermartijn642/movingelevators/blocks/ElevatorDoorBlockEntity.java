@@ -228,20 +228,20 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         // a district of doors loaded together does not run the whole check on one tick in forty. An
         // unbound door still looks on its very first tick, since that is a door somebody has just
         // placed and is waiting to see work.
-        ElevatorGroup group = this.getGroup();
+        ElevatorGroup group = this.resolveLanding();
         boolean firstLook = group == null && !this.adoptTried;
         if(firstLook || (this.world.getTotalWorldTime() + this.phase(ADOPT_INTERVAL)) % ADOPT_INTERVAL == 0){
             this.adoptTried = true;
             if(group == null || this.boundToFartherCabin(group)){
                 this.adoptNearestLanding();
-                group = this.getGroup();
+                group = this.resolveLanding();
             }
         }
 
-        // Mica: resolved once per tick and reused, rather than asking getGroup() again through
-        // getFloorLevel() -- each resolution is a world capability lookup and a map read.
-        int floorLevel = this.floorLevelIn(group);
-        boolean cabinHere = group != null && group.isCabinAt(floorLevel);
+        int floorLevel = this.landingFloorLevel;
+        // group.isCabinAt(floorLevel), with the floor's index taken from the cache.
+        boolean cabinHere = group != null && !group.isMoving() && this.landingFloorIndex != -1
+            && this.landingFloorIndex == group.getCabinFloorNumber();
 
         if(group != null){
             long openRequest = group.getDoorOpenRequest(floorLevel);
@@ -341,6 +341,42 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
                 ((ElevatorDoorBlockEntity)entity).acceptDoorwayPower(powered, stamp);
         }
     }
+
+    /**
+     * The bound group, with the landing this door stands at and that landing's floor index, as of the
+     * last time any of their inputs changed.
+     * <p>
+     * Mica: resolving these every tick -- a capability lookup and a map read for the group, a scan of
+     * its floors for the landing, another for the floor's index -- was most of what a door still cost
+     * once its power was cached, multiplied by every block of every doorway. The answer can only
+     * change when the binding does, when a group is added, removed or replaced, or when the group's
+     * floors or cabin height do, and each of those bumps something checked here.
+     */
+    private ElevatorGroup resolveLanding(){
+        ElevatorGroupCapability capability = ElevatorGroupCapability.get(this.world);
+        int groupsVersion = capability == null ? -1 : capability.getVersion();
+        if(capability == this.landingCapability && groupsVersion == this.landingGroupsVersion
+            && this.controllerPos == this.landingControllerPos && this.getControllerFacing() == this.landingControllerFacing
+            && (this.landingGroup == null || this.landingGroup.getLayoutVersion() == this.landingLayoutVersion))
+            return this.landingGroup;
+        ElevatorGroup group = this.getGroup();
+        this.landingCapability = capability;
+        this.landingGroupsVersion = groupsVersion;
+        this.landingControllerPos = this.controllerPos;
+        this.landingControllerFacing = this.getControllerFacing();
+        this.landingGroup = group;
+        this.landingLayoutVersion = group == null ? -1 : group.getLayoutVersion();
+        this.landingFloorLevel = this.floorLevelIn(group);
+        this.landingFloorIndex = group == null ? -1 : group.getFloorNumber(this.landingFloorLevel);
+        return group;
+    }
+
+    /** Server only, never saved: what {@link #resolveLanding()} last worked out, and from what. */
+    private ElevatorGroupCapability landingCapability;
+    private ElevatorGroup landingGroup;
+    private BlockPos landingControllerPos;
+    private net.minecraft.util.EnumFacing landingControllerFacing;
+    private int landingGroupsVersion, landingLayoutVersion, landingFloorLevel, landingFloorIndex = -1;
 
     /**
      * A fixed offset in {@code [0, interval)} derived from this block's position, for spreading
