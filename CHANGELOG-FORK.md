@@ -266,6 +266,17 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **A rider no longer bobs up and down when the cabin stops, or falls out when it next leaves.**
+  The cabin's height is advanced by adding its speed each tick, so it reaches a landing a fraction
+  of a nanometre short -- 169.9999999999995 rather than 170 -- and the rider was set down on that.
+  When the landing put the floor back underneath them, their feet were already inside it, and
+  vanilla collision lets anything already inside a block fall through it. The server refused each
+  fall and put the rider back where they had been, so the view jumped by a few centimetres every
+  other tick for as long as the cabin stood there; and when it departed, the rider was mid-fall and
+  went down the shaft. Riders are now set down on the block grid when they are within float noise
+  of it. Found by the new regression suite (`tools/regression`), which lost a survival rider on
+  every run before the fix and none in three runs after it.
+
 - **Open doors and wall panels no longer throw an exception on every frame.** Forge works out
   where a block entity is drawn from its block's collision box, and in 1.12 a block without one --
   every wall panel, and every door while it stands open -- hands it a null box, so the default

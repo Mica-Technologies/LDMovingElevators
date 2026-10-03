@@ -93,10 +93,10 @@ public class ElevatorCollisionHandler {
                 // anything taller than it was wide with its head inside the cabin's underside -- and
                 // the blocks are out of the world while it travels, so nothing pushed it back out
                 // until the cabin materialised around it on arrival and evicted it down the shaft.
-                entity.setPosition(entityPos.x, newBox.minY - entity.height, entityPos.z);
+                entity.setPosition(entityPos.x, snapToSurface(newBox.minY) - entity.height, entityPos.z);
                 entity.motionY = 0;
             }else if(oldEntityBox.minY > box.maxY && (entityBox.minY < newBox.maxY || (!movingUp && canPullEntity(entity) && oldEntityBox.minY > box.maxY && oldEntityBox.minY < box.maxY + 0.1))){
-                entity.setPosition(entityPos.x, newBox.maxY, entityPos.z);
+                entity.setPosition(entityPos.x, snapToSurface(newBox.maxY), entityPos.z);
                 entity.motionY = 0;
 
                 entity.onGround = true;
@@ -104,6 +104,24 @@ public class ElevatorCollisionHandler {
             }
         }
         return false;
+    }
+
+    /**
+     * The cabin face an entity is being put against, with floating-point drift taken off.
+     * <p>
+     * Mica: the cabin's height is advanced by adding its speed every tick, so it arrives at a landing
+     * as, say, 169.9999999999995 rather than 170. A rider set down on that is a fraction of a
+     * nanometre inside the floor block the landing puts back underneath them, and vanilla collision
+     * only holds up an entity whose feet are at or above a block's top -- one already inside it falls
+     * straight through. The server then refuses each fall and returns the rider to their last good
+     * position, which is the same drifted height, so they bounced in place for as long as the cabin
+     * stood there, and dropped down the shaft when it next left. Faces of real blocks lie on a
+     * sixteenth-of-a-block grid, so anything within float noise of that grid is put back on it;
+     * a cabin genuinely between landings is far further off the grid than this and is left alone.
+     */
+    private static double snapToSurface(double y){
+        double grid = Math.round(y * 16) / 16d;
+        return Math.abs(y - grid) < 1E-6 ? grid : y;
     }
 
     private static void onLanded(Entity entity){
