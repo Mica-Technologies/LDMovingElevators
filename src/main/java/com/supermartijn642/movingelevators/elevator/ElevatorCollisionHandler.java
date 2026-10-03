@@ -34,10 +34,17 @@ public class ElevatorCollisionHandler {
             }
 
             // vertical collisions
+            // Mica: the landing's side effects run once per entity, after every box has had its say.
+            // The landing test is made against where the entity was last tick, so on the way down
+            // every floor block under its feet passed it in turn, and each one fired the fall event,
+            // rewrote the fall-damage grace and -- on a rider's client -- sent another packet.
+            boolean landed = false;
             for(AxisAlignedBB box : boundingBoxes){
                 box = box.offset(position);
-                handleVerticalCollision(entity, box, motion);
+                landed |= handleVerticalCollision(entity, box, motion);
             }
+            if(landed)
+                onLanded(entity);
         }
     }
 
@@ -69,7 +76,8 @@ public class ElevatorCollisionHandler {
         }
     }
 
-    private static void handleVerticalCollision(Entity entity, AxisAlignedBB box, Vec3d motion){
+    /** @return whether the entity was set down on top of the box */
+    private static boolean handleVerticalCollision(Entity entity, AxisAlignedBB box, Vec3d motion){
         AxisAlignedBB newBox = box.offset(motion);
         boolean movingUp = motion.y > 0;
 
@@ -92,17 +100,22 @@ public class ElevatorCollisionHandler {
                 entity.motionY = 0;
 
                 entity.onGround = true;
-                if(!(entity instanceof EntityLivingBase) || !ElevatorFallDamageHandler.shouldCancelFallDamage((EntityLivingBase)entity))
-                    entity.fall(entity.fallDistance, 1);
-                entity.fallDistance = 0;
-                EntityPlayer controllingPlayer = entity instanceof EntityPlayer ? (EntityPlayer)entity :
-                        entity.getControllingPassenger() instanceof EntityPlayer ? (EntityPlayer)entity.getControllingPassenger() : null;
-                if(entity instanceof EntityLivingBase && controllingPlayer != null){
-                    ElevatorFallDamageHandler.resetElevatorTime((EntityLivingBase)entity);
-                    if(controllingPlayer.isUser())
-                        MovingElevators.CHANNEL.sendToServer(new PacketOnElevator());
-                }
+                return true;
             }
+        }
+        return false;
+    }
+
+    private static void onLanded(Entity entity){
+        if(!(entity instanceof EntityLivingBase) || !ElevatorFallDamageHandler.shouldCancelFallDamage((EntityLivingBase)entity))
+            entity.fall(entity.fallDistance, 1);
+        entity.fallDistance = 0;
+        EntityPlayer controllingPlayer = entity instanceof EntityPlayer ? (EntityPlayer)entity :
+                entity.getControllingPassenger() instanceof EntityPlayer ? (EntityPlayer)entity.getControllingPassenger() : null;
+        if(entity instanceof EntityLivingBase && controllingPlayer != null){
+            ElevatorFallDamageHandler.resetElevatorTime((EntityLivingBase)entity);
+            if(controllingPlayer.isUser())
+                MovingElevators.CHANNEL.sendToServer(new PacketOnElevator());
         }
     }
 

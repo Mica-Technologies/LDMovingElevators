@@ -283,6 +283,13 @@ Based on upstream **Moving Elevators 1.4.12**.
   comparator updates, so an arriving car stops refreshing comparators around each of its doors; and
   a fixture that moves to a different elevator now deregisters from the old one.
 
+- **A fire recall that cannot dispatch no longer retries every tick, and a rider's landing is
+  counted once.** A recalled car that could not leave -- no cabin found, the recall floor
+  obstructed, the car overloaded -- re-scanned its shaft every tick for as long as the alarm
+  sounded; it now retries once a second. And on the way down, each floor block under a rider
+  re-ran the landing's side effects -- the fall event, the fall-damage grace and, on the rider's
+  client, a packet to the server -- several times a tick. They now run once per landing.
+
 - **Elevator doors no longer cost the server time while nothing is happening to them.** Every
   door block re-read the redstone power of its whole doorway on every tick -- a walk of the doorway
   and six redstone reads per block, repeated by each of the doorway's blocks -- although power can

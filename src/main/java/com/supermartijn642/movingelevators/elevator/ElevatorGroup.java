@@ -248,6 +248,10 @@ public class ElevatorGroup {
     private BlockPos alarmPanelPos;
     /** The floor the alarm sends the car to. Set when the elevator is paired, from where it was paired. */
     private int recallFloorY;
+    /** Ticks between attempts to send a recalled car that could not set off. Server only, never saved. */
+    private static final int RECALL_RETRY_INTERVAL = 20;
+    /** Counts down to the next of those attempts; 0 or less means try now. */
+    private int recallRetryTicks;
     /** Counts down to the second note of the arrival ding; 0 when there is none pending. */
     private int pendingDing;
     /** Which note the scheduled half of the arrival chime is. Decided on arrival, not when it plays,
@@ -1235,8 +1239,15 @@ public class ElevatorGroup {
             // Arrived: sit with the doors open. A recalled car is a way out, and a shut door is not.
             if(this.tickCounter % ALARM_POLL_INTERVAL == 0)
                 this.requestDoorOpen(this.recallFloorY);
-        }else if(this.dwellCounter <= 0)
+        }else if(this.dwellCounter <= 0 && --this.recallRetryTicks <= 0){
             this.onButtonPress(false, false, this.recallFloorY, null);
+            // Mica: a dispatch that could not leave -- no cabin found, the recall floor obstructed,
+            // the car overloaded -- used to be retried on the very next tick, for as long as the
+            // alarm sounded. Each attempt scans the cabin volume at every floor, and a building-wide
+            // alarm recalls every car at once. The first attempt is still immediate.
+            if(!this.isMoving)
+                this.recallRetryTicks = RECALL_RETRY_INTERVAL;
+        }
     }
 
     /** Ticks between checking whether the cabin has reached a different floor, for comparators. */
