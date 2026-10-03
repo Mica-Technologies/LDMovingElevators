@@ -538,6 +538,18 @@ public class ElevatorCage {
     }
 
     public NBTTagCompound write(){
+        return this.write(false);
+    }
+
+    /**
+     * @param forClient leave out what only the server uses. Mica: the cabin is sent to every player
+     *                  in the dimension each time it departs, and two things in it never meant
+     *                  anything to a client: each block entity's item-stack copy, which is only for
+     *                  dropping the cabin as items and repeated that block entity's whole data, and
+     *                  a compound with six named doubles for every collision box. Saves are
+     *                  unaffected, and {@link #read} takes either form.
+     */
+    public NBTTagCompound write(boolean forClient){
         NBTTagCompound compound = new NBTTagCompound();
         compound.setInteger("xSize", this.xSize);
         compound.setInteger("ySize", this.ySize);
@@ -556,7 +568,8 @@ public class ElevatorCage {
                         tag.setInteger("y", y);
                         tag.setInteger("z", z);
                         tag.setTag("data", this.blockEntityData[x][y][z]);
-                        tag.setTag("stack", this.blockEntityStacks[x][y][z]);
+                        if(!forClient && this.blockEntityStacks[x][y][z] != null)
+                            tag.setTag("stack", this.blockEntityStacks[x][y][z]);
                         entityData.appendTag(tag);
                     }
                 }
@@ -564,9 +577,24 @@ public class ElevatorCage {
         }
         compound.setIntArray("blockStates", stateIds);
         compound.setTag("entityData", entityData);
-        NBTTagList collisionBoxList = new NBTTagList();
-        this.collisionBoxes.forEach(box -> collisionBoxList.appendTag(writeBox(box)));
-        compound.setTag("collisionBoxes", collisionBoxList);
+        if(forClient){
+            // Each double's exact bits, as two ints: the client collides with these boxes too, so they
+            // must not be rounded. (1.12's long array tag has no way to read its contents back.)
+            int[] bits = new int[this.collisionBoxes.size() * 12];
+            int i = 0;
+            for(AxisAlignedBB box : this.collisionBoxes){
+                for(double value : new double[]{box.minX, box.minY, box.minZ, box.maxX, box.maxY, box.maxZ}){
+                    long raw = Double.doubleToRawLongBits(value);
+                    bits[i++] = (int)(raw >>> 32);
+                    bits[i++] = (int)raw;
+                }
+            }
+            compound.setIntArray("boxBits", bits);
+        }else{
+            NBTTagList collisionBoxList = new NBTTagList();
+            this.collisionBoxes.forEach(box -> collisionBoxList.appendTag(writeBox(box)));
+            compound.setTag("collisionBoxes", collisionBoxList);
+        }
         return compound;
     }
 
@@ -594,14 +622,26 @@ public class ElevatorCage {
                 int y = ((NBTTagCompound)tag).getInteger("y");
                 int z = ((NBTTagCompound)tag).getInteger("z");
                 entityTags[x][y][z] = ((NBTTagCompound)tag).getCompoundTag("data");
-                stackTags[x][y][z] = ((NBTTagCompound)tag).getCompoundTag("stack");
+                if(((NBTTagCompound)tag).hasKey("stack", Constants.NBT.TAG_COMPOUND))
+                    stackTags[x][y][z] = ((NBTTagCompound)tag).getCompoundTag("stack");
             }
         }
-        NBTTagList collisionBoxList = compound.getTagList("collisionBoxes", 10);
-        List<AxisAlignedBB> collisionBoxes = Streams.stream(collisionBoxList)
-            .map(NBTTagCompound.class::cast)
-            .map(ElevatorCage::readBox)
-            .collect(Collectors.toList());
+        List<AxisAlignedBB> collisionBoxes;
+        if(compound.hasKey("boxBits", Constants.NBT.TAG_INT_ARRAY)){
+            int[] bits = compound.getIntArray("boxBits");
+            double[] values = new double[bits.length / 2];
+            for(int i = 0; i < values.length; i++)
+                values[i] = Double.longBitsToDouble(((long)bits[2 * i] << 32) | (bits[2 * i + 1] & 0xFFFFFFFFL));
+            collisionBoxes = new ArrayList<>(values.length / 6);
+            for(int i = 0; i + 5 < values.length; i += 6)
+                collisionBoxes.add(new AxisAlignedBB(values[i], values[i + 1], values[i + 2], values[i + 3], values[i + 4], values[i + 5]));
+        }else{
+            NBTTagList collisionBoxList = compound.getTagList("collisionBoxes", 10);
+            collisionBoxes = Streams.stream(collisionBoxList)
+                .map(NBTTagCompound.class::cast)
+                .map(ElevatorCage::readBox)
+                .collect(Collectors.toList());
+        }
         return isClientSide ?
             new ClientElevatorCage(xSize, ySize, zSize, blockStates, entityTags, stackTags, collisionBoxes) :
             new ElevatorCage(xSize, ySize, zSize, blockStates, entityTags, stackTags, collisionBoxes);

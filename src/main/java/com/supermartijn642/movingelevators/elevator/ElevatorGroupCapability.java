@@ -129,7 +129,7 @@ public class ElevatorGroupCapability {
             return;
         ElevatorGroupCapability groups = player.world.getCapability(CAPABILITY, null);
         if(groups != null)
-            MovingElevators.CHANNEL.sendToPlayer((EntityPlayerMP)player, new PacketUpdateElevatorGroups(groups.write()));
+            MovingElevators.CHANNEL.sendToPlayer((EntityPlayerMP)player, new PacketUpdateElevatorGroups(groups.write(true)));
     }
 
     @SubscribeEvent
@@ -235,10 +235,15 @@ public class ElevatorGroupCapability {
     }
 
     public NBTTagCompound write(){
+        return this.write(false);
+    }
+
+    /** @param forClient see {@link ElevatorCage#write(boolean)} */
+    public NBTTagCompound write(boolean forClient){
         NBTTagCompound compound = new NBTTagCompound();
         for(Map.Entry<ElevatorGroupPosition,ElevatorGroup> entry : this.groups.entrySet()){
             NBTTagCompound groupTag = new NBTTagCompound();
-            groupTag.setTag("group", entry.getValue().write());
+            groupTag.setTag("group", entry.getValue().write(true, forClient));
             groupTag.setTag("pos", entry.getKey().write());
             compound.setTag(entry.getKey().nbtKey(), groupTag);
         }
@@ -264,7 +269,7 @@ public class ElevatorGroupCapability {
 
     private NBTTagCompound writeGroup(ElevatorGroup group, boolean includeCage){
         NBTTagCompound tag = new NBTTagCompound();
-        tag.setTag("group", group.write(includeCage));
+        tag.setTag("group", group.write(includeCage, true));
         tag.setTag("pos", new ElevatorGroupPosition(group.x, group.z, group.facing).write());
         return tag;
     }

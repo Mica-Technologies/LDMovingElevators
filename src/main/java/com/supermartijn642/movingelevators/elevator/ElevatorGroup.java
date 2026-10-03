@@ -2282,6 +2282,11 @@ public class ElevatorGroup {
      *                    this and changes far less often than the rest of it
      */
     public NBTTagCompound write(boolean includeCage){
+        return this.write(includeCage, false);
+    }
+
+    /** @param forClient see {@link ElevatorCage#write(boolean)} */
+    public NBTTagCompound write(boolean includeCage, boolean forClient){
         NBTTagCompound compound = new NBTTagCompound();
         compound.setBoolean("isMoving", this.isMoving);
         // Written unconditionally: while stopped this is where the cabin came to rest, which is the
@@ -2292,7 +2297,7 @@ public class ElevatorGroup {
             compound.setDouble("lastY", this.lastY);
             compound.setDouble("currentY", this.currentY);
             if(includeCage)
-                compound.setTag("cage", this.cage.write());
+                compound.setTag("cage", this.cage.write(forClient));
         }
         compound.setDouble("targetSpeed", this.targetSpeed);
         compound.setDouble("speed", this.speed);

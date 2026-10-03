@@ -266,6 +266,12 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **A departing cabin costs less to send.** Every player in the dimension is sent the cabin's
+  contents when it sets off. That included, for every block entity in it, a second full copy of its
+  data that only the server uses (to drop the cabin as items), and each collision box as a compound
+  of six named numbers. Players now get neither: the copy is left out and the boxes go as one packed
+  array. Saved worlds are unchanged.
+
 - **Elevators no longer all run their periodic checks on the same tick, and a fire recall stops
   causing a tick spike.** Every elevator counted ticks from zero, and all of a world's elevators
   are created together, so every occupancy count, alarm poll and comparator check in the world
