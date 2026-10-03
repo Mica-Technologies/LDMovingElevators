@@ -97,3 +97,8 @@ docs/AGENT-PLANS/
 *.env
 .env.*
 *credentials*
+
+# Regression runs write their results, screenshots and launcher logs here. Local to the
+# machine and the build that produced them; tools/regression/README.md explains them.
+tools/regression/results/
+tools/regression/__pycache__/
