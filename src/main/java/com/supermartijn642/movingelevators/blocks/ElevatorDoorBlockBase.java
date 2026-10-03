@@ -4,6 +4,7 @@ import com.supermartijn642.core.TextComponents;
 import com.supermartijn642.core.block.BaseBlock;
 import com.supermartijn642.core.block.BlockProperties;
 import com.supermartijn642.core.block.EntityHoldingBlock;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockHorizontal;
 import net.minecraft.block.material.EnumPushReaction;
 import net.minecraft.block.properties.PropertyDirection;
@@ -111,7 +112,7 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
      * at the bottom opened only the bottom, while power at the top opened everything, because each
      * block was looking at a different set of neighbours. A walk cannot disagree with itself.
      */
-    private Set<BlockPos> connectedCells(World level, BlockPos pos, IBlockState state){
+    Set<BlockPos> connectedCells(World level, BlockPos pos, IBlockState state){
         EnumFacing facing = state.getValue(FACING);
         EnumFacing side = sideOf(state);
         Set<BlockPos> found = new HashSet<>();
@@ -158,6 +159,30 @@ public abstract class ElevatorDoorBlockBase extends BaseBlock implements EntityH
             if(level.isBlockPowered(cell))
                 return true;
         return false;
+    }
+
+    /**
+     * Tells every block of the doorway that its power may have changed.
+     * <p>
+     * Mica: the doorway's power used to be polled by every block, every tick -- a flood of the
+     * doorway and six redstone reads per cell, repeated by each of its cells, so O(cells squared) per
+     * doorway per tick for a value that can only change when a neighbour does. A district of 1,240
+     * door blocks spent nearly four fifths of the server thread on it. The block entities now cache
+     * the answer and recompute it when this marks them stale (plus a slow safety refresh for edits
+     * that bypass neighbour updates). Every cell is marked, not only the one that was notified, so
+     * whichever of them ticks first recomputes for the whole doorway and they all act on the new
+     * value on the same tick.
+     */
+    @Override
+    public void neighborChanged(IBlockState state, World level, BlockPos pos, Block block, BlockPos fromPos){
+        super.neighborChanged(state, level, pos, block, fromPos);
+        if(level.isRemote)
+            return;
+        for(BlockPos cell : this.connectedCells(level, pos, state)){
+            TileEntity entity = level.getTileEntity(cell);
+            if(entity instanceof ElevatorDoorBlockEntity)
+                ((ElevatorDoorBlockEntity)entity).markPowerStale();
+        }
     }
 
     @Override

@@ -266,6 +266,18 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **Elevator doors no longer cost the server time while nothing is happening to them.** Every
+  door block re-read the redstone power of its whole doorway on every tick -- a walk of the doorway
+  and six redstone reads per block, repeated by each of the doorway's blocks -- although power can
+  only change when something next to the doorway does. A district of 1,240 door blocks on a live
+  server spent nearly four fifths of the server thread there. The doorway's power is now cached:
+  any neighbour change on any block of the doorway marks it stale, the first of its blocks to tick
+  re-reads it once for all of them, and a safety re-read every two seconds (staggered by position)
+  catches changes that arrive without a neighbour update, such as world edits. Door behaviour is
+  unchanged -- redstone, cabin arrivals, car-panel buttons, the auto-close and the obstruction hold
+  all work as before. On a dev server with 1,120 door blocks, door ticking fell from about 2.0-2.3
+  ms to about 0.25-0.29 ms per tick.
+
 - **A rider no longer falls through the cabin floor when the server runs slow.** The report was
   precise: about a floor into a descent, the passenger dropped through the floor to the bottom of
   the shaft while the elevator above them made an emergency stop. Reproduced on a dedicated server

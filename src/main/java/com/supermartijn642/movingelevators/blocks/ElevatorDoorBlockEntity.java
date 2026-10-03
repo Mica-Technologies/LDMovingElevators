@@ -9,9 +9,12 @@ import com.supermartijn642.movingelevators.elevator.ElevatorSoundScheme;
 import com.supermartijn642.core.TextComponents;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextFormatting;
+
+import java.util.Set;
 
 /**
  * Decides when a doorway should be open, and holds the dwell that closes it again.
@@ -70,6 +73,25 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
     private boolean top;
     private int adoptCounter;
 
+    /**
+     * Ticks between safety re-reads of the doorway's redstone power.
+     * <p>
+     * Mica: power is otherwise only re-read when a neighbour of the doorway changes (see
+     * {@link ElevatorDoorBlockBase#neighborChanged}). This catches whatever changes power without a
+     * neighbour update -- world edits, structure pastes, other mods' silent block sets -- at a cost
+     * of one doorway read per doorway every two seconds instead of every cell re-reading the whole
+     * doorway every tick.
+     */
+    private static final int POWER_REFRESH_INTERVAL = 40;
+
+    /**
+     * Server only, never saved: the doorway's cached redstone power, whether it needs re-reading, and
+     * the world time it was last read. Starts stale, so a freshly loaded door reads it on its first
+     * tick.
+     */
+    private boolean doorwayPowered, powerStale = true, powerEverRead;
+    private long powerReadAt;
+
     public ElevatorDoorBlockEntity(){
         super(MovingElevators.elevator_door_tile);
     }
@@ -94,7 +116,11 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
      */
     @Override
     public int getFloorLevel(){
-        ElevatorGroup group = this.getGroup();
+        return this.floorLevelIn(this.getGroup());
+    }
+
+    /** {@link #getFloorLevel()} for a group already resolved this tick. */
+    private int floorLevelIn(ElevatorGroup group){
         if(group != null){
             int landing = this.landingWithin(group);
             if(landing != -1)
@@ -197,15 +223,18 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         // asked periodically of every bound door as well: is there a cabin strictly nearer than the
         // one it is bound to? Strictly, so that two cabins at the same distance never make a door
         // flap between them.
-        ElevatorGroup bound = this.getGroup();
+        ElevatorGroup group = this.getGroup();
         if(--this.adoptCounter <= 0){
             this.adoptCounter = ADOPT_INTERVAL;
-            if(bound == null || this.boundToFartherCabin(bound))
+            if(group == null || this.boundToFartherCabin(group)){
                 this.adoptNearestLanding();
+                group = this.getGroup();
+            }
         }
 
-        ElevatorGroup group = this.getGroup();
-        int floorLevel = this.getFloorLevel();
+        // Mica: resolved once per tick and reused, rather than asking getGroup() again through
+        // getFloorLevel() -- each resolution is a world capability lookup and a map read.
+        int floorLevel = this.floorLevelIn(group);
         boolean cabinHere = group != null && group.isCabinAt(floorLevel);
 
         if(group != null){
@@ -262,10 +291,57 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
             && ((ElevatorDoorBlockBase)state.getBlock()).isDoorwayObstructed(this.world, this.pos, state);
     }
 
+    /**
+     * Whether any block of the doorway is receiving redstone power, from the cache when it is
+     * current. See {@link ElevatorDoorBlockBase#neighborChanged} for why it is cached.
+     */
     private boolean isDoorwayPowered(){
+        long now = this.world.getTotalWorldTime();
+        if(this.powerStale || now - this.powerReadAt >= POWER_REFRESH_INTERVAL)
+            this.readDoorwayPower(now);
+        return this.doorwayPowered;
+    }
+
+    /** Marks the cached power as needing a re-read; called when a neighbour of the doorway changes. */
+    void markPowerStale(){
+        this.powerStale = true;
+    }
+
+    /**
+     * Reads the doorway's power once and hands the answer to every block of it, so a doorway costs one
+     * read per refresh however many blocks it has.
+     */
+    private void readDoorwayPower(long now){
         IBlockState state = this.world.getBlockState(this.pos);
-        return state.getBlock() instanceof ElevatorDoorBlockBase
-            && ((ElevatorDoorBlockBase)state.getBlock()).isDoorwayPowered(this.world, this.pos, state);
+        if(!(state.getBlock() instanceof ElevatorDoorBlockBase)){
+            this.acceptDoorwayPower(false, now);
+            return;
+        }
+        Set<BlockPos> cells = ((ElevatorDoorBlockBase)state.getBlock()).connectedCells(this.world, this.pos, state);
+        boolean powered = false;
+        for(BlockPos cell : cells){
+            if(this.world.isBlockPowered(cell)){
+                powered = true;
+                break;
+            }
+        }
+        // The first read after loading is backdated by a per-position amount, so a district of doors
+        // loaded on the same tick spreads its safety refreshes over the interval instead of all
+        // re-reading together every two seconds.
+        long stamp = this.powerEverRead ? now
+            : now - Math.floorMod(Long.hashCode(this.pos.toLong() * 0x9E3779B97F4A7C15L), POWER_REFRESH_INTERVAL);
+        for(BlockPos cell : cells){
+            TileEntity entity = cell.equals(this.pos) ? this : this.world.getTileEntity(cell);
+            if(entity instanceof ElevatorDoorBlockEntity)
+                ((ElevatorDoorBlockEntity)entity).acceptDoorwayPower(powered, stamp);
+        }
+    }
+
+    private void acceptDoorwayPower(boolean powered, long readAt){
+        this.doorwayPowered = powered;
+        this.powerStale = false;
+        this.powerEverRead = true;
+        this.powerReadAt = readAt;
     }
 
     /**
