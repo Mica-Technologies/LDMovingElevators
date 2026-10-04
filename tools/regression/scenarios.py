@@ -352,7 +352,11 @@ def panel_performance(game):
             blocks.append({"x": x, "y": y, "z": wall_z - 1, "block": block, "metadata": S.NORTH_HORIZONTAL, "nbt": nbt})
             i += 1
     game.place(blocks)
-    game.teleport((x0 + x1) / 2 + 0.5, y0, wall_z - 9.5, yaw=0, pitch=-5, fly=True)
+    # Standing on a slab of floor rather than flying, for the same reason as the main screenshots:
+    # flight eases the field of view and shifts every frame.
+    stand = (int((x0 + x1) / 2), y0 - 1, wall_z - 10)
+    game.fill("minecraft:quartz_block", (stand[0] - 1, stand[1], stand[2] - 1), (stand[0] + 1, stand[1], stand[2] + 1))
+    game.teleport(stand[0] + 0.5, y0, stand[2] + 0.5, yaw=0, pitch=-5, fly=False)
     game.wait_rendered()
     game.wait_ticks(200)
     work, sections = [], []
@@ -366,8 +370,50 @@ def panel_performance(game):
     game.metrics["panels.client.blockentities_ms"] = be[len(be) // 2] if be else None
     game.screenshot("panel_wall", ((x0 + x1) / 2 + 0.5, y0 + 2, wall_z - 6), ((x0 + x1) / 2 + 0.5, y0 + 1.5, wall_z))
     game.fill("minecraft:air", (x0, y0, wall_z - 1), (x1, y0 + 3, wall_z))
+    game.teleport(-198.5, S.BOTTOM, 189.5, fly=False)
+    game.fill("minecraft:air", (stand[0] - 1, stand[1], stand[2] - 1), (stand[0] + 1, stand[1], stand[2] + 1))
     return []
 
 
+
+def moving_cabin_render(game):
+    """A moving cabin is still drawn while it is in view.
+
+    Shot from beside the shaft, part-way up a ride, without waiting for meshes to settle (the cabin
+    would be gone by then). The cabin is grey and the sky behind it blue, so the check counts grey
+    pixels in the shaft's column against the same view with the shaft empty."""
+    from PIL import Image
+    a = S.CAR_A
+    checks = []
+    if not cabin_at(game, a, S.BOTTOM):
+        return [Check("cabin_render.precondition_cabin_at_bottom", False)]
+    eye, target = (a.cx - 11.5, 158.6, 198.5), (a.cx + 0.5, 158.6, 198.5)
+    game.teleport(-198.5, S.BOTTOM, 189.5, fly=False)
+    empty = game.screenshot("live_shaft_empty", eye, target, fov=70)
+    press_call(game, a, S.TOP, up=False)
+    left, _ = wait_departure(game, a, S.BOTTOM, 5)
+    checks.append(Check("cabin_render.car_departed", left))
+    time.sleep(1.8)
+    moving = game.screenshot("live_shaft_moving", eye, target, fov=70, settle_ms=0)
+    wait_arrival(game, a, S.TOP, 30)
+
+    def grey_share(path):
+        img = Image.open(path).convert("RGB")
+        w, h = img.size
+        box = (int(w * 0.4), int(h * 0.2), int(w * 0.6), int(h * 0.95))
+        pixels = img.crop(box).getdata()
+        # Unsaturated and not near-white: the cabin's iron and stone, but neither a hazy sky nor a
+        # cloud, both of which change between two shots of the same view.
+        return sum(1 for r, g, b in pixels if max(r, g, b) - min(r, g, b) < 10 and max(r, g, b) < 235) / len(pixels)
+
+    before, during = grey_share(empty), grey_share(moving)
+    checks.append(Check("cabin_render.cabin_drawn_while_moving", during - before > 0.04,
+                        "grey in the shaft column: %.1f%% empty, %.1f%% moving" % (before * 100, during * 100)))
+    # Back to the bottom for whatever runs next.
+    press_call(game, a, S.BOTTOM, up=True)
+    wait_arrival(game, a, S.BOTTOM, 30)
+    return checks
+
+
 ORDER = [adoption, idle, hall_call_and_doors, obstruction, redstone, rides, fire_recall_blocked,
-         screenshots, performance, panel_performance]
+         screenshots, moving_cabin_render, performance, panel_performance]
