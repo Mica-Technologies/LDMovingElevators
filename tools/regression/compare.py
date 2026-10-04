@@ -24,6 +24,14 @@ def load(label):
     return json.loads((HERE / "results" / label / "results.json").read_text(encoding="utf-8"))
 
 
+def blockentities_ms(run):
+    """The frame's block-entity pass, from the section profile -- where every renderer here lands."""
+    import re
+    text = run.get("metrics", {}).get("perf.client.sections") or ""
+    match = re.search(r"^\s*blockentities [0-9.]+% ([0-9.]+)ms", text, re.M)
+    return float(match.group(1)) if match else None
+
+
 def checks(run):
     return {c["name"]: c for s in run["scenarios"].values() for c in s["checks"]}
 
@@ -65,7 +73,8 @@ def main(before_label, after_label):
     print("  %d changed outcome; %d failing in %s" % (changed, len(failing), after_label))
 
     print("== metrics")
-    mb, ma = before.get("metrics", {}), after.get("metrics", {})
+    mb, ma = dict(before.get("metrics", {})), dict(after.get("metrics", {}))
+    mb["perf.client.blockentities_ms"], ma["perf.client.blockentities_ms"] = blockentities_ms(before), blockentities_ms(after)
     for key in sorted(set(mb) | set(ma)):
         x, y = mb.get(key), ma.get(key)
         if isinstance(x, str) or isinstance(y, str):

@@ -286,10 +286,23 @@ def screenshots(game):
 
 
 def performance(game):
-    """A district of 1,140 door blocks, half held open by redstone, measured on both sides."""
-    a, b = (-262, S.BOTTOM, 160), (-233, S.BOTTOM + 1, 178)
-    game.fill("movingelevators:elevator_door_block", a, b, replace_only="minecraft:air")
-    game.fill("minecraft:redstone_block", (-262, S.BOTTOM + 2, 160), (-248, S.BOTTOM + 2, 178), replace_only="minecraft:air")
+    """A district of 1,160 door blocks -- 290 real two-by-two doorways, half held open by redstone --
+    measured on both sides."""
+    # Doorways three blocks apart, so a doorway's walk never strays into its neighbour, and each
+    # with its halves and leaves flagged as a placed doorway's are.
+    blocks = []
+    for z in range(160, 189):
+        for k in range(10):
+            x = -262 + 3 * k
+            for right in (0, 1):
+                for top in (0, 1):
+                    blocks.append({"x": x + right, "y": S.BOTTOM + top, "z": z,
+                                   "block": "movingelevators:elevator_door_block",
+                                   "metadata": S.NORTH_HORIZONTAL | (4 if right else 0),
+                                   "nbt": S.data("{top:%db}" % top)})
+    game.place(blocks)
+    a, b = (-262, S.BOTTOM, 160), (-233, S.BOTTOM + 1, 188)
+    game.fill("minecraft:redstone_block", (-262, S.BOTTOM + 2, 160), (-248, S.BOTTOM + 2, 188), replace_only="minecraft:air")
     game.teleport(-247.5, S.BOTTOM + 8, 148.5, yaw=0, pitch=25, fly=True)
     game.wait_rendered()
     game.wait_ticks(400)
@@ -312,10 +325,49 @@ def performance(game):
     m["perf.server.tick_mean_ms"] = median(tick_mean)
     sections = game.client.call("client_profile_sections", duration_seconds=8, min_percent=1, max_depth=5)
     m["perf.client.sections"] = sections if isinstance(sections, str) else str(sections)
-    game.fill("minecraft:air", (-262, S.BOTTOM + 2, 160), (-248, S.BOTTOM + 2, 178), replace_only="minecraft:redstone_block")
+    game.fill("minecraft:air", (-262, S.BOTTOM + 2, 160), (-248, S.BOTTOM + 2, 188), replace_only="minecraft:redstone_block")
     game.fill("minecraft:air", a, b, replace_only="movingelevators:elevator_door_block")
     return []
 
 
+
+
+
+def panel_performance(game):
+    """A wall of 80 landing and car panels bound to car A, within all of their draw distances, for the
+    client's cost of drawing panels."""
+    wall_z, x0, x1, y0 = 232, -240, -221, S.BOTTOM
+    game.fill("minecraft:stonebrick", (x0, y0, wall_z), (x1, y0 + 3, wall_z))
+    both = "[{x:%d,y:%d,z:200,facing:2},{x:%d,y:%d,z:200,facing:2}]" % (S.CAR_A.cx, S.BOTTOM, S.CAR_B.cx, S.BOTTOM)
+    kinds = [("movingelevators:remote_call_panel_block", S.data(S.CAR_A.binding(S.BOTTOM))),
+             ("movingelevators:remote_indicator_block", S.data(S.CAR_A.binding(S.BOTTOM))),
+             ("movingelevators:bank_indicator_block", S.data("{bindings:%s}" % both)),
+             ("movingelevators:bank_lobby_panel_block", S.data("{bindings:%s}" % both)),
+             ("movingelevators:elevator_car_panel_block", S.data(S.CAR_A.binding(S.BOTTOM)))]
+    blocks = []
+    i = 0
+    for y in range(y0, y0 + 4):
+        for x in range(x0, x1 + 1):
+            block, nbt = kinds[i % len(kinds)]
+            blocks.append({"x": x, "y": y, "z": wall_z - 1, "block": block, "metadata": S.NORTH_HORIZONTAL, "nbt": nbt})
+            i += 1
+    game.place(blocks)
+    game.teleport((x0 + x1) / 2 + 0.5, y0, wall_z - 9.5, yaw=0, pitch=-5, fly=True)
+    game.wait_rendered()
+    game.wait_ticks(200)
+    work, sections = [], []
+    for _ in range(3):
+        work.append(game.client.call("client_frame_stats", sample_seconds=6)["sampled"]["renderWork"]["meanMs"])
+        sections.append(game.client.call("client_profile_sections", duration_seconds=6, min_percent=1, max_depth=5))
+    import re
+    be = sorted(float(m.group(1)) for t in sections
+                for m in [re.search(r"^\s*blockentities [0-9.]+% ([0-9.]+)ms", t if isinstance(t, str) else str(t), re.M)] if m)
+    game.metrics["panels.client.renderWork_mean_ms"] = sorted(work)[1]
+    game.metrics["panels.client.blockentities_ms"] = be[len(be) // 2] if be else None
+    game.screenshot("panel_wall", ((x0 + x1) / 2 + 0.5, y0 + 2, wall_z - 6), ((x0 + x1) / 2 + 0.5, y0 + 1.5, wall_z))
+    game.fill("minecraft:air", (x0, y0, wall_z - 1), (x1, y0 + 3, wall_z))
+    return []
+
+
 ORDER = [adoption, idle, hall_call_and_doors, obstruction, redstone, rides, fire_recall_blocked,
-         screenshots, performance]
+         screenshots, performance, panel_performance]
