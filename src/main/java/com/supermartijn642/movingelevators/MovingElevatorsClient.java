@@ -127,6 +127,20 @@ public class MovingElevatorsClient {
     public static String stripFloorPrefix(String label){
         if(label == null)
             return null;
+        // Mica: remembered, because every panel in view asks again each frame for the same handful of
+        // floor names, and each answer is a regex match.
+        checkLabelLanguage();
+        String known = STRIPPED.get(label);
+        if(known != null)
+            return known;
+        String stripped = stripFloorPrefixUncached(label);
+        if(STRIPPED.size() >= LABEL_CACHE_LIMIT)
+            STRIPPED.clear();
+        STRIPPED.put(label, stripped);
+        return stripped;
+    }
+
+    private static String stripFloorPrefixUncached(String label){
         Matcher matcher = FLOOR_PREFIX.matcher(label);
         if(!matcher.find())
             return label;
@@ -158,7 +172,41 @@ public class MovingElevatorsClient {
      * @param floor zero-based floor index
      */
     public static String formatFloorDisplayName(String name, int floor){
-        return name == null ? translate("movingelevators.floor_name", TextComponents.number(floor + 1).get()) : name;
+        if(name != null)
+            return name;
+        // Mica: the generated name for an index never changes within a language, and every unnamed
+        // floor on every readout in view was building and translating it again each frame.
+        checkLabelLanguage();
+        String generated = GENERATED_FLOOR_NAMES.get(floor);
+        if(generated == null){
+            generated = translate("movingelevators.floor_name", TextComponents.number(floor + 1).get());
+            if(GENERATED_FLOOR_NAMES.size() >= LABEL_CACHE_LIMIT)
+                GENERATED_FLOOR_NAMES.clear();
+            GENERATED_FLOOR_NAMES.put(floor, generated);
+        }
+        return generated;
+    }
+
+    /**
+     * Label text worked out once and reused, since it only changes with the game's language: the
+     * generated floor names, translations without arguments, and floor names with "Floor" taken off.
+     * Bounded, and cleared whole when full, because names are player-chosen and could otherwise grow
+     * without end over a long session.
+     */
+    private static final int LABEL_CACHE_LIMIT = 1024;
+    private static final java.util.Map<Integer,String> GENERATED_FLOOR_NAMES = new java.util.HashMap<>();
+    private static final java.util.Map<String,String> TRANSLATIONS = new java.util.HashMap<>();
+    private static final java.util.Map<String,String> STRIPPED = new java.util.HashMap<>();
+    private static String labelLanguage;
+
+    private static void checkLabelLanguage(){
+        String language = ClientUtils.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode();
+        if(!language.equals(labelLanguage)){
+            labelLanguage = language;
+            GENERATED_FLOOR_NAMES.clear();
+            TRANSLATIONS.clear();
+            STRIPPED.clear();
+        }
     }
 
     /**
@@ -177,7 +225,10 @@ public class MovingElevatorsClient {
      * call, from the floor's dye, so the codes were never carrying anything to begin with.
      */
     private static String translate(String key, Object... args){
-        return TextComponents.translation(key, args).get().getUnformattedText();
+        if(args.length > 0)
+            return TextComponents.translation(key, args).get().getUnformattedText();
+        checkLabelLanguage();
+        return TRANSLATIONS.computeIfAbsent(key, k -> TextComponents.translation(k).get().getUnformattedText());
     }
 
     /**

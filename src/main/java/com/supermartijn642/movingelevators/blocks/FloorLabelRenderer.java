@@ -166,11 +166,12 @@ final class FloorLabelRenderer {
 
     private static void drawArrowUnlit(float x, float centerY, float halfWidth, float halfHeight, boolean up, boolean lit){
         float centerX = mirrorX(x);
-        drawScreen(centerX - halfWidth - ARROW_BEZEL, centerY - halfHeight - ARROW_BEZEL,
-            centerX + halfWidth + ARROW_BEZEL, centerY + halfHeight + ARROW_BEZEL);
-
         int r = lit ? LIT_R : UNLIT_R, g = lit ? LIT_G : UNLIT_G, b = lit ? LIT_B : UNLIT_B;
 
+        // Mica: the inset and the arrow go out in one draw rather than two -- a lobby panel is a dozen
+        // of these, and every draw call costs far more than the few vertices in it. The arrow is a
+        // quad with its tip repeated, which draws the same triangle, so it can share the inset's
+        // buffer; the inset still goes first, exactly as before.
         GlStateManager.disableTexture2D();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
@@ -180,12 +181,15 @@ final class FloorLabelRenderer {
         GlStateManager.disableCull();
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-        buffer.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_COLOR);
+        buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        screenQuad(buffer, centerX - halfWidth - ARROW_BEZEL, centerY - halfHeight - ARROW_BEZEL,
+            centerX + halfWidth + ARROW_BEZEL, centerY + halfHeight + ARROW_BEZEL);
         float tipY = up ? centerY + halfHeight : centerY - halfHeight;
         float baseY = up ? centerY - halfHeight : centerY + halfHeight;
         buffer.pos(centerX, tipY, -0.005).color(r, g, b, 255).endVertex();
         buffer.pos(centerX - halfWidth, baseY, -0.005).color(r, g, b, 255).endVertex();
         buffer.pos(centerX + halfWidth, baseY, -0.005).color(r, g, b, 255).endVertex();
+        buffer.pos(centerX, tipY, -0.005).color(r, g, b, 255).endVertex();
         Tessellator.getInstance().draw();
 
         GlStateManager.enableCull();
@@ -221,11 +225,9 @@ final class FloorLabelRenderer {
         // floor buttons take it. Scaling it with the button instead would make a wide control's
         // surround grow sideways with it, so the bar would sit in a slab of socket rather than in
         // the same hairline well every other control on the plate has.
-        drawScreen(centerX - halfWidth - ARROW_BEZEL, centerY - halfHeight - ARROW_BEZEL,
-            centerX + halfWidth + ARROW_BEZEL, centerY + halfHeight + ARROW_BEZEL);
-
         int r = lit ? LIT_R : UNLIT_R, g = lit ? LIT_G : UNLIT_G, b = lit ? LIT_B : UNLIT_B;
 
+        // One draw for the socket and the lamp, as for the arrows above.
         GlStateManager.disableTexture2D();
         GlStateManager.enableBlend();
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
@@ -233,6 +235,8 @@ final class FloorLabelRenderer {
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+        screenQuad(buffer, centerX - halfWidth - ARROW_BEZEL, centerY - halfHeight - ARROW_BEZEL,
+            centerX + halfWidth + ARROW_BEZEL, centerY + halfHeight + ARROW_BEZEL);
         buffer.pos(centerX - halfWidth, centerY + halfHeight, -0.005).color(r, g, b, 255).endVertex();
         buffer.pos(centerX + halfWidth, centerY + halfHeight, -0.005).color(r, g, b, 255).endVertex();
         buffer.pos(centerX + halfWidth, centerY - halfHeight, -0.005).color(r, g, b, 255).endVertex();
@@ -256,14 +260,18 @@ final class FloorLabelRenderer {
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
         buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
-        buffer.pos(minX, maxY, -0.003).color(SCREEN_R, SCREEN_G, SCREEN_B, SCREEN_A).endVertex();
-        buffer.pos(maxX, maxY, -0.003).color(SCREEN_R, SCREEN_G, SCREEN_B, SCREEN_A).endVertex();
-        buffer.pos(maxX, minY, -0.003).color(SCREEN_R, SCREEN_G, SCREEN_B, SCREEN_A).endVertex();
-        buffer.pos(minX, minY, -0.003).color(SCREEN_R, SCREEN_G, SCREEN_B, SCREEN_A).endVertex();
+        screenQuad(buffer, minX, minY, maxX, maxY);
         Tessellator.getInstance().draw();
 
         GlStateManager.disableBlend();
         GlStateManager.enableTexture2D();
+    }
+
+    private static void screenQuad(BufferBuilder buffer, float minX, float minY, float maxX, float maxY){
+        buffer.pos(minX, maxY, -0.003).color(SCREEN_R, SCREEN_G, SCREEN_B, SCREEN_A).endVertex();
+        buffer.pos(maxX, maxY, -0.003).color(SCREEN_R, SCREEN_G, SCREEN_B, SCREEN_A).endVertex();
+        buffer.pos(maxX, minY, -0.003).color(SCREEN_R, SCREEN_G, SCREEN_B, SCREEN_A).endVertex();
+        buffer.pos(minX, minY, -0.003).color(SCREEN_R, SCREEN_G, SCREEN_B, SCREEN_A).endVertex();
     }
 
     /**
@@ -272,6 +280,19 @@ final class FloorLabelRenderer {
      * floor colour and scores 2.21, which is what made the label hard to read.
      */
     static int readableColor(EnumDyeColor color){
+        // Mica: a fixed answer per dye, so worked out once rather than with six Math.pow calls per
+        // label per frame.
+        return READABLE_COLORS[color.getMetadata()];
+    }
+
+    private static final int[] READABLE_COLORS = new int[EnumDyeColor.values().length];
+
+    static{
+        for(EnumDyeColor color : EnumDyeColor.values())
+            READABLE_COLORS[color.getMetadata()] = computeReadableColor(color);
+    }
+
+    private static int computeReadableColor(EnumDyeColor color){
         int rgb = color.getColorValue();
         return contrastRatio(relativeLuminance(rgb), relativeLuminance(SCREEN_R << 16 | SCREEN_G << 8 | SCREEN_B)) < MIN_CONTRAST
             ? EnumDyeColor.WHITE.getColorValue()

@@ -266,6 +266,12 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **Panels cost less to draw.** Each call arrow and floor button was two draw calls -- its dark
+  inset, then its lamp -- and each is now one. Floor labels that never change between frames (the
+  generated "Floor N" names, the fixed notices, the label with "Floor" stripped off) are worked out
+  once instead of every frame, and so is each dye's readable colour. On a wall of 80 panels the
+  frame's block-entity time fell by 37%. Panels look exactly as before.
+
 - **Elevator doors are drawn in one batch.** Each door block was drawn on its own -- lighting set up,
   texture bound and one box sent -- so a district in view cost over a thousand draw calls a frame.
   Doors now go into Forge's shared batch and are drawn together. They look exactly as before; their
