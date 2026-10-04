@@ -266,6 +266,10 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **A moving cabin out of view is no longer drawn.** Every moving cabin within render distance
+  was rebuilt block by block for each render layer of every frame, including ones behind the
+  camera. Cabins are now checked against the view first, as the world's own chunks are.
+
 - **Panels cost less to draw.** Each call arrow and floor button was two draw calls -- its dark
   inset, then its lamp -- and each is now one. Floor labels that never change between frames (the
   generated "Floor N" names, the fixed notices, the label with "Floor" stripped off) are worked out

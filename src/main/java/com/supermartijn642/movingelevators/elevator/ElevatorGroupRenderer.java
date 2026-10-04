@@ -7,6 +7,8 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
@@ -67,9 +69,10 @@ public class ElevatorGroupRenderer {
         double d4 = renderViewEntity.lastTickPosY + (renderViewEntity.posY - renderViewEntity.lastTickPosY) * partialTicks;
         double d5 = renderViewEntity.lastTickPosZ + (renderViewEntity.posZ - renderViewEntity.lastTickPosZ) * partialTicks;
         GlStateManager.translate(-d3, -d4, -d5);
+        ICamera frustum = frustum(d3, d4, d5);
         BufferBuilder buffer = null;
         for(ElevatorGroup group : groups.getGroups()){
-            if(group.isMoving() && isWithinRenderDistance(group)){
+            if(group.isMoving() && isWithinRenderDistance(group) && isInView(group, frustum, partialTicks)){
                 if(buffer == null){
                     buffer = Tessellator.getInstance().getBuffer();
                     buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
@@ -86,10 +89,35 @@ public class ElevatorGroupRenderer {
     public static void renderBlockEntities(float partialTicks){
         ElevatorGroupCapability groups = ElevatorGroupCapability.get(ClientUtils.getWorld());
 
+        Entity view = ClientUtils.getMinecraft().getRenderViewEntity();
+        ICamera frustum = frustum(view.lastTickPosX + (view.posX - view.lastTickPosX) * partialTicks,
+            view.lastTickPosY + (view.posY - view.lastTickPosY) * partialTicks,
+            view.lastTickPosZ + (view.posZ - view.lastTickPosZ) * partialTicks);
         for(ElevatorGroup group : groups.getGroups()){
-            if(group.isMoving() && isWithinRenderDistance(group))
+            if(group.isMoving() && isWithinRenderDistance(group) && isInView(group, frustum, partialTicks))
                 renderGroupBlockEntities(group, partialTicks);
         }
+    }
+
+    /**
+     * The view frustum for the frame being drawn, positioned at the camera.
+     * <p>
+     * Mica: moving cabins were re-tessellated block by block for every render layer of every frame
+     * whether they were in view or not -- a cabin behind the camera cost exactly as much as one in
+     * front of it. Vanilla culls its own chunks against this same frustum.
+     */
+    private static ICamera frustum(double x, double y, double z){
+        Frustum frustum = new Frustum();
+        frustum.setPosition(x, y, z);
+        return frustum;
+    }
+
+    /** Whether any part of the cabin, where it is this frame, is inside the frustum. */
+    private static boolean isInView(ElevatorGroup group, ICamera frustum, float partialTicks){
+        double renderY = group.getLastY() + (group.getCurrentY() - group.getLastY()) * partialTicks;
+        Vec3d start = group.getCageAnchorPos(renderY);
+        return frustum.isBoundingBoxInFrustum(new AxisAlignedBB(start.x, start.y, start.z,
+            start.x + group.getCageSizeX(), start.y + group.getCageSizeY(), start.z + group.getCageSizeZ()));
     }
 
     public static void renderGroupBlocks(ElevatorGroup group, BlockRenderLayer renderType, BufferBuilder buffer, float partialTicks){
