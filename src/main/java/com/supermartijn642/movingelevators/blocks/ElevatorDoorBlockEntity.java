@@ -386,6 +386,15 @@ public class ElevatorDoorBlockEntity extends RemoteBoundBlockEntity implements T
         return Math.floorMod(Long.hashCode(this.pos.toLong() * 0x9E3779B97F4A7C15L), interval);
     }
 
+    /**
+     * Mica: batched with every other door in view; see {@link ElevatorDoorBlockEntityRenderer}.
+     */
+    @Override
+    @net.minecraftforge.fml.relauncher.SideOnly(net.minecraftforge.fml.relauncher.Side.CLIENT)
+    public boolean hasFastRenderer(){
+        return true;
+    }
+
     /** Doors give no comparator signal; see {@link RemoteBoundBlockEntity#drivesComparator()}. */
     @Override
     protected boolean drivesComparator(){

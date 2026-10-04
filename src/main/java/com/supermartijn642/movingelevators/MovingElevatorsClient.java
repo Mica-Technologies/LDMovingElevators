@@ -60,7 +60,7 @@ public class MovingElevatorsClient {
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_car_panel_tile, ElevatorCarPanelBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.bank_lobby_panel_tile, BankLobbyPanelBlockEntityRenderer::new);
         handler.registerCustomBlockEntityRenderer(() -> MovingElevators.bank_indicator_tile, BankIndicatorBlockEntityRenderer::new);
-        handler.registerCustomBlockEntityRenderer(() -> MovingElevators.elevator_door_tile, ElevatorDoorBlockEntityRenderer::new);
+        handler.registerBlockEntityRenderer(() -> MovingElevators.elevator_door_tile, ElevatorDoorBlockEntityRenderer::new);
         // Register texture
         handler.registerAtlasSprite(TextureAtlases.getBlocks(), OVERLAY_TEXTURE_LOCATION.getResourcePath());
         handler.registerAtlasSprite(TextureAtlases.getBlocks(), METAL_TEXTURE_LOCATION.getResourcePath());

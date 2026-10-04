@@ -266,6 +266,12 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **Elevator doors are drawn in one batch.** Each door block was drawn on its own -- lighting set up,
+  texture bound and one box sent -- so a district in view cost over a thousand draw calls a frame.
+  Doors now go into Forge's shared batch and are drawn together. They look exactly as before; their
+  shade is now fixed rather than depending on whatever happened to be drawn just ahead of them. On
+  the regression suite's 290-doorway district, the frame's block-entity time fell by 45%.
+
 - **A departing cabin costs less to send.** Every player in the dimension is sent the cabin's
   contents when it sets off. That included, for every block entity in it, a second full copy of its
   data that only the server uses (to drop the cabin as items), and each collision box as a compound
