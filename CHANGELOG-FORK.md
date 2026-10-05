@@ -266,6 +266,12 @@ Based on upstream **Moving Elevators 1.4.12**.
 
 ### Fixed
 
+- **Players and other entities are visible again.** 2026.10.04's culling of moving cabins built
+  its own view frustum, which in 1.12.2 overwrites the one the game shares, and it did so with the
+  camera offset applied. Every entity was then culled against a frustum displaced from the view,
+  so players showed only from odd angles. Cabins are now culled against the game's own camera,
+  which is left untouched.
+
 - **A moving cabin out of view is no longer drawn.** Every moving cabin within render distance
   was rebuilt block by block for each render layer of every frame, including ones behind the
   camera. Cabins are now checked against the view first, as the world's own chunks are.

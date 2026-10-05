@@ -7,7 +7,6 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
@@ -69,7 +68,7 @@ public class ElevatorGroupRenderer {
         double d4 = renderViewEntity.lastTickPosY + (renderViewEntity.posY - renderViewEntity.lastTickPosY) * partialTicks;
         double d5 = renderViewEntity.lastTickPosZ + (renderViewEntity.posZ - renderViewEntity.lastTickPosZ) * partialTicks;
         GlStateManager.translate(-d3, -d4, -d5);
-        ICamera frustum = frustum(d3, d4, d5);
+        ICamera frustum = camera;
         BufferBuilder buffer = null;
         for(ElevatorGroup group : groups.getGroups()){
             if(group.isMoving() && isWithinRenderDistance(group) && isInView(group, frustum, partialTicks)){
@@ -89,10 +88,7 @@ public class ElevatorGroupRenderer {
     public static void renderBlockEntities(float partialTicks){
         ElevatorGroupCapability groups = ElevatorGroupCapability.get(ClientUtils.getWorld());
 
-        Entity view = ClientUtils.getMinecraft().getRenderViewEntity();
-        ICamera frustum = frustum(view.lastTickPosX + (view.posX - view.lastTickPosX) * partialTicks,
-            view.lastTickPosY + (view.posY - view.lastTickPosY) * partialTicks,
-            view.lastTickPosZ + (view.posZ - view.lastTickPosZ) * partialTicks);
+        ICamera frustum = camera;
         for(ElevatorGroup group : groups.getGroups()){
             if(group.isMoving() && isWithinRenderDistance(group) && isInView(group, frustum, partialTicks))
                 renderGroupBlockEntities(group, partialTicks);
@@ -100,20 +96,31 @@ public class ElevatorGroupRenderer {
     }
 
     /**
-     * The view frustum for the frame being drawn, positioned at the camera.
+     * The camera vanilla culls with this frame, already positioned at the view entity, handed over
+     * by {@link com.supermartijn642.movingelevators.mixin.LevelRendererMixin} from setupTerrain and
+     * renderEntities. Null until the first frame.
      * <p>
      * Mica: moving cabins were re-tessellated block by block for every render layer of every frame
      * whether they were in view or not -- a cabin behind the camera cost exactly as much as one in
-     * front of it. Vanilla culls its own chunks against this same frustum.
+     * front of it. They are culled against vanilla's own camera rather than a new Frustum, because
+     * {@code new Frustum()} re-initialises the ClippingHelper every vanilla camera shares from the
+     * GL matrices current at that moment. Built at the head of a block layer, under the camera
+     * translation, that moved vanilla's frustum away from the view, and renderEntities then culled
+     * players and every other entity against it: they showed only from odd angles.
      */
-    private static ICamera frustum(double x, double y, double z){
-        Frustum frustum = new Frustum();
-        frustum.setPosition(x, y, z);
-        return frustum;
+    private static ICamera camera;
+
+    public static void setCamera(ICamera camera){
+        ElevatorGroupRenderer.camera = camera;
     }
 
-    /** Whether any part of the cabin, where it is this frame, is inside the frustum. */
+    /**
+     * Whether any part of the cabin, where it is this frame, is inside the frustum. Without a
+     * camera yet, every cabin counts as in view.
+     */
     private static boolean isInView(ElevatorGroup group, ICamera frustum, float partialTicks){
+        if(frustum == null)
+            return true;
         double renderY = group.getLastY() + (group.getCurrentY() - group.getLastY()) * partialTicks;
         Vec3d start = group.getCageAnchorPos(renderY);
         return frustum.isBoundingBoxInFrustum(new AxisAlignedBB(start.x, start.y, start.z,

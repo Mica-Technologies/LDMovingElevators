@@ -18,6 +18,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class LevelRendererMixin {
 
     @Inject(
+        method = "setupTerrain",
+        at = @At("HEAD")
+    )
+    public void captureTerrainCamera(Entity viewEntity, double partialTicks, ICamera camera, int frameCount, boolean playerSpectator, CallbackInfo ci){
+        ElevatorGroupRenderer.setCamera(camera);
+    }
+
+    @Inject(
+        method = "renderEntities",
+        at = @At("HEAD")
+    )
+    public void captureEntityCamera(Entity renderViewEntity, ICamera camera, float partialTicks, CallbackInfo ci){
+        ElevatorGroupRenderer.setCamera(camera);
+    }
+
+    @Inject(
         method = "renderEntities",
         at = @At(
             value = "INVOKE",
